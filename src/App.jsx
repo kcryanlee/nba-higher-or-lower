@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import Achievements from "./components/Achievements.jsx";
 import Board from "./components/Board.jsx";
 import DailyScore from "./components/DailyScore.jsx";
@@ -65,6 +66,7 @@ export default function App() {
 
   return (
     <div className="court">
+      <Analytics />
       {wrongFlash ? <div className="wrong-flash" aria-hidden="true" /> : null}
       {milestone ? (
         <div className="milestone" role="status">
