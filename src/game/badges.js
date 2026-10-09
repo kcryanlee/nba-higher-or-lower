@@ -1,5 +1,8 @@
+import { readJsonStorage, readStoredNumber } from "./storage.js";
+
 export const BADGE_KEY = "nba-hol-badges";
 const BEST_KEY = "nba-hol-best";
+const DAILY_SEEN_LIMIT = 600;
 
 const COUNT_KEYS = [
   "ppg",
@@ -181,16 +184,17 @@ export function emptyBadgeState() {
     counts: Object.fromEntries(COUNT_KEYS.map((key) => [key, 0])),
     hardCorrect: 0,
     expertCorrect: 0,
+    dailySeen: [],
   };
 }
 
 function readBest() {
-  try {
-    const stored = Number(localStorage.getItem(BEST_KEY));
-    return Number.isFinite(stored) && stored > 0 ? Math.floor(stored) : 0;
-  } catch {
-    return 0;
-  }
+  return readStoredNumber(BEST_KEY);
+}
+
+function readDailySeen(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((key) => typeof key === "string").slice(-DAILY_SEEN_LIMIT);
 }
 
 function whole(value) {
@@ -233,27 +237,31 @@ function withUnlocks(state, event = {}) {
 
 export function readBadgeState() {
   const empty = emptyBadgeState();
-  try {
-    const raw = JSON.parse(localStorage.getItem(BADGE_KEY));
-    if (!raw || typeof raw !== "object") return withUnlocks(empty, { best: readBest() }).state;
-    const known = new Set(BADGES.map((badge) => badge.id));
-    const counts = { ...empty.counts };
-    for (const key of COUNT_KEYS) counts[key] = whole(raw.counts?.[key]);
-    const saved = Array.isArray(raw.unlocked) ? raw.unlocked.filter((id) => known.has(id)) : [];
-    const state = {
-      unlocked: saved.filter((id) => KEPT_WHEN_SAVED.has(id)),
-      counts,
-      hardCorrect: whole(raw.hardCorrect),
-      expertCorrect: whole(raw.expertCorrect),
-    };
-    return withUnlocks(state, { best: readBest() }).state;
-  } catch {
-    return withUnlocks(empty, { best: readBest() }).state;
-  }
+  const raw = readJsonStorage(BADGE_KEY);
+  if (!raw || typeof raw !== "object") return withUnlocks(empty, { best: readBest() }).state;
+  const known = new Set(BADGES.map((badge) => badge.id));
+  const counts = { ...empty.counts };
+  for (const key of COUNT_KEYS) counts[key] = whole(raw.counts?.[key]);
+  const saved = Array.isArray(raw.unlocked) ? raw.unlocked.filter((id) => known.has(id)) : [];
+  const state = {
+    unlocked: saved.filter((id) => KEPT_WHEN_SAVED.has(id)),
+    counts,
+    hardCorrect: whole(raw.hardCorrect),
+    expertCorrect: whole(raw.expertCorrect),
+    dailySeen: readDailySeen(raw.dailySeen),
+  };
+  return withUnlocks(state, { best: readBest() }).state;
 }
 
 export function applyAnswer(state, event) {
-  if (!event.correct) return { state, fresh: [] };
+  const seen = Array.isArray(state.dailySeen) ? state.dailySeen : [];
+  if (event.dailyKey && seen.includes(event.dailyKey)) return { state, fresh: [] };
+
+  const dailySeen = event.dailyKey ? [...seen, event.dailyKey].slice(-DAILY_SEEN_LIMIT) : seen;
+  if (!event.correct) {
+    if (!event.dailyKey) return { state, fresh: [] };
+    return { state: { ...state, dailySeen }, fresh: [] };
+  }
 
   const counts = { ...state.counts };
   if (Object.hasOwn(counts, event.categoryId)) counts[event.categoryId] += 1;
@@ -261,6 +269,7 @@ export function applyAnswer(state, event) {
   return withUnlocks({
     ...state,
     counts,
+    dailySeen,
     hardCorrect: state.hardCorrect + (event.bandId === "hard" ? 1 : 0),
     expertCorrect: state.expertCorrect + (event.bandId === "expert" ? 1 : 0),
   }, event);

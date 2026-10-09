@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { bandForStreak } from "../game/difficulty.js";
 import { playBuzzer } from "../game/feedback.js";
+import { outcomeFor } from "../game/outcome.js";
 import { selectMatchup } from "../game/selectMatchup.js";
+import { readStoredNumber, writeStorage } from "../game/storage.js";
 
 const BEST_KEY = "nba-hol-best";
 
 function readBest() {
-  const stored = Number(localStorage.getItem(BEST_KEY));
-  return Number.isFinite(stored) && stored > 0 ? stored : 0;
+  return readStoredNumber(BEST_KEY);
 }
 
 export function useGame(players, { onAnswer } = {}) {
@@ -17,12 +18,20 @@ export function useGame(players, { onAnswer } = {}) {
   const [matchup, setMatchup] = useState(null);
   const [pickedId, setPickedId] = useState(null);
   const [result, setResult] = useState(null);
+  const locked = useRef(false);
+  const onAnswerRef = useRef(onAnswer);
+
+  useEffect(() => {
+    onAnswerRef.current = onAnswer;
+  });
 
   function deal(nextStreak, previousKey) {
-    setMatchup(selectMatchup(players, nextStreak, previousKey));
+    const next = selectMatchup(players, nextStreak, previousKey);
+    setMatchup(next);
     setPickedId(null);
     setResult(null);
-    setPhase("playing");
+    locked.current = false;
+    setPhase(next ? "playing" : "gameover");
   }
 
   function start() {
@@ -30,42 +39,55 @@ export function useGame(players, { onAnswer } = {}) {
     deal(0, null);
   }
 
+  function discard() {
+    locked.current = false;
+    setStreak(0);
+    setMatchup(null);
+    setPickedId(null);
+    setResult(null);
+    setPhase("start");
+  }
+
   function pick(playerId) {
-    if (phase !== "playing" || !matchup) return;
+    if (locked.current || phase !== "playing" || !matchup) return;
+    locked.current = true;
 
     const { category, left, right } = matchup;
     const pickedValue = playerId === left.id ? left[category.id] : right[category.id];
     const otherValue = playerId === left.id ? right[category.id] : left[category.id];
-    const correct = pickedValue >= otherValue;
+    const outcome = outcomeFor(pickedValue, otherValue);
+    const nextStreak = outcome === "correct" ? streak + 1 : streak;
+    const nextBest = Math.max(best, nextStreak);
 
-    setPickedId(playerId);
-
-    if (correct) {
-      const nextStreak = streak + 1;
+    if (outcome === "correct") {
       setStreak(nextStreak);
-      const nextBest = Math.max(best, nextStreak);
       if (nextStreak > best) {
-        localStorage.setItem(BEST_KEY, String(nextBest));
         setBest(nextBest);
+        writeStorage(BEST_KEY, String(nextBest));
       }
-      onAnswer?.({
-        correct: true,
-        best: nextBest,
-        categoryId: category.id,
-        bandId: matchup.band.id,
-      });
-      setResult("correct");
-      setPhase("revealing");
-      return;
+      try {
+        onAnswerRef.current?.({
+          correct: true,
+          best: nextBest,
+          categoryId: category.id,
+          bandId: matchup.band.id,
+        });
+      } catch {
+        // Badge persistence must not block the reveal.
+      }
+    } else if (outcome === "wrong") {
+      playBuzzer();
     }
 
-    playBuzzer();
-    setResult("wrong");
+    setPickedId(playerId);
+    setResult(outcome === "push" ? "push" : outcome);
     setPhase("revealing");
   }
 
   function advance() {
-    if (result === "correct" && matchup) {
+    if (phase !== "revealing" || !locked.current) return;
+    locked.current = false;
+    if ((result === "correct" || result === "push") && matchup) {
       deal(streak, matchup.key);
       return;
     }
@@ -83,5 +105,6 @@ export function useGame(players, { onAnswer } = {}) {
     start,
     pick,
     advance,
+    discard,
   };
 }

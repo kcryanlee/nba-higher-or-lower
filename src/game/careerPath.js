@@ -1,4 +1,4 @@
-import { CAREERS } from "../data/careers.js";
+import { careerPlayers as CAREERS } from "../data/players.js";
 
 const LABELS = {
   easy: "Easy",

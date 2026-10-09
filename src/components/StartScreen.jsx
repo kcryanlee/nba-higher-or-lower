@@ -3,14 +3,21 @@ import { DAILY_LENGTH } from "../game/daily.js";
 export default function StartScreen({
   best,
   dailyStreak,
-  playedToday,
+  dailyStatus,
   todayCorrect,
+  resumeQuestion,
   onPlay,
   onDaily,
   onAwards,
   onHub,
 }) {
-  const progress = playedToday ? `${todayCorrect}/${DAILY_LENGTH}` : `0/${DAILY_LENGTH}`;
+  const dailyLine = dailyStatus === "complete"
+    ? `Today's challenge • ${todayCorrect}/${DAILY_LENGTH} completed`
+    : dailyStatus === "progress"
+      ? `Today's challenge • question ${resumeQuestion} of ${DAILY_LENGTH}`
+      : dailyStatus === "unavailable"
+        ? "Today's challenge"
+        : "Today's challenge • not started";
 
   return (
     <section className="panel start-screen lobby">
@@ -25,21 +32,28 @@ export default function StartScreen({
       <button type="button" className="action play-main" onClick={onPlay}>
         Play
       </button>
-      <button type="button" className="lobby-card" onClick={onDaily}>
-        <span>Today&apos;s challenge • {progress} completed</span>
-        {dailyStreak > 0 ? (
-          <strong>
-            🔥 {dailyStreak}-day daily streak
-          </strong>
-        ) : (
-          <strong>Same questions for everyone today</strong>
-        )}
-      </button>
+      {dailyStatus === "unavailable" ? (
+        <div className="lobby-card is-unavailable" role="status">
+          <span>{dailyLine}</span>
+          <strong>Unavailable today</strong>
+        </div>
+      ) : (
+        <button type="button" className="lobby-card" onClick={onDaily}>
+          <span>{dailyLine}</span>
+          {dailyStreak > 0 ? (
+            <strong>
+              🔥 {dailyStreak}-day daily streak
+            </strong>
+          ) : (
+            <strong>Same questions for everyone today</strong>
+          )}
+        </button>
+      )}
       <button type="button" className="lobby-link" onClick={onAwards}>
         Achievements
       </button>
       <button type="button" className="lobby-link" onClick={onHub}>
-        All games
+        All Games
       </button>
     </section>
   );

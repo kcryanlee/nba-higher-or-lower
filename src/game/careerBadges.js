@@ -1,3 +1,5 @@
+import { readJsonStorage, readStoredNumber } from "./storage.js";
+
 export const CAREER_BADGE_KEY = "nba-career-badges";
 export const CAREER_BEST_KEY = "nba-career-best";
 
@@ -47,12 +49,7 @@ export const CAREER_BADGES = [
 ];
 
 function readBest() {
-  try {
-    const stored = Number(localStorage.getItem(CAREER_BEST_KEY));
-    return Number.isFinite(stored) && stored > 0 ? Math.floor(stored) : 0;
-  } catch {
-    return 0;
-  }
+  return readStoredNumber(CAREER_BEST_KEY);
 }
 
 export function applyCareerStreak(state, streak) {
@@ -73,17 +70,8 @@ export function applyCareerStreak(state, streak) {
 
 export function readCareerBadges() {
   const known = new Set(CAREER_BADGES.map((badge) => badge.id));
-  let unlocked = [];
-
-  try {
-    const raw = JSON.parse(localStorage.getItem(CAREER_BADGE_KEY));
-    if (Array.isArray(raw?.unlocked)) {
-      unlocked = raw.unlocked.filter((id) => known.has(id));
-    }
-  } catch {
-    unlocked = [];
-  }
-
+  const raw = readJsonStorage(CAREER_BADGE_KEY);
+  const unlocked = Array.isArray(raw?.unlocked) ? raw.unlocked.filter((id) => known.has(id)) : [];
   return applyCareerStreak({ unlocked }, readBest()).state;
 }
 

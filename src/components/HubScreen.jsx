@@ -18,12 +18,6 @@ const GAMES = [
     ready: false,
   },
   {
-    id: "contract",
-    name: "Contract Higher or Lower",
-    detail: "Compare two salaries and pick the bigger one.",
-    ready: false,
-  },
-  {
     id: "scored",
     name: "Who Scored More?",
     detail: "Two players from the same game. Who scored more?",

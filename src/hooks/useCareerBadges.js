@@ -4,14 +4,11 @@ import {
   applyCareerStreak,
   readCareerBadges,
 } from "../game/careerBadges.js";
+import { writeStorage } from "../game/storage.js";
 
 function loadCareerBadges() {
   const state = readCareerBadges();
-  try {
-    localStorage.setItem(CAREER_BADGE_KEY, JSON.stringify(state));
-  } catch {
-    // Private browsing can block storage. The in-memory badges still work.
-  }
+  writeStorage(CAREER_BADGE_KEY, JSON.stringify(state));
   return state;
 }
 
@@ -23,7 +20,7 @@ export function useCareerBadges() {
 
   const save = useCallback((state, unlocked) => {
     snapshotRef.current = state;
-    localStorage.setItem(CAREER_BADGE_KEY, JSON.stringify(state));
+    writeStorage(CAREER_BADGE_KEY, JSON.stringify(state));
     setSnapshot(state);
     setFresh(unlocked);
     if (unlocked.length) {

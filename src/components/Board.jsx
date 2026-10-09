@@ -18,8 +18,10 @@ export default function Board({
   holdMs,
   onPick,
   onAdvance,
+  onMenu,
 }) {
   const leaderId = higherId(matchup);
+  const tied = matchup.left[matchup.category.id] === matchup.right[matchup.category.id];
   const wrong = phase === "revealing" && result === "wrong";
 
   return (
@@ -34,6 +36,11 @@ export default function Board({
           <span>{matchup.band.label}</span>
         </p>
         <h1>{matchup.category.question}</h1>
+        {onMenu ? (
+          <button type="button" className="lobby-link board-leave" onClick={onMenu}>
+            All Games
+          </button>
+        ) : null}
       </div>
       <div className="cards">
         <PlayerCard
@@ -42,6 +49,7 @@ export default function Board({
           revealed={phase === "revealing"}
           picked={pickedId === matchup.left.id}
           higher={leaderId === matchup.left.id}
+          tied={phase === "revealing" && tied}
           disabled={phase !== "playing"}
           onSelect={onPick}
         />
@@ -54,6 +62,7 @@ export default function Board({
           revealed={phase === "revealing"}
           picked={pickedId === matchup.right.id}
           higher={leaderId === matchup.right.id}
+          tied={phase === "revealing" && tied}
           disabled={phase !== "playing"}
           onSelect={onPick}
         />

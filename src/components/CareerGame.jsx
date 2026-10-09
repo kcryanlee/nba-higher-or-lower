@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { formatYears } from "../game/careerPath.js";
-import { REVEAL_MS } from "../game/feedback.js";
+import { BADGE_REVEAL_MS, REVEAL_MS } from "../game/feedback.js";
 import { teamLogoUrl } from "../game/teams.js";
 
 function CareerStop({ stop, bandId }) {
@@ -41,9 +41,10 @@ export default function CareerGame({
 
   useEffect(() => {
     if (phase !== "revealing") return undefined;
-    const timer = window.setTimeout(() => onAdvanceRef.current(), REVEAL_MS);
+    const hold = unlockedBadges.length ? BADGE_REVEAL_MS : REVEAL_MS;
+    const timer = window.setTimeout(() => onAdvanceRef.current(), hold);
     return () => window.clearTimeout(timer);
-  }, [phase, question]);
+  }, [phase, question, unlockedBadges.length]);
 
   if (phase === "gameover") {
     return (
@@ -61,7 +62,7 @@ export default function CareerGame({
             Achievements
           </button>
           <button type="button" className="action secondary" onClick={onMenu}>
-            All games
+            All Games
           </button>
         </div>
       </section>
@@ -128,7 +129,7 @@ export default function CareerGame({
         Achievements
       </button>
       <button type="button" className="lobby-link" onClick={onMenu}>
-        All games
+        All Games
       </button>
     </section>
   );

@@ -1,6 +1,7 @@
 import { CATEGORIES } from "./categories.js";
 import { BANDS, bandForGap, widenedRange } from "./difficulty.js";
 import { collectPairs } from "./selectMatchup.js";
+import { readJsonStorage, writeStorage } from "./storage.js";
 
 export const DAILY_KEY = "nba-hol-daily";
 export const DAILY_LENGTH = 15;
@@ -25,22 +26,24 @@ const SLOT_BANDS = [
 ];
 
 export function todayKey(now = new Date()) {
-  return now.toISOString().slice(0, 10);
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export function previousDateKey(dateKey) {
   const [year, month, day] = dateKey.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  date.setUTCDate(date.getUTCDate() - 1);
-  return date.toISOString().slice(0, 10);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() - 1);
+  return todayKey(date);
 }
 
 export function formatDailyDate(dateKey) {
   const [year, month, day] = dateKey.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString("en-US", {
+  return new Date(year, month - 1, day).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    timeZone: "UTC",
   });
 }
 
@@ -106,31 +109,39 @@ function takePair(players, category, requested, blocked, random) {
 }
 
 export function buildDaily(players, dateKey) {
-  const random = mulberry32(hashString(`nba-hol:${dateKey}`));
-  const categories = shuffleWith(CATEGORIES, random);
-  const extras = shuffleWith(CATEGORIES, random).slice(0, DAILY_LENGTH - categories.length);
-  categories.push(...extras);
-  const blocked = new Set();
-  const questions = categories.map((category, index) => (
-    takePair(players, category, BANDS[SLOT_BANDS[index]], blocked, random)
-  ));
+  try {
+    if (!Array.isArray(players) || players.length < 2) return null;
+    const random = mulberry32(hashString(`nba-hol:${dateKey}`));
+    const categories = shuffleWith(CATEGORIES, random);
+    const extras = shuffleWith(CATEGORIES, random).slice(0, DAILY_LENGTH - categories.length);
+    categories.push(...extras);
+    const blocked = new Set();
+    const questions = categories.map((category, index) => (
+      takePair(players, category, BANDS[SLOT_BANDS[index]], blocked, random)
+    ));
 
-  if (questions.length !== DAILY_LENGTH || questions.some((question) => !question)) {
-    throw new Error(`Could not build the daily challenge for ${dateKey}`);
+    if (questions.length !== DAILY_LENGTH || questions.some((question) => !question)) return null;
+    if (questions.some((question) => question.left[question.category.id] === question.right[question.category.id])) {
+      return null;
+    }
+    return questions;
+  } catch {
+    return null;
   }
-
-  return questions;
 }
+
+const BAND_IDS = new Set(["easy", "medium", "hard", "expert"]);
 
 export function emptyDailyRecord() {
   return {
-    version: 2,
+    version: 3,
     lastCompleted: "",
     streak: 0,
     days: {},
     completedDates: [],
     bestCorrect: 0,
     bestTotal: DAILY_LENGTH,
+    active: null,
   };
 }
 
@@ -153,37 +164,58 @@ function readDay(value) {
   };
 }
 
+function readActive(value, days) {
+  if (!value || typeof value !== "object") return null;
+  if (typeof value.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.date)) return null;
+  if (days[value.date]) return null;
+  const index = Math.floor(Number(value.index));
+  if (!Number.isInteger(index) || index <= 0 || index >= DAILY_LENGTH) return null;
+  const credited = Math.floor(Number(value.credited));
+  const safeCredited = Number.isInteger(credited) && credited > 0 ? Math.min(credited, DAILY_LENGTH) : 0;
+  return {
+    date: value.date,
+    index,
+    correct: whole(value.correct),
+    score: whole(value.score),
+    highestId: BAND_IDS.has(value.highestId) ? value.highestId : null,
+    credited: Math.max(safeCredited, index),
+  };
+}
+
 export function readDailyRecord() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(DAILY_KEY));
-    if (!raw || raw.version !== 2) return emptyDailyRecord();
-    const days = {};
-    if (raw.days && typeof raw.days === "object") {
-      for (const [date, value] of Object.entries(raw.days)) {
-        const day = readDay(value);
-        if (day) days[date] = day;
-      }
+  const raw = readJsonStorage(DAILY_KEY);
+  if (!raw || (raw.version !== 2 && raw.version !== 3)) return emptyDailyRecord();
+  const days = {};
+  if (raw.days && typeof raw.days === "object") {
+    for (const [date, value] of Object.entries(raw.days)) {
+      const day = readDay(value);
+      if (day) days[date] = day;
     }
-    const completedDates = Array.isArray(raw.completedDates)
-      ? raw.completedDates.filter((date) => typeof date === "string" && days[date])
-      : Object.keys(days);
-    const best = bestDay(days);
-    return {
-      version: 2,
-      lastCompleted: typeof raw.lastCompleted === "string" && days[raw.lastCompleted] ? raw.lastCompleted : "",
-      streak: whole(raw.streak),
-      days,
-      completedDates,
-      bestCorrect: best?.correct ?? 0,
-      bestTotal: best?.total ?? DAILY_LENGTH,
-    };
-  } catch {
-    return emptyDailyRecord();
   }
+  const completedDates = Array.isArray(raw.completedDates)
+    ? raw.completedDates.filter((date) => typeof date === "string" && days[date])
+    : Object.keys(days);
+  const best = bestDay(days);
+  return {
+    version: 3,
+    lastCompleted: typeof raw.lastCompleted === "string" && days[raw.lastCompleted] ? raw.lastCompleted : "",
+    streak: whole(raw.streak),
+    days,
+    completedDates,
+    bestCorrect: best?.correct ?? 0,
+    bestTotal: best?.total ?? DAILY_LENGTH,
+    active: readActive(raw.active, days),
+  };
 }
 
 export function writeDailyRecord(record) {
-  localStorage.setItem(DAILY_KEY, JSON.stringify(record));
+  return writeStorage(DAILY_KEY, JSON.stringify(record));
+}
+
+export function dailyRunStatus(record, date = todayKey()) {
+  if (record.days?.[date]) return "complete";
+  if (record.active?.date === date) return "progress";
+  return "new";
 }
 
 export function activeDailyStreak(record, date = todayKey()) {
@@ -215,7 +247,10 @@ export function accuracyFor(correct, total) {
 }
 
 export function commitOfficialResult(record, attempt) {
-  if (record.days[attempt.date]) return record;
+  if (record.days[attempt.date]) {
+    if (record.active?.date === attempt.date) return { ...record, active: null };
+    return record;
+  }
 
   const streak = record.lastCompleted === previousDateKey(attempt.date) ? record.streak + 1 : 1;
   const day = {
@@ -228,12 +263,57 @@ export function commitOfficialResult(record, attempt) {
   const best = bestDay(days);
 
   return {
-    version: 2,
+    version: 3,
     lastCompleted: attempt.date,
     streak,
     days,
     completedDates: [...record.completedDates, attempt.date],
     bestCorrect: best.correct,
     bestTotal: best.total,
+    active: null,
+  };
+}
+
+export function noteOfficialAnswer(record, attempt) {
+  if (record.days[attempt.date]) {
+    const locked = record.active?.date === attempt.date ? { ...record, active: null } : record;
+    return { record: locked, accepted: false, finished: true };
+  }
+
+  const active = record.active?.date === attempt.date
+    ? record.active
+    : { date: attempt.date, index: 0, correct: 0, score: 0, highestId: null, credited: 0 };
+
+  if (attempt.index !== active.index || attempt.index < active.credited) {
+    return { record, accepted: false, finished: false };
+  }
+
+  const nextIndex = attempt.index + 1;
+  if (nextIndex >= attempt.total) {
+    const finished = commitOfficialResult(record, {
+      date: attempt.date,
+      correct: attempt.correct,
+      total: attempt.total,
+      score: attempt.score,
+      difficulty: attempt.difficulty,
+    });
+    return { record: { ...finished, active: null }, accepted: true, finished: true };
+  }
+
+  return {
+    record: {
+      ...record,
+      version: 3,
+      active: {
+        date: attempt.date,
+        index: nextIndex,
+        correct: attempt.correct,
+        score: attempt.score,
+        highestId: attempt.highestId ?? null,
+        credited: nextIndex,
+      },
+    },
+    accepted: true,
+    finished: false,
   };
 }

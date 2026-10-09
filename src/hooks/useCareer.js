@@ -1,13 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CAREER_BEST_KEY } from "../game/careerBadges.js";
 import { selectCareerQuestion } from "../game/careerPath.js";
 import { playBuzzer } from "../game/feedback.js";
-
-const BEST_KEY = CAREER_BEST_KEY;
+import { readStoredNumber, writeStorage } from "../game/storage.js";
 
 function readBest() {
-  const stored = Number(localStorage.getItem(BEST_KEY));
-  return Number.isFinite(stored) && stored > 0 ? stored : 0;
+  return readStoredNumber(CAREER_BEST_KEY);
 }
 
 export function useCareer({ onCorrect } = {}) {
@@ -17,11 +15,18 @@ export function useCareer({ onCorrect } = {}) {
   const [question, setQuestion] = useState(() => selectCareerQuestion(0));
   const [picked, setPicked] = useState(null);
   const [result, setResult] = useState(null);
+  const locked = useRef(false);
+  const onCorrectRef = useRef(onCorrect);
+
+  useEffect(() => {
+    onCorrectRef.current = onCorrect;
+  });
 
   function deal(nextStreak, previousName) {
     setQuestion(selectCareerQuestion(nextStreak, previousName));
     setPicked(null);
     setResult(null);
+    locked.current = false;
     setPhase("playing");
   }
 
@@ -31,26 +36,34 @@ export function useCareer({ onCorrect } = {}) {
   }
 
   function pick(name) {
-    if (phase !== "playing") return;
+    if (locked.current || phase !== "playing" || !question) return;
+    locked.current = true;
     const correct = name === question.answer;
-    setPicked(name);
+    const nextStreak = correct ? streak + 1 : streak;
+
     if (correct) {
-      const nextStreak = streak + 1;
       setStreak(nextStreak);
       if (nextStreak > best) {
-        localStorage.setItem(BEST_KEY, String(nextStreak));
         setBest(nextStreak);
+        writeStorage(CAREER_BEST_KEY, String(nextStreak));
       }
-      onCorrect?.(nextStreak);
-      setResult("correct");
+      try {
+        onCorrectRef.current?.(nextStreak);
+      } catch {
+        // Badge persistence must not block the reveal.
+      }
     } else {
       playBuzzer();
-      setResult("wrong");
     }
+
+    setPicked(name);
+    setResult(correct ? "correct" : "wrong");
     setPhase("revealing");
   }
 
   function advance() {
+    if (phase !== "revealing" || !locked.current) return;
+    locked.current = false;
     if (result === "correct") {
       deal(streak, question.answer);
       return;

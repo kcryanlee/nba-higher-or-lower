@@ -5,6 +5,7 @@ import {
   applyDailyCompletion,
   readBadgeState,
 } from "../game/badges.js";
+import { writeStorage } from "../game/storage.js";
 
 export function useBadges() {
   const [snapshot, setSnapshot] = useState(readBadgeState);
@@ -14,7 +15,7 @@ export function useBadges() {
 
   const save = useCallback((state, unlocked) => {
     snapshotRef.current = state;
-    localStorage.setItem(BADGE_KEY, JSON.stringify(state));
+    writeStorage(BADGE_KEY, JSON.stringify(state));
     setSnapshot(state);
     setFresh(unlocked);
     if (unlocked.length) {

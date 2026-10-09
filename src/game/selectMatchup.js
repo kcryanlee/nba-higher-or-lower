@@ -15,6 +15,10 @@ export function pairKey(categoryId, first, second) {
   return `${categoryId}:${low}:${high}`;
 }
 
+function hasStat(player, categoryId) {
+  return Number.isFinite(player?.[categoryId]);
+}
+
 export function collectPairs(players, category, range, blocked = new Set()) {
   const matches = [];
 
@@ -22,6 +26,7 @@ export function collectPairs(players, category, range, blocked = new Set()) {
     for (let right = left + 1; right < players.length; right += 1) {
       const first = players[left];
       const second = players[right];
+      if (!hasStat(first, category.id) || !hasStat(second, category.id)) continue;
       const gap = statGap(category.id, first[category.id], second[category.id]);
       if (!gapInRange(gap, range)) continue;
 
@@ -60,14 +65,25 @@ export function selectMatchup(players, streak, previousKey = null) {
     }
   }
 
-  const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
-  const [left, right] = shuffle(players).slice(0, 2);
-  return {
-    category,
-    left,
-    right,
-    key: pairKey(category.id, left, right),
-    gap: statGap(category.id, left[category.id], right[category.id]),
-    band,
-  };
+  for (const category of shuffle(CATEGORIES)) {
+    const eligible = shuffle(players.filter((player) => hasStat(player, category.id)));
+    for (let leftIndex = 0; leftIndex < eligible.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < eligible.length; rightIndex += 1) {
+        const left = eligible[leftIndex];
+        const right = eligible[rightIndex];
+        const gap = statGap(category.id, left[category.id], right[category.id]);
+        if (!(gap > 0) || left[category.id] === right[category.id]) continue;
+        return {
+          category,
+          left,
+          right,
+          key: pairKey(category.id, left, right),
+          gap,
+          band,
+        };
+      }
+    }
+  }
+
+  return null;
 }

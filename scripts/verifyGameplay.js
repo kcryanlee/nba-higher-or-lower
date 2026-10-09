@@ -1,0 +1,188 @@
+import assert from "node:assert/strict";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { CATEGORIES } from "../src/game/categories.js";
+import {
+  DAILY_LENGTH,
+  activeDailyStreak,
+  buildDaily,
+  commitOfficialResult,
+  dailyRunStatus,
+  emptyDailyRecord,
+  noteOfficialAnswer,
+  previousDateKey,
+  readDailyRecord,
+  todayKey,
+  writeDailyRecord,
+} from "../src/game/daily.js";
+import { BADGE_REVEAL_MS, REVEAL_MS } from "../src/game/feedback.js";
+import { outcomeFor } from "../src/game/outcome.js";
+import { selectMatchup } from "../src/game/selectMatchup.js";
+import { applyAnswer, emptyBadgeState } from "../src/game/badges.js";
+import { readJsonStorage, writeStorage } from "../src/game/storage.js";
+import { players } from "../src/data/players.js";
+import { useDaily } from "../src/hooks/useDaily.js";
+
+const store = new Map();
+let failRead = false;
+let failWrite = false;
+
+globalThis.localStorage = {
+  getItem(key) {
+    if (failRead) throw new Error("read failed");
+    return store.has(key) ? store.get(key) : null;
+  },
+  setItem(key, value) {
+    if (failWrite) throw new Error("write failed");
+    store.set(key, String(value));
+  },
+  removeItem(key) {
+    store.delete(key);
+  },
+  clear() {
+    store.clear();
+  },
+};
+
+function player(id, value) {
+  const row = { id, name: `Player ${id}` };
+  for (const category of CATEGORIES) row[category.id] = value;
+  return row;
+}
+
+function answer(record, index, correct) {
+  return noteOfficialAnswer(record, {
+    date: "2026-10-09",
+    index,
+    correct,
+    score: correct,
+    highestId: correct ? "easy" : null,
+    total: DAILY_LENGTH,
+    difficulty: correct ? "Easy" : "None",
+  });
+}
+
+const early = new Date(2026, 9, 9, 0, 30, 0);
+const late = new Date(2026, 9, 9, 23, 30, 0);
+assert.equal(todayKey(early), "2026-10-09");
+assert.equal(todayKey(late), "2026-10-09");
+if (early.getTimezoneOffset() < 0) {
+  assert.notEqual(todayKey(early), early.toISOString().slice(0, 10));
+}
+if (late.getTimezoneOffset() > 0) {
+  assert.notEqual(todayKey(late), late.toISOString().slice(0, 10));
+}
+
+assert.equal(previousDateKey("2026-10-09"), "2026-10-08");
+assert.equal(previousDateKey("2026-03-01"), "2026-02-28");
+assert.equal(previousDateKey("2024-03-01"), "2024-02-29");
+assert.equal(previousDateKey("2026-01-01"), "2025-12-31");
+
+const yesterday = commitOfficialResult(emptyDailyRecord(), {
+  date: "2026-10-08",
+  correct: 10,
+  total: 15,
+  score: 12,
+  difficulty: "Easy",
+});
+assert.equal(activeDailyStreak(yesterday, "2026-10-09"), 1);
+assert.equal(activeDailyStreak(yesterday, "2026-10-10"), 0);
+assert.equal(activeDailyStreak(yesterday, "2026-10-08"), 1);
+
+assert.equal(outcomeFor(10, 10), "push");
+assert.equal(outcomeFor(11, 10), "correct");
+assert.equal(outcomeFor(9, 10), "wrong");
+assert.equal(outcomeFor(Number.NaN, 10), "wrong");
+
+assert.equal(selectMatchup([player(1, 10), player(2, 10)], 0), null);
+const uneven = selectMatchup([player(1, 10), player(2, 40)], 0);
+assert.ok(uneven);
+assert.notEqual(uneven.left[uneven.category.id], uneven.right[uneven.category.id]);
+
+assert.equal(buildDaily([], "2026-10-09"), null);
+assert.equal(buildDaily(null, "2026-10-09"), null);
+const first = buildDaily(players, "2026-10-09");
+const second = buildDaily(players, "2026-10-09");
+assert.equal(first.length, DAILY_LENGTH);
+assert.deepEqual(first.map((question) => question.key), second.map((question) => question.key));
+assert.ok(first.every((question) => question.left[question.category.id] !== question.right[question.category.id]));
+
+let record = emptyDailyRecord();
+assert.equal(dailyRunStatus(record, "2026-10-09"), "new");
+for (let index = 0; index < 3; index += 1) {
+  const noted = answer(record, index, index + 1);
+  assert.equal(noted.accepted, true);
+  assert.equal(noted.finished, false);
+  record = noted.record;
+}
+assert.equal(record.active.index, 3);
+assert.equal(record.active.credited, 3);
+assert.equal(dailyRunStatus(record, "2026-10-09"), "progress");
+const replay = answer(record, 0, 99);
+assert.equal(replay.accepted, false);
+assert.equal(replay.record, record);
+
+for (let index = 3; index < DAILY_LENGTH; index += 1) {
+  const noted = answer(record, index, 0);
+  assert.equal(noted.accepted, true);
+  record = noted.record;
+}
+assert.equal(record.days["2026-10-09"].correct, 0);
+assert.equal(record.days["2026-10-09"].total, 15);
+assert.equal(record.active, null);
+assert.equal(dailyRunStatus(record, "2026-10-09"), "complete");
+assert.equal(dailyRunStatus(emptyDailyRecord(), "2026-10-09"), "new");
+const locked = answer(record, 0, 15);
+assert.equal(locked.accepted, false);
+assert.equal(locked.record.days["2026-10-09"].correct, 0);
+
+store.clear();
+assert.equal(writeDailyRecord(record), true);
+const restored = readDailyRecord();
+assert.equal(restored.days["2026-10-09"].correct, 0);
+assert.equal(restored.days["2026-10-09"].total, 15);
+assert.equal(dailyRunStatus(restored, "2026-10-09"), "complete");
+
+store.set("nba-hol-daily", "{");
+assert.equal(dailyRunStatus(readDailyRecord(), "2026-10-09"), "new");
+failRead = true;
+assert.equal(readJsonStorage("nba-hol-daily"), null);
+failRead = false;
+failWrite = true;
+assert.equal(writeStorage("nba-hol-best", "4"), false);
+assert.equal(writeDailyRecord(record), false);
+failWrite = false;
+
+const badges = emptyBadgeState();
+const once = applyAnswer(badges, { correct: true, categoryId: "salary", bandId: "easy", dailyKey: "2026-10-09:0" });
+const twice = applyAnswer(once.state, { correct: true, categoryId: "salary", bandId: "easy", dailyKey: "2026-10-09:0" });
+assert.equal(once.state.counts.salary, 1);
+assert.equal(twice.state.counts.salary, 1);
+assert.deepEqual(twice.state, once.state);
+const wrongFirst = applyAnswer(badges, { correct: false, categoryId: "ppg", bandId: "hard", dailyKey: "2026-10-09:1" });
+const laterCorrect = applyAnswer(wrongFirst.state, { correct: true, categoryId: "ppg", bandId: "hard", dailyKey: "2026-10-09:1" });
+assert.equal(laterCorrect.state.counts.ppg, 0);
+assert.equal(laterCorrect.state.hardCorrect, 0);
+
+assert.ok(BADGE_REVEAL_MS > REVEAL_MS);
+assert.equal(REVEAL_MS, 750);
+
+function Probe({ roster }) {
+  const daily = useDaily(roster);
+  return createElement(
+    "main",
+    null,
+    createElement("h1", null, "NBA Mini Games"),
+    createElement("p", null, daily.available ? "daily-ready" : "Unavailable today"),
+  );
+}
+
+store.clear();
+const failedDaily = renderToStaticMarkup(createElement(Probe, { roster: [] }));
+assert.match(failedDaily, /NBA Mini Games/);
+assert.match(failedDaily, /Unavailable today/);
+const readyDaily = renderToStaticMarkup(createElement(Probe, { roster: players }));
+assert.match(readyDaily, /NBA Mini Games/);
+assert.match(readyDaily, /daily-ready/);
+
+console.log("Gameplay checks passed.");

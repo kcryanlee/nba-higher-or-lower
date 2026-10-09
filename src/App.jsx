@@ -7,9 +7,10 @@ import DailyScore from "./components/DailyScore.jsx";
 import GameOver from "./components/GameOver.jsx";
 import HubScreen from "./components/HubScreen.jsx";
 import StartScreen from "./components/StartScreen.jsx";
-import roster from "./data/players.json";
+import { dataDisclaimer, dataSeasonLine } from "./data/dataConfig.js";
+import { players } from "./data/players.js";
 import { CAREER_BADGES, careerBadgeProgress } from "./game/careerBadges.js";
-import { MILESTONE_MS, REVEAL_MS, milestoneBanner, streakCallout } from "./game/feedback.js";
+import { BADGE_REVEAL_MS, MILESTONE_MS, REVEAL_MS, milestoneBanner, streakCallout } from "./game/feedback.js";
 import { useBadges } from "./hooks/useBadges.js";
 import { useCareer } from "./hooks/useCareer.js";
 import { useCareerBadges } from "./hooks/useCareerBadges.js";
@@ -20,8 +21,8 @@ export default function App() {
   const [screen, setScreen] = useState("hub");
   const [awardsReturn, setAwardsReturn] = useState("menu");
   const badges = useBadges();
-  const game = useGame(roster.players, { onAnswer: badges.recordAnswer });
-  const daily = useDaily(roster.players, {
+  const game = useGame(players, { onAnswer: badges.recordAnswer });
+  const daily = useDaily(players, {
     onAnswer: badges.recordAnswer,
     onOfficial: badges.recordDaily,
   });
@@ -52,6 +53,10 @@ export default function App() {
 
   function openDaily() {
     badges.dismiss();
+    if (!daily.available) {
+      setScreen("daily");
+      return;
+    }
     if (daily.official) {
       daily.showOfficial();
     } else {
@@ -61,9 +66,20 @@ export default function App() {
   }
 
   function practiceDaily() {
+    if (!daily.available) return;
     badges.dismiss();
     daily.start(true);
     setScreen("daily");
+  }
+
+  function leaveClassic() {
+    game.discard();
+    setScreen("hub");
+  }
+
+  function leaveDaily() {
+    daily.leave();
+    setScreen("hub");
   }
 
   function advanceClassic() {
@@ -155,8 +171,9 @@ export default function App() {
           <StartScreen
             best={game.best}
             dailyStreak={daily.dailyStreak}
-            playedToday={Boolean(daily.official)}
+            dailyStatus={daily.status}
             todayCorrect={daily.official?.correct ?? 0}
+            resumeQuestion={(daily.active?.index ?? 0) + 1}
             onPlay={playClassic}
             onDaily={openDaily}
             onAwards={() => openAwards("menu")}
@@ -239,10 +256,22 @@ export default function App() {
             result={game.result}
             unlockedBadges={badges.fresh}
             callout={game.result === "correct" ? streakCallout(game.streak) : ""}
-            holdMs={milestone ? MILESTONE_MS : REVEAL_MS}
+            holdMs={badges.fresh.length ? BADGE_REVEAL_MS : milestone ? MILESTONE_MS : REVEAL_MS}
             onPick={game.pick}
             onAdvance={advanceClassic}
+            onMenu={leaveClassic}
           />
+        ) : null}
+
+        {screen === "daily" && !daily.available ? (
+          <section className="panel daily-score">
+            <p className="eyebrow">Daily challenge</p>
+            <h1 className="section-title">Unavailable</h1>
+            <p className="lede">Today&apos;s challenge could not be built.</p>
+            <button type="button" className="action secondary" onClick={() => setScreen("hub")}>
+              All Games
+            </button>
+          </section>
         ) : null}
 
         {dailyLive && daily.matchup ? (
@@ -252,12 +281,17 @@ export default function App() {
             pickedId={daily.pickedId}
             result={daily.result}
             unlockedBadges={badges.fresh}
+            holdMs={badges.fresh.length ? BADGE_REVEAL_MS : REVEAL_MS}
             onPick={daily.pick}
             onAdvance={advanceDaily}
+            onMenu={leaveDaily}
           />
         ) : null}
 
-        <p className="snapshot">{roster.snapshot}</p>
+        <p className="snapshot">
+          {dataDisclaimer()}
+          <span className="snapshot-seasons">{dataSeasonLine()}</span>
+        </p>
       </main>
     </div>
   );
