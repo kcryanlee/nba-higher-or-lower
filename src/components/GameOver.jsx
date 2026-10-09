@@ -82,7 +82,7 @@ export default function GameOver({
           Achievements
         </button>
         <button type="button" className="action secondary" onClick={onMenu}>
-          Menu
+          All Games
         </button>
       </div>
       {copied ? <p className="copied">Copied</p> : null}

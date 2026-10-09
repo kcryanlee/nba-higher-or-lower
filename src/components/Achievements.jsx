@@ -7,17 +7,22 @@ export default function Achievements({
   monthCount,
   celebrate = [],
   onBack,
+  catalog = BADGES,
+  progressFor,
+  eyebrow = "Milestones",
 }) {
   return (
     <section className="panel awards">
-      <p className="eyebrow">Milestones</p>
+      <p className="eyebrow">{eyebrow}</p>
       <h1 className="section-title">Achievements</h1>
       <p className="lede">
         Badges stay on this device and show up the moment you earn them.
       </p>
       <div className="award-grid">
-        {BADGES.map((badge) => {
-          const progress = badgeProgress(badge, badges, { best, dailyStreak, monthCount });
+        {catalog.map((badge) => {
+          const progress = progressFor
+            ? progressFor(badge)
+            : badgeProgress(badge, badges, { best, dailyStreak, monthCount });
           const isOwned = progress === "Unlocked";
 
           return (

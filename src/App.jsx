@@ -2,17 +2,22 @@ import { useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import Achievements from "./components/Achievements.jsx";
 import Board from "./components/Board.jsx";
+import CareerGame from "./components/CareerGame.jsx";
 import DailyScore from "./components/DailyScore.jsx";
 import GameOver from "./components/GameOver.jsx";
+import HubScreen from "./components/HubScreen.jsx";
 import StartScreen from "./components/StartScreen.jsx";
 import roster from "./data/players.json";
+import { CAREER_BADGES, careerBadgeProgress } from "./game/careerBadges.js";
 import { MILESTONE_MS, REVEAL_MS, milestoneBanner, streakCallout } from "./game/feedback.js";
 import { useBadges } from "./hooks/useBadges.js";
+import { useCareer } from "./hooks/useCareer.js";
+import { useCareerBadges } from "./hooks/useCareerBadges.js";
 import { useDaily } from "./hooks/useDaily.js";
 import { useGame } from "./hooks/useGame.js";
 
 export default function App() {
-  const [screen, setScreen] = useState("menu");
+  const [screen, setScreen] = useState("hub");
   const [awardsReturn, setAwardsReturn] = useState("menu");
   const badges = useBadges();
   const game = useGame(roster.players, { onAnswer: badges.recordAnswer });
@@ -20,10 +25,23 @@ export default function App() {
     onAnswer: badges.recordAnswer,
     onOfficial: badges.recordDaily,
   });
+  const careerBadges = useCareerBadges();
+  const career = useCareer({ onCorrect: careerBadges.recordStreak });
 
   function openAwards(from) {
     setAwardsReturn(from);
     setScreen("awards");
+  }
+
+  function playCareer() {
+    careerBadges.dismiss();
+    career.start();
+    setScreen("career");
+  }
+
+  function advanceCareer() {
+    careerBadges.dismiss();
+    career.advance();
   }
 
   function playClassic() {
@@ -74,7 +92,7 @@ export default function App() {
         </div>
       ) : null}
       <header className="topbar">
-        <p className="brand">NBA Higher or Lower</p>
+        <p className="brand">NBA Mini Games</p>
         {dailyLive ? (
           <p className="scoreboard">
             {daily.practice ? <span>Practice</span> : null}
@@ -99,6 +117,22 @@ export default function App() {
           <p className="scoreboard">
             <span>Daily challenge</span>
           </p>
+        ) : screen === "career" || screen === "career-awards" ? (
+          <p className="scoreboard">
+            <span>
+              Streak <strong>{career.streak}</strong>
+            </span>
+            <span className="score-dot" aria-hidden="true">
+              •
+            </span>
+            <span>
+              Best <strong>{career.best}</strong>
+            </span>
+          </p>
+        ) : screen === "hub" ? (
+          <p className="scoreboard">
+            <span>Pick a game</span>
+          </p>
         ) : (
           <p className="scoreboard">
             <span>
@@ -115,6 +149,8 @@ export default function App() {
       </header>
 
       <main className="frame">
+        {screen === "hub" ? <HubScreen onHigher={() => setScreen("menu")} onCareer={playCareer} /> : null}
+
         {screen === "menu" ? (
           <StartScreen
             best={game.best}
@@ -124,6 +160,39 @@ export default function App() {
             onPlay={playClassic}
             onDaily={openDaily}
             onAwards={() => openAwards("menu")}
+            onHub={() => setScreen("hub")}
+          />
+        ) : null}
+
+        {screen === "career" ? (
+          <CareerGame
+            phase={career.phase}
+            streak={career.streak}
+            best={career.best}
+            question={career.question}
+            picked={career.picked}
+            result={career.result}
+            onPick={career.pick}
+            onAdvance={advanceCareer}
+            onAgain={playCareer}
+            onMenu={() => setScreen("hub")}
+            onAwards={() => setScreen("career-awards")}
+            unlockedBadges={careerBadges.fresh}
+          />
+        ) : null}
+
+        {screen === "career-awards" ? (
+          <Achievements
+            badges={careerBadges.snapshot}
+            best={career.best}
+            celebrate={careerBadges.celebrate}
+            catalog={CAREER_BADGES}
+            progressFor={(badge) => careerBadgeProgress(badge, careerBadges.snapshot, career.best)}
+            eyebrow="Career Path"
+            onBack={() => {
+              careerBadges.acknowledge();
+              setScreen("career");
+            }}
           />
         ) : null}
 
@@ -148,7 +217,7 @@ export default function App() {
             difficulty={game.difficulty}
             onAgain={playClassic}
             onAwards={() => openAwards("classic")}
-            onMenu={() => setScreen("menu")}
+            onMenu={() => setScreen("hub")}
           />
         ) : null}
 
@@ -158,7 +227,7 @@ export default function App() {
             unlockedBadges={badges.fresh}
             onPractice={practiceDaily}
             onAwards={() => openAwards("daily")}
-            onMenu={() => setScreen("menu")}
+            onMenu={() => setScreen("hub")}
           />
         ) : null}
 

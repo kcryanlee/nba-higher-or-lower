@@ -8,6 +8,7 @@ export default function StartScreen({
   onPlay,
   onDaily,
   onAwards,
+  onHub,
 }) {
   const progress = playedToday ? `${todayCorrect}/${DAILY_LENGTH}` : `0/${DAILY_LENGTH}`;
 
@@ -36,6 +37,9 @@ export default function StartScreen({
       </button>
       <button type="button" className="lobby-link" onClick={onAwards}>
         Achievements
+      </button>
+      <button type="button" className="lobby-link" onClick={onHub}>
+        All games
       </button>
     </section>
   );

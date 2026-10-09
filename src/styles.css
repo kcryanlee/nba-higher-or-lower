@@ -192,6 +192,151 @@ main {
   transform: translateY(-2px);
 }
 
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.hub-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 190px;
+  padding: 18px;
+  border: 1px solid rgba(244, 239, 228, 0.22);
+  border-radius: 18px;
+  background: rgba(10, 22, 38, 0.88);
+  text-align: left;
+}
+
+.hub-card h2 {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.hub-card p {
+  margin: 0;
+  color: #d7c8b2;
+  line-height: 1.4;
+}
+
+.hub-card .action {
+  margin-top: auto;
+}
+
+.hub-card.is-soon {
+  opacity: 0.55;
+}
+
+.hub-card p.hub-soon {
+  margin-top: auto;
+  color: #ffb15a;
+  font-family: "Oswald", Impact, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.career-position {
+  margin: 8px 0 0;
+  color: #ffb15a;
+  text-align: center;
+}
+
+.career-path {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px 4px;
+  margin: 18px 0;
+}
+
+.career-piece {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.career-stop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 72px;
+  max-width: 140px;
+  text-align: center;
+}
+
+.career-stop img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+
+.career-team,
+.career-years,
+.career-arrow {
+  font-family: "Oswald", Impact, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.career-team {
+  font-size: 0.85rem;
+  line-height: 1.15;
+}
+
+.career-years,
+.career-arrow {
+  color: #ffb15a;
+}
+
+.career-arrow {
+  font-size: 1.3rem;
+}
+
+.career-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.career-choice {
+  width: 100%;
+}
+
+.career-choice.is-correct {
+  border-color: #3dd68c;
+  color: #7dffc3;
+}
+
+.career-choice.is-wrong {
+  border-color: #ff5d73;
+  color: #ff8b98;
+}
+
+.career-board,
+.career-over {
+  text-align: center;
+}
+
+.career-over .section-title {
+  font-size: clamp(4rem, 12vw, 6rem);
+  line-height: 0.9;
+}
+
+.reveal-title.is-right {
+  color: #7dffc3;
+}
+
+.reveal-title.is-miss {
+  color: #ff8b98;
+}
+
 .awards {
   margin-top: 18px;
 }
@@ -907,5 +1052,18 @@ h1.section-title {
 
   .player-name {
     font-size: 1.45rem;
+  }
+
+  .career-choices {
+    grid-template-columns: 1fr;
+  }
+
+  .career-stop img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .hub-card {
+    min-height: 0;
   }
 }

@@ -66,7 +66,7 @@ export default function DailyScore({
           Achievements
         </button>
         <button type="button" className="action secondary" onClick={onMenu}>
-          Menu
+          All Games
         </button>
       </div>
     </section>
