@@ -1,0 +1,73 @@
+import { CATEGORIES, statGap } from "./categories.js";
+import { bandForStreak, gapInRange, widenedRange } from "./difficulty.js";
+
+function shuffle(list) {
+  const copy = [...list];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swap]] = [copy[swap], copy[index]];
+  }
+  return copy;
+}
+
+export function pairKey(categoryId, first, second) {
+  const [low, high] = [first.id, second.id].sort((a, b) => a - b);
+  return `${categoryId}:${low}:${high}`;
+}
+
+export function collectPairs(players, category, range, blocked = new Set()) {
+  const matches = [];
+
+  for (let left = 0; left < players.length; left += 1) {
+    for (let right = left + 1; right < players.length; right += 1) {
+      const first = players[left];
+      const second = players[right];
+      const gap = statGap(category.id, first[category.id], second[category.id]);
+      if (!gapInRange(gap, range)) continue;
+
+      const key = pairKey(category.id, first, second);
+      if (blocked.has(key)) continue;
+      matches.push({ first, second, gap, key });
+    }
+  }
+
+  return matches;
+}
+
+export function selectMatchup(players, streak, previousKey = null) {
+  const band = bandForStreak(streak);
+
+  for (const category of shuffle(CATEGORIES)) {
+    for (let step = 0; step <= 4; step += 1) {
+      const range = step === 0
+        ? band.gaps[category.id]
+        : widenedRange(band.id, category.id, step);
+      const blocked = previousKey ? new Set([previousKey]) : new Set();
+      const matches = collectPairs(players, category, range, blocked);
+      if (matches.length === 0) continue;
+
+      const match = matches[Math.floor(Math.random() * matches.length)];
+      const [left, right] = shuffle([match.first, match.second]);
+
+      return {
+        category,
+        left,
+        right,
+        key: match.key,
+        gap: match.gap,
+        band,
+      };
+    }
+  }
+
+  const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+  const [left, right] = shuffle(players).slice(0, 2);
+  return {
+    category,
+    left,
+    right,
+    key: pairKey(category.id, left, right),
+    gap: statGap(category.id, left[category.id], right[category.id]),
+    band,
+  };
+}
