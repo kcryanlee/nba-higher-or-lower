@@ -802,23 +802,64 @@ h1.section-title {
 }
 
 @media (max-width: 800px) {
+  main {
+    width: min(1080px, calc(100% - 16px));
+  }
+
   .topbar {
     flex-wrap: wrap;
     row-gap: 2px;
-    padding: 12px 16px;
+    padding: 10px 12px;
     align-items: center;
   }
 
-  .scoreboard {
+  .brand {
     font-size: 0.95rem;
+  }
+
+  .scoreboard {
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 0.85rem;
+  }
+
+  .scoreboard strong {
+    font-size: 1.05rem;
   }
 
   .frame {
     padding: 4px 12px 14px;
   }
 
+  .player-name,
+  .player-team,
+  .prompt h1,
+  .snapshot,
+  .lobby-card span,
+  .lobby-card strong {
+    overflow-wrap: anywhere;
+  }
+
+  .player-card,
+  .lobby-card,
+  .play-main,
+  .score-card,
+  .action,
+  .share-fallback {
+    max-width: 100%;
+  }
+
+  .actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .board {
+    padding: 4px 0 8px;
+  }
+
   .prompt {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   .prompt h1 {
@@ -827,23 +868,37 @@ h1.section-title {
 
   .cards {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 2px;
   }
 
   .versus {
     justify-self: center;
-    width: 44px;
-    height: 44px;
-    font-size: 1.1rem;
+    width: 34px;
+    height: 34px;
+    margin: 1px 0;
+    font-size: 0.95rem;
   }
 
   .player-card {
-    gap: 8px;
-    padding: 8px;
+    gap: 6px;
+    padding: 8px 12px;
   }
 
   .photo-frame {
-    aspect-ratio: 2.4 / 1;
+    aspect-ratio: auto;
+    height: 132px;
+    min-height: 0;
+  }
+
+  .photo-frame img {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center center;
   }
 
   .player-copy {
