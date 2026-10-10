@@ -15,6 +15,15 @@ export function writeStorage(key, value) {
   }
 }
 
+export function removeStorage(key) {
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function readJsonStorage(key) {
   try {
     const raw = localStorage.getItem(key);

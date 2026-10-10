@@ -1,3 +1,5 @@
+import { players } from "../data/players.js";
+
 const GAMES = [
   {
     id: "higher",
@@ -31,6 +33,15 @@ const GAMES = [
   },
 ];
 
+function draftHasAnswers(roster) {
+  return roster.some((player) => Number.isInteger(player.draftYear) && Number.isInteger(player.draftPick));
+}
+
+function listedReady(game) {
+  if (game.id === "draft") return game.ready && draftHasAnswers(players);
+  return game.ready;
+}
+
 export default function HubScreen({ onHigher, onCareer }) {
   const actions = { higher: onHigher, career: onCareer };
 
@@ -41,10 +52,10 @@ export default function HubScreen({ onHigher, onCareer }) {
       <p className="lede">Test how well you really know basketball.</p>
       <div className="hub-grid">
         {GAMES.map((game) => (
-          <article key={game.id} className={`hub-card ${game.ready ? "" : "is-soon"}`}>
+          <article key={game.id} className={`hub-card ${listedReady(game) ? "" : "is-soon"}`}>
             <h2>{game.name}</h2>
             <p>{game.detail}</p>
-            {game.ready ? (
+            {listedReady(game) ? (
               <button type="button" className="action" onClick={actions[game.id]}>
                 Play
               </button>

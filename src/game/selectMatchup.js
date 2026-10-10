@@ -16,7 +16,10 @@ export function pairKey(categoryId, first, second) {
 }
 
 function hasStat(player, categoryId) {
-  return Number.isFinite(player?.[categoryId]);
+  const value = player?.[categoryId];
+  if (!Number.isFinite(value)) return false;
+  if ((categoryId === "threes" || categoryId === "tpPct") && value <= 0) return false;
+  return true;
 }
 
 export function collectPairs(players, category, range, blocked = new Set()) {

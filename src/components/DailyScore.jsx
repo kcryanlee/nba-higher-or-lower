@@ -39,10 +39,6 @@ export default function DailyScore({
           <dd>{attempt.difficulty}</dd>
         </div>
         <div>
-          <dt>Daily ranking</dt>
-          <dd>{attempt.ranking}</dd>
-        </div>
-        <div>
           <dt>Daily streak</dt>
           <dd>
             {attempt.dailyStreak} {attempt.dailyStreak === 1 ? "day" : "days"}
@@ -56,7 +52,7 @@ export default function DailyScore({
         </div>
       </dl>
       <p className="score-note">
-        Each correct answer scores 1 to 4, matching its difficulty. The official score locks after one play.
+        Today&apos;s puzzle uses your local date. Each correct answer scores 1 to 4, matching its difficulty. The official score locks after one play.
       </p>
       <div className="actions">
         <button type="button" className="action" onClick={onPractice}>

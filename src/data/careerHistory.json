@@ -1515,7 +1515,7 @@
       {
         "team": "Cleveland Cavaliers",
         "start": 2017,
-        "end": 2019
+        "end": 2017
       },
       {
         "team": "Utah Jazz",
@@ -1875,7 +1875,7 @@
       {
         "team": "New York Knicks",
         "start": 2020,
-        "end": 2024
+        "end": 2022
       },
       {
         "team": "Toronto Raptors",
@@ -1990,7 +1990,7 @@
       {
         "team": "Brooklyn Nets",
         "start": 2017,
-        "end": 2021
+        "end": 2019
       },
       {
         "team": "Cleveland Cavaliers",
@@ -2005,7 +2005,7 @@
       {
         "team": "Philadelphia 76ers",
         "start": 2014,
-        "end": 2017
+        "end": 2015
       },
       {
         "team": "Oklahoma City Thunder",
@@ -2075,11 +2075,11 @@
       {
         "team": "Los Angeles Clippers",
         "start": 2024,
-        "end": 2025
+        "end": 2024
       },
       {
         "team": "Milwaukee Bucks",
-        "start": 2024,
+        "start": 2025,
         "end": 2027
       }
     ]
@@ -2180,16 +2180,16 @@
       {
         "team": "New Orleans Pelicans",
         "start": 2019,
-        "end": 2022
+        "end": 2021
       },
       {
         "team": "Utah Jazz",
-        "start": 2021,
-        "end": 2023
+        "start": 2022,
+        "end": 2022
       },
       {
         "team": "Minnesota Timberwolves",
-        "start": 2022,
+        "start": 2023,
         "end": 2025
       },
       {
@@ -2225,7 +2225,7 @@
       {
         "team": "Toronto Raptors",
         "start": 2016,
-        "end": 2024
+        "end": 2022
       },
       {
         "team": "Indiana Pacers",
@@ -2250,7 +2250,7 @@
       {
         "team": "New York Knicks",
         "start": 2019,
-        "end": 2024
+        "end": 2022
       },
       {
         "team": "Toronto Raptors",
@@ -2270,11 +2270,11 @@
       {
         "team": "Washington Wizards",
         "start": 2023,
-        "end": 2024
+        "end": 2023
       },
       {
         "team": "Milwaukee Bucks",
-        "start": 2023,
+        "start": 2024,
         "end": 2027
       }
     ]
@@ -2285,12 +2285,17 @@
       {
         "team": "Detroit Pistons",
         "start": 2020,
-        "end": 2023
+        "end": 2021
       },
       {
         "team": "Atlanta Hawks",
         "start": 2022,
         "end": 2024
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2024,
+        "end": 2025
       },
       {
         "team": "New Orleans Pelicans",
@@ -2380,6 +2385,31 @@
       {
         "team": "New Orleans Pelicans",
         "start": 2019,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203076,
+    "stops": [
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2012,
+        "end": 2019
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2019,
+        "end": 2024
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2025,
         "end": 2027
       }
     ]

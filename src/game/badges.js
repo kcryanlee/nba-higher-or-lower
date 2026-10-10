@@ -55,8 +55,8 @@ export const BADGES = [
   },
   {
     id: "threes",
-    name: "Three-Point Master",
-    detail: "Answer 25 three-point questions correctly",
+    name: "Career Threes Master",
+    detail: "Answer 25 career three-pointers made questions correctly",
     mark: "3PT",
     kind: "category",
     categoryId: "threes",
@@ -118,7 +118,7 @@ export const BADGES = [
   },
   {
     id: "tp-pct",
-    name: "Three-Point Accuracy Master",
+    name: "Three-Point Percentage Master",
     detail: "Answer 25 three-point percentage questions correctly",
     mark: "3%",
     kind: "category",

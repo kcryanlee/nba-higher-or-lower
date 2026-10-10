@@ -9,6 +9,7 @@ import HubScreen from "./components/HubScreen.jsx";
 import StartScreen from "./components/StartScreen.jsx";
 import { dataDisclaimer, dataSeasonLine } from "./data/dataConfig.js";
 import { players } from "./data/players.js";
+import { openingScreen } from "./game/activeRun.js";
 import { CAREER_BADGES, careerBadgeProgress } from "./game/careerBadges.js";
 import { BADGE_REVEAL_MS, MILESTONE_MS, REVEAL_MS, milestoneBanner, streakCallout } from "./game/feedback.js";
 import { useBadges } from "./hooks/useBadges.js";
@@ -17,8 +18,13 @@ import { useCareerBadges } from "./hooks/useCareerBadges.js";
 import { useDaily } from "./hooks/useDaily.js";
 import { useGame } from "./hooks/useGame.js";
 
+function confirmLeave(active) {
+  if (!active) return true;
+  return window.confirm("Leave this game? Your current run will be lost.");
+}
+
 export default function App() {
-  const [screen, setScreen] = useState("hub");
+  const [screen, setScreen] = useState(() => openingScreen(players));
   const [awardsReturn, setAwardsReturn] = useState("menu");
   const badges = useBadges();
   const game = useGame(players, { onAnswer: badges.recordAnswer });
@@ -73,7 +79,16 @@ export default function App() {
   }
 
   function leaveClassic() {
+    const active = game.phase === "playing" || game.phase === "revealing";
+    if (!confirmLeave(active)) return;
     game.discard();
+    setScreen("hub");
+  }
+
+  function leaveCareer() {
+    const active = career.phase === "playing" || career.phase === "revealing";
+    if (!confirmLeave(active)) return;
+    career.discard();
     setScreen("hub");
   }
 
@@ -93,6 +108,7 @@ export default function App() {
   }
 
   const classicLive = screen === "classic" && (game.phase === "playing" || game.phase === "revealing");
+  const careerLive = career.phase === "playing" || career.phase === "revealing";
   const dailyLive = screen === "daily" && (daily.phase === "playing" || daily.phase === "revealing");
   const wrongFlash = (classicLive && game.result === "wrong") || (dailyLive && daily.result === "wrong");
   const milestone =
@@ -133,7 +149,7 @@ export default function App() {
           <p className="scoreboard">
             <span>Daily challenge</span>
           </p>
-        ) : screen === "career" || screen === "career-awards" ? (
+        ) : (screen === "career" || screen === "career-awards") && careerLive ? (
           <p className="scoreboard">
             <span>
               Streak <strong>{career.streak}</strong>
@@ -145,11 +161,17 @@ export default function App() {
               Best <strong>{career.best}</strong>
             </span>
           </p>
+        ) : screen === "career" || screen === "career-awards" ? (
+          <p className="scoreboard">
+            <span>
+              Best <strong>{career.best}</strong>
+            </span>
+          </p>
         ) : screen === "hub" ? (
           <p className="scoreboard">
             <span>Pick a game</span>
           </p>
-        ) : (
+        ) : classicLive ? (
           <p className="scoreboard">
             <span>
               Streak <strong>{game.streak}</strong>
@@ -157,6 +179,12 @@ export default function App() {
             <span className="score-dot" aria-hidden="true">
               •
             </span>
+            <span>
+              Best <strong>{game.best}</strong>
+            </span>
+          </p>
+        ) : (
+          <p className="scoreboard">
             <span>
               Best <strong>{game.best}</strong>
             </span>
@@ -192,7 +220,7 @@ export default function App() {
             onPick={career.pick}
             onAdvance={advanceCareer}
             onAgain={playCareer}
-            onMenu={() => setScreen("hub")}
+            onMenu={leaveCareer}
             onAwards={() => setScreen("career-awards")}
             unlockedBadges={careerBadges.fresh}
           />
@@ -234,7 +262,7 @@ export default function App() {
             difficulty={game.difficulty}
             onAgain={playClassic}
             onAwards={() => openAwards("classic")}
-            onMenu={() => setScreen("hub")}
+            onMenu={leaveClassic}
           />
         ) : null}
 

@@ -72,30 +72,6 @@ const TIER = {
   "Patrick Beverley": "role",
 };
 
-const EASY_NAMES = new Set([
-  "Stephen Curry",
-  "LeBron James",
-  "Kevin Durant",
-  "James Harden",
-  "Nikola Jokic",
-  "Luka Doncic",
-  "Anthony Edwards",
-  "Jayson Tatum",
-  "Jaylen Brown",
-  "Devin Booker",
-  "Donovan Mitchell",
-  "Kawhi Leonard",
-  "Tyrese Maxey",
-  "Jalen Brunson",
-  "Jamal Murray",
-  "Karl-Anthony Towns",
-  "Trae Young",
-  "De'Aaron Fox",
-  "Paul George",
-  "Klay Thompson",
-  "Draymond Green",
-]);
-
 export function careerBand(streak) {
   if (streak >= 6) return { id: "hard", label: LABELS.hard };
   if (streak >= 3) return { id: "medium", label: LABELS.medium };
@@ -108,6 +84,22 @@ function tierOf(career) {
 
 function pathKey(career) {
   return career.stops.map((stop) => stop.team).join("|");
+}
+
+function timelineKey(career) {
+  return career.stops.map((stop) => `${stop.team}:${stop.start}:${stop.end}`).join("|");
+}
+
+export function careerChoiceAllowed(answer, candidate, bandId) {
+  if (!answer || !candidate || candidate.name === answer.name) return false;
+  if (bandId === "hard") return pathKey(candidate) !== pathKey(answer);
+  return timelineKey(candidate) !== timelineKey(answer);
+}
+
+export function eligibleCareers(bandId) {
+  if (bandId === "hard") return CAREERS.filter((career) => career.stops.length >= 4);
+  if (bandId === "medium") return CAREERS.filter((career) => career.stops.length === 2 || career.stops.length === 3);
+  return CAREERS.filter((career) => career.stops.length === 1);
 }
 
 function shuffle(items) {
@@ -129,9 +121,7 @@ function pickWeighted(careers, weightOf) {
 }
 
 function poolFor(bandId) {
-  if (bandId === "hard") return CAREERS.filter((career) => career.stops.length >= 4);
-  if (bandId === "medium") return CAREERS.filter((career) => career.stops.length >= 2);
-  return CAREERS.filter((career) => EASY_NAMES.has(career.name));
+  return eligibleCareers(bandId);
 }
 
 function weightFor(bandId, career) {
@@ -143,7 +133,7 @@ function weightFor(bandId, career) {
   }
   if (bandId === "medium") {
     let weight = tier === "role" ? 3 : tier === "known" ? 2 : 1;
-    if (career.stops.length >= 4) weight += 1;
+    if (career.stops.length >= 3) weight += 1;
     return weight;
   }
   return 1;
@@ -172,8 +162,8 @@ function distractorScore(answer, candidate) {
   return score;
 }
 
-function selectDistractors(answer) {
-  const ranked = CAREERS.filter((career) => career.name !== answer.name && pathKey(career) !== pathKey(answer))
+function selectDistractors(answer, bandId) {
+  const ranked = CAREERS.filter((career) => careerChoiceAllowed(answer, career, bandId))
     .map((career) => ({ career, score: distractorScore(answer, career) }))
     .sort((left, right) => right.score - left.score);
   const plausible = ranked.filter((item) => item.score >= 3);
@@ -183,20 +173,42 @@ function selectDistractors(answer) {
     .map((item) => item.career);
 }
 
-export function selectCareerQuestion(streak, previousName = null) {
-  const band = careerBand(streak);
-  let pool = poolFor(band.id).filter((career) => career.name !== previousName);
-  if (!pool.length) pool = poolFor(band.id);
-  const answer = pickWeighted(pool, (career) => weightFor(band.id, career));
-  const distractors = selectDistractors(answer);
+function uniqueChoices(answer, distractors) {
+  const names = [];
+  const seenIds = new Set([answer.id]);
+  const seenNames = new Set([answer.name]);
+  for (const career of distractors) {
+    if (seenIds.has(career.id) || seenNames.has(career.name)) continue;
+    seenIds.add(career.id);
+    seenNames.add(career.name);
+    names.push(career.name);
+  }
+  if (names.length < 3) return null;
+  return shuffle([answer.name, ...names.slice(0, 3)]);
+}
 
-  return {
-    band,
-    answer: answer.name,
-    position: answer.position,
-    stops: answer.stops,
-    choices: shuffle([answer.name, ...distractors.map((career) => career.name)]),
-  };
+export function selectCareerQuestion(streak, { usedIds = [] } = {}) {
+  const band = careerBand(streak);
+  const used = new Set(Array.isArray(usedIds) ? usedIds.filter((id) => Number.isInteger(id)) : []);
+  let pool = poolFor(band.id).filter((career) => !used.has(career.id));
+
+  while (pool.length) {
+    const answer = pickWeighted(pool, (career) => weightFor(band.id, career));
+    const choices = uniqueChoices(answer, selectDistractors(answer, band.id));
+    if (choices) {
+      return {
+        band,
+        answer: answer.name,
+        answerId: answer.id,
+        position: answer.position,
+        stops: answer.stops,
+        choices,
+      };
+    }
+    pool = pool.filter((career) => career.id !== answer.id);
+  }
+
+  return null;
 }
 
 export function formatYears(stop) {

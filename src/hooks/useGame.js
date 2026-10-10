@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { clearActiveRun, restoreClassicRun, writeActiveRun } from "../game/activeRun.js";
 import { bandForStreak } from "../game/difficulty.js";
 import { playBuzzer } from "../game/feedback.js";
 import { outcomeFor } from "../game/outcome.js";
@@ -12,18 +13,37 @@ function readBest() {
 }
 
 export function useGame(players, { onAnswer } = {}) {
+  const restored = restoreClassicRun(players);
   const [best, setBest] = useState(readBest);
-  const [phase, setPhase] = useState("start");
-  const [streak, setStreak] = useState(0);
-  const [matchup, setMatchup] = useState(null);
-  const [pickedId, setPickedId] = useState(null);
-  const [result, setResult] = useState(null);
-  const locked = useRef(false);
+  const [phase, setPhase] = useState(restored?.phase ?? "start");
+  const [streak, setStreak] = useState(restored?.streak ?? 0);
+  const [matchup, setMatchup] = useState(restored?.matchup ?? null);
+  const [pickedId, setPickedId] = useState(restored?.pickedId ?? null);
+  const [result, setResult] = useState(restored?.result ?? null);
+  const locked = useRef(restored?.phase === "revealing");
   const onAnswerRef = useRef(onAnswer);
 
   useEffect(() => {
     onAnswerRef.current = onAnswer;
   });
+
+  useEffect(() => {
+    if ((phase === "playing" || phase === "revealing") && matchup) {
+      writeActiveRun({
+        game: "classic",
+        phase,
+        streak,
+        pickedId,
+        result,
+        categoryId: matchup.category.id,
+        leftId: matchup.left.id,
+        rightId: matchup.right.id,
+        key: matchup.key,
+      });
+      return;
+    }
+    if (phase === "start" || phase === "gameover") clearActiveRun("classic");
+  }, [phase, streak, matchup, pickedId, result]);
 
   function deal(nextStreak, previousKey) {
     const next = selectMatchup(players, nextStreak, previousKey);

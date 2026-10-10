@@ -345,6 +345,18 @@ main {
   color: #ff8b98;
 }
 
+.career-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px 28px;
+  margin-top: 16px;
+}
+
+.career-links .lobby-link {
+  margin-top: 0;
+}
+
 .career-board,
 .career-over {
   text-align: center;
@@ -596,17 +608,6 @@ main {
   text-transform: uppercase;
   text-shadow: 0 0 36px rgba(255, 122, 26, 0.55);
   animation: pop-in 0.32s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .board.is-wrong,
-  .wrong-flash,
-  .streak-callout,
-  .unlock,
-  .award.just-unlocked,
-  .milestone p {
-    animation: none;
-  }
 }
 
 .eyebrow,
@@ -1105,5 +1106,288 @@ h1.section-title {
   .hub-card:nth-child(5):last-child {
     grid-column: auto;
     min-height: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .topbar {
+    padding: 8px 10px 4px;
+  }
+
+  .frame {
+    padding: 2px 8px 8px;
+  }
+
+  main {
+    margin-bottom: 8px;
+  }
+
+  .board,
+  .panel {
+    padding: 2px 0 4px;
+  }
+
+  .prompt {
+    margin-bottom: 4px;
+  }
+
+  .prompt h1,
+  .career-board .section-title {
+    font-size: 1.2rem;
+  }
+
+  .band,
+  .eyebrow {
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+  }
+
+  .board-leave,
+  .career-links {
+    margin-top: 6px;
+  }
+
+  .cards {
+    gap: 0;
+  }
+
+  .versus {
+    width: 28px;
+    height: 28px;
+    margin: 0;
+    font-size: 0.8rem;
+  }
+
+  .player-card {
+    gap: 4px;
+    padding: 6px 8px;
+    border-radius: 14px;
+  }
+
+  .photo-frame {
+    aspect-ratio: auto;
+    height: 72px;
+    border-radius: 10px;
+  }
+
+  .player-name {
+    font-size: 1.12rem;
+  }
+
+  .player-team,
+  .player-stat,
+  .higher-label,
+  .reveal-name {
+    font-size: 0.82rem;
+  }
+
+  .reveal {
+    margin-top: 8px;
+    padding: 8px 10px;
+  }
+
+  .reveal-title {
+    margin-bottom: 4px;
+    font-size: 1.35rem;
+  }
+
+  .reveal-stats {
+    gap: 16px;
+    margin-bottom: 0;
+  }
+
+  .reveal-value {
+    font-size: 1.45rem;
+  }
+
+  .snapshot {
+    font-size: 0.75rem;
+    line-height: 1.3;
+  }
+
+  .career-path {
+    gap: 4px 2px;
+    margin: 8px 0;
+  }
+
+  .career-stop {
+    min-width: 58px;
+    max-width: 96px;
+    gap: 2px;
+  }
+
+  .career-stop img,
+  .career-board .career-stop img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .career-team {
+    font-size: 0.68rem;
+  }
+
+  .career-years,
+  .career-arrow {
+    font-size: 0.75rem;
+  }
+
+  .career-choices {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .career-choice {
+    margin-top: 0;
+    padding: 8px 10px;
+    font-size: 0.92rem;
+  }
+
+  .career-over .section-title {
+    font-size: 3.2rem;
+  }
+}
+
+@media (max-height: 640px) {
+  .topbar {
+    padding: 4px 8px 2px;
+  }
+
+  .brand {
+    font-size: 0.85rem;
+  }
+
+  .scoreboard {
+    font-size: 0.75rem;
+  }
+
+  .scoreboard strong {
+    font-size: 0.95rem;
+  }
+
+  .prompt h1,
+  .career-board .section-title {
+    font-size: 1.02rem;
+  }
+
+  .photo-frame {
+    height: 44px;
+  }
+
+  .player-card {
+    gap: 2px;
+    padding: 4px 8px;
+  }
+
+  .player-name {
+    font-size: 0.98rem;
+  }
+
+  .reveal {
+    margin-top: 4px;
+    padding: 6px 8px;
+  }
+
+  .reveal-title {
+    font-size: 1.15rem;
+  }
+
+  .reveal-value {
+    font-size: 1.2rem;
+  }
+
+  .snapshot {
+    display: none;
+  }
+
+  .career-position {
+    margin: 2px 0 0;
+    font-size: 0.85rem;
+  }
+
+  .career-path {
+    margin: 6px 0;
+  }
+
+  .career-choice {
+    padding: 7px 8px;
+  }
+
+  .career-over .section-title {
+    font-size: 2.6rem;
+  }
+
+  .actions .action {
+    padding: 8px 14px;
+    font-size: 0.95rem;
+  }
+
+  main {
+    margin-bottom: 8px;
+  }
+
+  .start-screen,
+  .game-over,
+  .daily-score {
+    margin-top: 0;
+  }
+
+  .panel,
+  .board {
+    padding-bottom: 8px;
+  }
+
+  .score-card {
+    margin: 2px 0 8px;
+    padding: 10px 12px 8px;
+  }
+
+  .streak-flame {
+    margin-top: 2px;
+    font-size: 2.4rem;
+  }
+
+  .streak-label,
+  .reached {
+    margin-top: 2px;
+    font-size: 0.82rem;
+  }
+
+  .badge {
+    margin-top: 4px;
+    font-size: 0.95rem;
+  }
+
+  .challenge {
+    margin-top: 6px;
+    font-size: 0.82rem;
+  }
+
+  .play-now {
+    margin-top: 2px;
+    font-size: 0.9rem;
+  }
+
+  .actions {
+    justify-content: center;
+    gap: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .lobby-card:hover,
+  .lobby-link:hover,
+  .play-main:hover,
+  .action:hover,
+  .player-card:hover:not(:disabled) {
+    transform: none !important;
   }
 }

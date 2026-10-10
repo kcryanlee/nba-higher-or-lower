@@ -125,12 +125,14 @@ export default function CareerGame({
             </p>
           ))
         : null}
-      <button type="button" className="lobby-link" onClick={onAwards}>
-        Achievements
-      </button>
-      <button type="button" className="lobby-link" onClick={onMenu}>
-        All Games
-      </button>
+      <div className="career-links">
+        <button type="button" className="lobby-link" onClick={onAwards}>
+          Achievements
+        </button>
+        <button type="button" className="lobby-link" onClick={onMenu}>
+          All Games
+        </button>
+      </div>
     </section>
   );
 }

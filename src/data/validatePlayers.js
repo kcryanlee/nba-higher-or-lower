@@ -44,6 +44,7 @@ export function validateDataset(players, history) {
       errors.push(`Career history for player ${entry.id} has no teams.`);
       continue;
     }
+    let previousStop = null;
     for (const stop of entry.stops) {
       if (!stop || typeof stop.team !== "string" || !teamLogoUrl(stop.team)) {
         errors.push(`Career history for player ${entry.id} has a team without a logo.`);
@@ -51,6 +52,15 @@ export function validateDataset(players, history) {
       if (!Number.isFinite(stop?.start) || !Number.isFinite(stop?.end) || stop.end < stop.start) {
         errors.push(`Career history for player ${entry.id} has an invalid year range.`);
       }
+      if (previousStop && Number.isFinite(stop?.start) && Number.isFinite(previousStop.end)) {
+        if (stop.start < previousStop.start) {
+          errors.push(`Career history for player ${entry.id} is out of chronological order.`);
+        }
+        if (previousStop.end > stop.start) {
+          errors.push(`Career history for player ${entry.id} has overlapping team years.`);
+        }
+      }
+      previousStop = stop;
     }
   }
 

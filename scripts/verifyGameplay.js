@@ -20,7 +20,10 @@ import { outcomeFor } from "../src/game/outcome.js";
 import { selectMatchup } from "../src/game/selectMatchup.js";
 import { applyAnswer, emptyBadgeState } from "../src/game/badges.js";
 import { readJsonStorage, writeStorage } from "../src/game/storage.js";
-import { players } from "../src/data/players.js";
+import { players, careerPlayers } from "../src/data/players.js";
+import { careerChoiceAllowed, eligibleCareers, selectCareerQuestion } from "../src/game/careerPath.js";
+import { collectPairs } from "../src/game/selectMatchup.js";
+import { openingScreen, readActiveRun, restoreCareerRun, writeActiveRun } from "../src/game/activeRun.js";
 import { useDaily } from "../src/hooks/useDaily.js";
 
 const store = new Map();
@@ -184,5 +187,113 @@ assert.match(failedDaily, /Unavailable today/);
 const readyDaily = renderToStaticMarkup(createElement(Probe, { roster: players }));
 assert.match(readyDaily, /NBA Mini Games/);
 assert.match(readyDaily, /daily-ready/);
+
+for (const career of careerPlayers) {
+  for (let index = 1; index < career.stops.length; index += 1) {
+    const previous = career.stops[index - 1];
+    const next = career.stops[index];
+    assert.ok(next.start >= previous.start, `${career.name} is out of order`);
+    assert.ok(previous.end <= next.start, `${career.name} has overlapping teams`);
+    assert.ok(previous.end >= previous.start, `${career.name} has an invalid stop`);
+  }
+}
+
+assert.ok(careerPlayers.some((career) => career.name === "Anthony Davis" && career.stops.length === 4));
+for (const career of eligibleCareers("easy")) assert.equal(career.stops.length, 1);
+for (const career of eligibleCareers("medium")) {
+  assert.ok(career.stops.length === 2 || career.stops.length === 3);
+}
+for (const career of eligibleCareers("hard")) assert.ok(career.stops.length >= 4);
+assert.ok(eligibleCareers("easy").some((career) => career.name === "Amen Thompson"));
+assert.equal(eligibleCareers("easy").some((career) => career.name === "LeBron James"), false);
+
+const herro = careerPlayers.find((career) => career.name === "Tyler Herro");
+const jaquez = careerPlayers.find((career) => career.name === "Jaime Jaquez Jr.");
+assert.equal(careerChoiceAllowed(herro, jaquez, "easy"), true);
+assert.equal(careerChoiceAllowed(herro, jaquez, "medium"), true);
+assert.equal(careerChoiceAllowed(herro, jaquez, "hard"), false);
+assert.equal(careerChoiceAllowed(herro, { ...herro, name: "Clone" }, "easy"), false);
+
+const threes = CATEGORIES.find((category) => category.id === "threes");
+const threesPairs = collectPairs(players, threes, { min: 0, max: Infinity });
+assert.ok(threesPairs.every((pair) => pair.first.threes > 0 && pair.second.threes > 0));
+const duren = players.find((player) => player.name === "Jalen Duren");
+assert.equal(duren.threes, 0);
+assert.equal(duren.tpPct, 0);
+assert.equal(players.some((player) => Number.isInteger(player.draftYear) && Number.isInteger(player.draftPick)), false);
+
+store.clear();
+writeActiveRun({
+  game: "classic",
+  phase: "playing",
+  streak: 4,
+  pickedId: null,
+  result: null,
+  categoryId: "ppg",
+  leftId: players[0].id,
+  rightId: players[1].id,
+  key: "ppg:test",
+});
+assert.equal(openingScreen(players), "classic");
+const activeRun = readActiveRun();
+assert.equal(activeRun.game, "classic");
+assert.equal(activeRun.streak, 4);
+store.clear();
+
+const seenAnswers = [];
+let careerStreak = 0;
+while (careerStreak < 500) {
+  const question = selectCareerQuestion(careerStreak, { usedIds: seenAnswers });
+  if (!question) break;
+  assert.equal(seenAnswers.includes(question.answerId), false);
+  assert.equal(new Set(question.choices).size, question.choices.length);
+  assert.equal(question.choices.length, 4);
+  assert.ok(question.choices.includes(question.answer));
+  seenAnswers.push(question.answerId);
+  careerStreak += 1;
+}
+assert.ok(seenAnswers.length > 6);
+assert.equal(new Set(seenAnswers).size, seenAnswers.length);
+assert.equal(selectCareerQuestion(careerStreak, { usedIds: seenAnswers }), null);
+
+const easyIds = eligibleCareers("easy").map((career) => career.id);
+assert.equal(selectCareerQuestion(0, { usedIds: easyIds }), null);
+const repeated = selectCareerQuestion(0, { usedIds: [easyIds[0]] });
+assert.ok(repeated);
+assert.notEqual(repeated.answerId, easyIds[0]);
+
+const firstCareer = selectCareerQuestion(0, { usedIds: [] });
+const secondCareer = selectCareerQuestion(1, { usedIds: [firstCareer.answerId] });
+writeActiveRun({
+  game: "career",
+  phase: "playing",
+  streak: 1,
+  picked: null,
+  result: null,
+  question: secondCareer,
+  usedIds: [firstCareer.answerId, secondCareer.answerId],
+});
+const restoredCareer = restoreCareerRun();
+assert.deepEqual(restoredCareer.usedIds, [firstCareer.answerId, secondCareer.answerId]);
+const continued = selectCareerQuestion(2, { usedIds: restoredCareer.usedIds });
+assert.ok(continued);
+assert.equal(restoredCareer.usedIds.includes(continued.answerId), false);
+store.clear();
+
+writeActiveRun({
+  game: "career",
+  phase: "revealing",
+  streak: 1,
+  picked: secondCareer.answer,
+  result: "correct",
+  question: { ...secondCareer, answerId: undefined },
+  usedIds: [firstCareer.answerId],
+});
+const refreshed = restoreCareerRun();
+assert.ok(refreshed.usedIds.includes(firstCareer.answerId));
+assert.ok(refreshed.usedIds.includes(secondCareer.answerId));
+const afterRefresh = selectCareerQuestion(refreshed.streak, { usedIds: refreshed.usedIds });
+assert.equal(refreshed.usedIds.includes(afterRefresh.answerId), false);
+store.clear();
 
 console.log("Gameplay checks passed.");

@@ -36,6 +36,7 @@ export default function StartScreen({
         <div className="lobby-card is-unavailable" role="status">
           <span>{dailyLine}</span>
           <strong>Unavailable today</strong>
+          <span>Uses your local date</span>
         </div>
       ) : (
         <button type="button" className="lobby-card" onClick={onDaily}>
@@ -47,6 +48,7 @@ export default function StartScreen({
           ) : (
             <strong>Same questions for everyone today</strong>
           )}
+          <span>Uses your local date</span>
         </button>
       )}
       <button type="button" className="lobby-link" onClick={onAwards}>

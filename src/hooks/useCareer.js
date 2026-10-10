@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { clearActiveRun, restoreCareerRun, writeActiveRun } from "../game/activeRun.js";
 import { CAREER_BEST_KEY } from "../game/careerBadges.js";
 import { selectCareerQuestion } from "../game/careerPath.js";
 import { playBuzzer } from "../game/feedback.js";
@@ -9,21 +10,45 @@ function readBest() {
 }
 
 export function useCareer({ onCorrect } = {}) {
+  const restored = restoreCareerRun();
   const [best, setBest] = useState(readBest);
-  const [phase, setPhase] = useState("playing");
-  const [streak, setStreak] = useState(0);
-  const [question, setQuestion] = useState(() => selectCareerQuestion(0));
-  const [picked, setPicked] = useState(null);
-  const [result, setResult] = useState(null);
-  const locked = useRef(false);
+  const [phase, setPhase] = useState(restored?.phase ?? "idle");
+  const [streak, setStreak] = useState(restored?.streak ?? 0);
+  const [question, setQuestion] = useState(restored?.question ?? null);
+  const [usedIds, setUsedIds] = useState(restored?.usedIds ?? []);
+  const [picked, setPicked] = useState(restored?.picked ?? null);
+  const [result, setResult] = useState(restored?.result ?? null);
+  const locked = useRef(restored?.phase === "revealing");
   const onCorrectRef = useRef(onCorrect);
 
   useEffect(() => {
     onCorrectRef.current = onCorrect;
   });
 
-  function deal(nextStreak, previousName) {
-    setQuestion(selectCareerQuestion(nextStreak, previousName));
+  useEffect(() => {
+    if ((phase === "playing" || phase === "revealing") && question) {
+      writeActiveRun({
+        game: "career",
+        phase,
+        streak,
+        picked,
+        result,
+        question,
+        usedIds,
+      });
+      return;
+    }
+    if (phase === "idle" || phase === "gameover") clearActiveRun("career");
+  }, [phase, streak, question, picked, result, usedIds]);
+
+  function deal(nextStreak, ids) {
+    const next = selectCareerQuestion(nextStreak, { usedIds: ids });
+    if (!next) {
+      setPhase("gameover");
+      return;
+    }
+    setUsedIds(ids.includes(next.answerId) ? ids : [...ids, next.answerId]);
+    setQuestion(next);
     setPicked(null);
     setResult(null);
     locked.current = false;
@@ -31,8 +56,30 @@ export function useCareer({ onCorrect } = {}) {
   }
 
   function start() {
+    locked.current = false;
+    const next = selectCareerQuestion(0, { usedIds: [] });
     setStreak(0);
-    deal(0, null);
+    setPicked(null);
+    setResult(null);
+    if (!next) {
+      setQuestion(null);
+      setUsedIds([]);
+      setPhase("idle");
+      return;
+    }
+    setUsedIds([next.answerId]);
+    setQuestion(next);
+    setPhase("playing");
+  }
+
+  function discard() {
+    locked.current = false;
+    setStreak(0);
+    setQuestion(null);
+    setUsedIds([]);
+    setPicked(null);
+    setResult(null);
+    setPhase("idle");
   }
 
   function pick(name) {
@@ -65,11 +112,11 @@ export function useCareer({ onCorrect } = {}) {
     if (phase !== "revealing" || !locked.current) return;
     locked.current = false;
     if (result === "correct") {
-      deal(streak, question.answer);
+      deal(streak, usedIds);
       return;
     }
     setPhase("gameover");
   }
 
-  return { phase, streak, best, question, picked, result, start, pick, advance };
+  return { phase, streak, best, question, picked, result, start, pick, advance, discard };
 }
