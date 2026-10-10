@@ -1,9 +1,12 @@
-import { DAILY_LENGTH } from "../game/daily.js";
+import { QUIZ_DAILY_LENGTH } from "../game/quizDaily.js";
 
-export default function StartScreen({
+export default function GameLobby({
+  eyebrow,
+  title,
+  lede,
   best,
-  dailyStreak,
   dailyStatus,
+  dailyStreak,
   todayCorrect,
   resumeQuestion,
   onPlay,
@@ -13,20 +16,18 @@ export default function StartScreen({
   onHub,
 }) {
   const dailyLine = dailyStatus === "complete"
-    ? `Today's challenge • ${todayCorrect}/${DAILY_LENGTH} completed`
+    ? `Today's challenge • ${todayCorrect}/${QUIZ_DAILY_LENGTH} completed`
     : dailyStatus === "progress"
-      ? `Today's challenge • question ${resumeQuestion} of ${DAILY_LENGTH}`
+      ? `Today's challenge • question ${resumeQuestion} of ${QUIZ_DAILY_LENGTH}`
       : dailyStatus === "unavailable"
         ? "Today's challenge"
         : "Today's challenge • not started";
 
   return (
     <section className="panel start-screen lobby">
-      <p className="eyebrow">Basketball stats, one guess at a time</p>
-      <h1>NBA Higher or Lower</h1>
-      <p className="lede">
-        Two players. One stat. Pick who’s higher. Build your streak.
-      </p>
+      <p className="eyebrow">{eyebrow}</p>
+      <h1>{title}</h1>
+      <p className="lede">{lede}</p>
       <p className="best-line">
         Best streak <strong>{best}</strong>
       </p>
@@ -44,12 +45,12 @@ export default function StartScreen({
           <span>{dailyLine}</span>
           {dailyStreak > 0 ? (
             <strong>
-              🔥 {dailyStreak}-day daily streak
+              {dailyStreak}-day daily streak
             </strong>
           ) : (
-            <strong>Same questions for everyone today</strong>
+            <strong>Same five questions for everyone today</strong>
           )}
-          <span>Uses your local date</span>
+          <span>One attempt · uses your local date</span>
         </button>
       )}
       <button type="button" className="lobby-link" onClick={onAwards}>

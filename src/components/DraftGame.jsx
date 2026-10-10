@@ -62,6 +62,9 @@ export default function DraftGame({
   onAgain,
   onAwards,
   onMenu,
+  onDaily,
+  kicker,
+  menuLabel = "All Games",
 }) {
   const revealing = phase === "revealing";
   const label = draftModeLabel(mode);
@@ -95,11 +98,16 @@ export default function DraftGame({
           <button type="button" className="action" onClick={onAgain}>
             Play again
           </button>
+          {onDaily ? (
+            <button type="button" className="action secondary" onClick={onDaily}>
+              Today&apos;s Challenge
+            </button>
+          ) : null}
           <button type="button" className="action secondary" onClick={onAwards}>
             Achievements
           </button>
           <button type="button" className="action secondary" onClick={onMenu}>
-            All Games
+            {menuLabel}
           </button>
         </div>
       </section>
@@ -111,7 +119,7 @@ export default function DraftGame({
   return (
     <section className="panel draft-board">
       <p className="band">
-        Draft Pick
+        {kicker || "Draft Pick"}
         <span className="score-dot" aria-hidden="true">
           {" "}
           •{" "}
@@ -157,11 +165,16 @@ export default function DraftGame({
           ))
         : null}
       <div className="career-links">
+        {onDaily ? (
+          <button type="button" className="lobby-link" onClick={onDaily}>
+            Today&apos;s Challenge
+          </button>
+        ) : null}
         <button type="button" className="lobby-link" onClick={onAwards}>
           Achievements
         </button>
         <button type="button" className="lobby-link" onClick={onMenu}>
-          All Games
+          {menuLabel}
         </button>
       </div>
     </section>

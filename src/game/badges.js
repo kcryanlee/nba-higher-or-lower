@@ -158,25 +158,7 @@ export const BADGES = [
     kind: "expert",
     goal: 10,
   },
-  {
-    id: "daily-grinder",
-    name: "Daily Grinder",
-    detail: "Complete the Daily Challenge 7 days in a row",
-    mark: "7D",
-    kind: "grinder",
-    goal: 7,
-  },
-  {
-    id: "monthly-regular",
-    name: "Monthly Regular",
-    detail: "Complete the Daily Challenge on 20 different days in one month",
-    mark: "20D",
-    kind: "monthly",
-    goal: 20,
-  },
 ];
-
-const KEPT_WHEN_SAVED = new Set(["daily-grinder", "monthly-regular"]);
 
 export function emptyBadgeState() {
   return {
@@ -214,8 +196,6 @@ function meets(state, badge, event = {}) {
   }
   if (badge.kind === "hard") return state.hardCorrect >= badge.goal;
   if (badge.kind === "expert") return state.expertCorrect >= badge.goal;
-  if (badge.kind === "grinder") return event.dailyStreak >= badge.goal;
-  if (badge.kind === "monthly") return event.monthCount >= badge.goal;
   return false;
 }
 
@@ -239,12 +219,10 @@ export function readBadgeState() {
   const empty = emptyBadgeState();
   const raw = readJsonStorage(BADGE_KEY);
   if (!raw || typeof raw !== "object") return withUnlocks(empty, { best: readBest() }).state;
-  const known = new Set(BADGES.map((badge) => badge.id));
   const counts = { ...empty.counts };
   for (const key of COUNT_KEYS) counts[key] = whole(raw.counts?.[key]);
-  const saved = Array.isArray(raw.unlocked) ? raw.unlocked.filter((id) => known.has(id)) : [];
   const state = {
-    unlocked: saved.filter((id) => KEPT_WHEN_SAVED.has(id)),
+    unlocked: [],
     counts,
     hardCorrect: whole(raw.hardCorrect),
     expertCorrect: whole(raw.expertCorrect),
@@ -275,11 +253,7 @@ export function applyAnswer(state, event) {
   }, event);
 }
 
-export function applyDailyCompletion(state, event) {
-  return withUnlocks(state, event);
-}
-
-export function badgeProgress(badge, state, { best = 0, dailyStreak = 0, monthCount = 0 } = {}) {
+export function badgeProgress(badge, state, { best = 0 } = {}) {
   if (state.unlocked.includes(badge.id)) return "Unlocked";
   if (badge.kind === "streak") {
     return `${Math.min(best, badge.streak)} of ${badge.streak}`;
@@ -301,8 +275,5 @@ export function badgeProgress(badge, state, { best = 0, dailyStreak = 0, monthCo
   if (badge.kind === "expert") {
     return `${Math.min(state.expertCorrect, badge.goal)} of ${badge.goal}`;
   }
-  if (badge.kind === "grinder") {
-    return `${Math.min(dailyStreak, badge.goal)} of ${badge.goal} days`;
-  }
-  return `${Math.min(monthCount, badge.goal)} of ${badge.goal} days`;
+  return "Locked";
 }

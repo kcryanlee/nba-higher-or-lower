@@ -72,10 +72,7 @@ export function useDaily(players, { onAnswer, onOfficial } = {}) {
 
   function reportOfficial(saved) {
     try {
-      onOfficialRef.current?.({
-        dailyStreak: activeDailyStreak(saved, date),
-        monthCount: monthCompletionCount(saved, date),
-      });
+      onOfficialRef.current?.(saved, date);
     } catch {
       // Badge persistence must not block the results.
     }
@@ -107,10 +104,7 @@ export function useDaily(players, { onAnswer, onOfficial } = {}) {
     });
     setPhase("results");
     try {
-      onOfficialRef.current?.({
-        dailyStreak: activeDailyStreak(saved, runDate),
-        monthCount: monthCompletionCount(saved, runDate),
-      });
+      onOfficialRef.current?.(saved, runDate);
     } catch {
       // Badge persistence must not block the results.
     }
@@ -278,6 +272,7 @@ export function useDaily(players, { onAnswer, onOfficial } = {}) {
     status: available ? dailyRunStatus(record, date) : "unavailable",
     dailyStreak: activeDailyStreak(record, date),
     monthCount: monthCompletionCount(record, date),
+    record,
     start,
     showOfficial,
     pick,

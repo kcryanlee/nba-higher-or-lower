@@ -103,6 +103,12 @@ main {
   background: rgba(8, 16, 28, 0.45);
 }
 
+.frame.is-open {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
 .snapshot {
   margin: 4px 0 0;
   color: #b7aa98;
@@ -121,6 +127,10 @@ main {
   padding: 12px 0 28px;
 }
 
+.board {
+  padding-bottom: 4px;
+}
+
 .start-screen,
 .game-over,
 .daily-score {
@@ -128,11 +138,30 @@ main {
   margin: 8vh auto 0;
 }
 
+.lobby,
+.hub {
+  container-type: inline-size;
+}
+
 .lobby {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+
+.lobby h1,
+.hub > h1 {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  line-height: 1;
+  font-size: clamp(1.15rem, 9.4cqi, 4.6rem);
+}
+
+.hub > h1.section-title {
+  font-size: clamp(1.15rem, 9.4cqi, 3.2rem);
 }
 
 .lobby .lede {
@@ -205,10 +234,6 @@ main {
   transform: none;
 }
 
-.board-leave {
-  margin-top: 4px;
-}
-
 .hub-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -218,6 +243,7 @@ main {
 }
 
 .hub-card {
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -241,7 +267,9 @@ main {
 
 .hub-card h2 {
   margin: 0;
-  font-size: 1.45rem;
+  max-width: 100%;
+  white-space: nowrap;
+  font-size: clamp(0.95rem, 10cqi, 1.45rem);
 }
 
 .hub-card p {
@@ -380,7 +408,8 @@ main {
 }
 
 .career-over .section-title,
-.draft-over .section-title {
+.draft-over .section-title,
+.quiz-daily-score .section-title {
   font-size: clamp(4rem, 12vw, 6rem);
   line-height: 0.9;
 }
@@ -808,7 +837,8 @@ h1.section-title {
   text-align: left;
 }
 
-.game-over {
+.game-over,
+.quiz-daily-score {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1076,6 +1106,11 @@ h1.section-title {
   box-shadow: inset 0 0 0 1px rgba(255, 177, 90, 0.85);
 }
 
+.board-notes {
+  margin-top: 12px;
+  text-align: center;
+}
+
 .reveal-title {
   margin: 0 0 8px;
   font-size: 2rem;
@@ -1175,7 +1210,7 @@ h1.section-title {
   }
 
   .board {
-    padding: 4px 0 8px;
+    padding: 4px 0 4px;
   }
 
   .prompt {
@@ -1285,7 +1320,6 @@ h1.section-title {
     font-size: 0.92rem;
   }
 
-  .board-leave,
   .career-links {
     margin-top: 4px;
   }
@@ -1308,14 +1342,14 @@ h1.section-title {
   }
 
   .photo-frame {
-    aspect-ratio: auto;
-    height: 96px;
+    aspect-ratio: 1.68 / 1;
+    height: auto;
     border-radius: 12px;
   }
 
   .photo-frame img,
   .player-silhouette {
-    object-position: center 18%;
+    object-position: center top;
   }
 
   .player-name {
@@ -1399,7 +1433,8 @@ h1.section-title {
   }
 
   .career-over .section-title,
-  .draft-over .section-title {
+  .draft-over .section-title,
+  .quiz-daily-score .section-title {
     font-size: 3.2rem;
   }
 
@@ -1432,7 +1467,7 @@ h1.section-title {
   }
 
   .photo-frame {
-    height: 44px;
+    height: auto;
   }
 
   .player-card {
@@ -1475,7 +1510,8 @@ h1.section-title {
   }
 
   .career-over .section-title,
-  .draft-over .section-title {
+  .draft-over .section-title,
+  .quiz-daily-score .section-title {
     font-size: 2.6rem;
   }
 
@@ -1574,7 +1610,7 @@ h1.section-title {
     font-size: 0.85rem;
   }
 
-  .board-leave {
+  .career-links {
     margin-top: 2px;
   }
 
@@ -1591,12 +1627,111 @@ h1.section-title {
   }
 
   .photo-frame {
-    height: 52px;
+    height: auto;
   }
 
   .photo-frame img,
   .player-silhouette {
-    object-position: center 32%;
+    object-position: center top;
+  }
+
+  .court:has(.board),
+  .court:has(.career-board) {
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .court:has(.board) .topbar,
+  .court:has(.career-board) .topbar {
+    flex: none;
+  }
+
+  .court:has(.board) main,
+  .court:has(.career-board) main {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .board {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-bottom: 2px;
+  }
+
+  .board .prompt,
+  .board .versus,
+  .board .player-copy,
+  .board .higher-label,
+  .board .board-notes,
+  .board .career-links {
+    flex: none;
+  }
+
+  .board .cards {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .board .player-card {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .board .photo-frame {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    height: auto;
+    aspect-ratio: auto;
+  }
+
+  .board .photo-frame img,
+  .board .player-silhouette {
+    object-position: center top;
+  }
+
+  .board .higher-label:empty {
+    display: none;
+  }
+
+  .career-board {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-bottom: 4px;
+  }
+
+  .career-board .section-title,
+  .career-board .band,
+  .career-board .career-position,
+  .career-choices,
+  .career-board .reveal-title,
+  .career-board .unlock,
+  .career-links {
+    flex: none;
+  }
+
+  .career-path {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 4px 0;
+    align-content: flex-start;
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .team-logo {

@@ -143,12 +143,12 @@ export function draftChoices(players, mode, answer, random = Math.random, now = 
   return shuffle(choices, random);
 }
 
-export function selectDraftQuestion(players, mode, usedIds = [], random = Math.random) {
+export function selectDraftQuestion(players, mode, usedIds = [], random = Math.random, now = new Date()) {
   const used = new Set(usedIds);
-  const pool = draftPool(players, mode).filter((player) => !used.has(player.id));
+  const pool = draftPool(players, mode, now).filter((player) => !used.has(player.id));
   for (const player of shuffle(pool, random)) {
     const question = draftQuestion(player, mode);
-    const choices = draftChoices(players, mode, question.answer, random);
+    const choices = draftChoices(players, mode, question.answer, random, now);
     if (choices.length === 4) return { ...question, choices };
   }
   return null;

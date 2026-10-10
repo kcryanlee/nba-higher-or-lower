@@ -17,15 +17,44 @@ import {
 } from "../src/game/daily.js";
 import { BADGE_REVEAL_MS, REVEAL_MS } from "../src/game/feedback.js";
 import { outcomeFor } from "../src/game/outcome.js";
-import { selectMatchup } from "../src/game/selectMatchup.js";
-import { applyAnswer, emptyBadgeState } from "../src/game/badges.js";
-import { readJsonStorage, writeStorage } from "../src/game/storage.js";
+import { pairKey, selectMatchup } from "../src/game/selectMatchup.js";
+import { BADGES, applyAnswer, emptyBadgeState } from "../src/game/badges.js";
+import { readJsonStorage, readStoredNumber, writeStorage } from "../src/game/storage.js";
 import { players, careerPlayers } from "../src/data/players.js";
 import { careerChoiceAllowed, eligibleCareers, selectCareerQuestion } from "../src/game/careerPath.js";
 import { collectPairs } from "../src/game/selectMatchup.js";
-import { openingScreen, readActiveRun, restoreCareerRun, restoreDraftRun, writeActiveRun } from "../src/game/activeRun.js";
+import { openingScreen, readActiveRun, restoreCareerRun, restoreClassicRun, restoreDraftRun, writeActiveRun } from "../src/game/activeRun.js";
 import { DRAFT_BEST_KEYS, draftPool, ordinal, parseDraftAnswer, selectDraftQuestion, usableDraftYear } from "../src/game/draft.js";
 import { DRAFT_BADGE_KEYS, DRAFT_BADGES, applyDraftStreak, readDraftBadges } from "../src/game/draftBadges.js";
+import { CAREER_BEST_KEY, readCareerBadges } from "../src/game/careerBadges.js";
+import { CAREER_DAILY_KEY, buildCareerDaily } from "../src/game/careerDaily.js";
+import { DRAFT_DAILY_KEYS, buildDraftDaily } from "../src/game/draftDaily.js";
+import {
+  CAREER_DAILY_BADGE_KEY,
+  DRAFT_DAILY_BADGE_KEY,
+  DRAFT_DAILY_BADGE_KEYS,
+  HIGHER_DAILY_BADGE_KEY,
+  MODE_DAILY_BADGES,
+  applyModeDailyBadges,
+  mergeModeDailyRecords,
+  modeDailyBadgeProgress,
+  modeDailyStats,
+  readModeDailyBadges,
+  readUnlockedModeDailyBadges,
+  syncModeDailyBadges,
+} from "../src/game/modeDailyBadges.js";
+import {
+  QUIZ_DAILY_LENGTH,
+  activeQuizStreak,
+  commitQuizResult,
+  emptyQuizDailyRecord,
+  longestConsecutive,
+  nextDateKey,
+  noteQuizAnswer,
+  quizRunStatus,
+  readQuizDailyRecord,
+  writeQuizDailyRecord,
+} from "../src/game/quizDaily.js";
 import { useDaily } from "../src/hooks/useDaily.js";
 
 const store = new Map();
@@ -104,6 +133,30 @@ const uneven = selectMatchup([player(1, 10), player(2, 40)], 0);
 assert.ok(uneven);
 assert.notEqual(uneven.left[uneven.category.id], uneven.right[uneven.category.id]);
 
+const classicRoster = [player(1, 10), player(2, 30), player(3, 55)];
+const usedMatchups = new Set();
+const classicAppearances = new Map();
+for (let round = 0; round < 18; round += 1) {
+  const match = selectMatchup(classicRoster, round, usedMatchups);
+  assert.ok(match, `classic matchup ${round}`);
+  assert.equal(usedMatchups.has(match.key), false);
+  assert.equal(match.key, pairKey(match.category.id, match.left, match.right));
+  assert.equal(pairKey(match.category.id, match.right, match.left), match.key);
+  for (const id of [match.left.id, match.right.id]) {
+    classicAppearances.set(id, (classicAppearances.get(id) ?? 0) + 1);
+  }
+  usedMatchups.add(match.key);
+}
+assert.ok([...classicAppearances.values()].some((count) => count > 1));
+const everyKey = [];
+for (const category of CATEGORIES) {
+  for (const pair of collectPairs(classicRoster, category, { min: 0, max: Infinity })) everyKey.push(pair.key);
+}
+assert.equal(selectMatchup(classicRoster, 0, new Set(everyKey)), null);
+const resetMatchup = selectMatchup(classicRoster, 0, new Set());
+assert.ok(resetMatchup);
+assert.equal(everyKey.includes(resetMatchup.key), true);
+
 assert.equal(buildDaily([], "2026-10-09"), null);
 assert.equal(buildDaily(null, "2026-10-09"), null);
 const first = buildDaily(players, "2026-10-09");
@@ -111,6 +164,25 @@ const second = buildDaily(players, "2026-10-09");
 assert.equal(first.length, DAILY_LENGTH);
 assert.deepEqual(first.map((question) => question.key), second.map((question) => question.key));
 assert.ok(first.every((question) => question.left[question.category.id] !== question.right[question.category.id]));
+assert.equal(new Set(first.map((question) => question.key)).size, DAILY_LENGTH);
+assert.equal(new Set(first.flatMap((question) => [question.left.id, question.right.id])).size, DAILY_LENGTH * 2);
+
+for (const date of ["2026-10-10", "2026-01-01", "2024-02-29", "2026-06-15", "2026-12-31"]) {
+  const questions = buildDaily(players, date);
+  assert.equal(questions.length, DAILY_LENGTH, date);
+  assert.deepEqual(questions, buildDaily(players, date));
+  assert.equal(new Set(questions.map((question) => question.key)).size, DAILY_LENGTH, date);
+  const ids = questions.flatMap((question) => [question.left.id, question.right.id]);
+  assert.equal(new Set(ids).size, ids.length, date);
+}
+
+const tinyRoster = [player(1, 5), player(2, 12), player(3, 20), player(4, 40)];
+const tinyDaily = buildDaily(tinyRoster, "2026-10-10");
+assert.equal(tinyDaily.length, DAILY_LENGTH);
+assert.deepEqual(tinyDaily, buildDaily(tinyRoster, "2026-10-10"));
+assert.equal(new Set(tinyDaily.map((question) => question.key)).size, DAILY_LENGTH);
+const tinyIds = tinyDaily.flatMap((question) => [question.left.id, question.right.id]);
+assert.ok(new Set(tinyIds).size < tinyIds.length);
 
 let record = emptyDailyRecord();
 assert.equal(dailyRunStatus(record, "2026-10-09"), "new");
@@ -284,6 +356,38 @@ writeActiveRun({
   key: "ppg:test",
 });
 assert.equal(openingScreen(players), "classic");
+const classicLeft = players.find((item) => item.ppg !== players[0].ppg) ?? players[1];
+const classicKey = pairKey("ppg", players[0], classicLeft);
+writeActiveRun({
+  game: "classic",
+  phase: "playing",
+  streak: 4,
+  pickedId: null,
+  result: null,
+  categoryId: "ppg",
+  leftId: players[0].id,
+  rightId: classicLeft.id,
+  key: classicKey,
+  usedKeys: ["ppg:1:2", classicKey],
+});
+const restoredClassic = restoreClassicRun(players);
+assert.equal(restoredClassic.matchup.key, classicKey);
+assert.ok(restoredClassic.usedKeys.includes("ppg:1:2"));
+assert.ok(restoredClassic.usedKeys.includes(classicKey));
+assert.equal(restoredClassic.usedKeys.filter((key) => key === classicKey).length, 1);
+store.clear();
+writeActiveRun({
+  game: "classic",
+  phase: "playing",
+  streak: 4,
+  pickedId: null,
+  result: null,
+  categoryId: "ppg",
+  leftId: players[0].id,
+  rightId: classicLeft.id,
+  key: classicKey,
+});
+assert.equal(openingScreen(players), "classic");
 const activeRun = readActiveRun();
 assert.equal(activeRun.game, "classic");
 assert.equal(activeRun.streak, 4);
@@ -392,6 +496,289 @@ assert.ok(savedYearBadges.unlocked.includes("first-pick"));
 assert.ok(savedYearBadges.unlocked.includes("draft-expert"));
 assert.equal(savedYearBadges.unlocked.includes("hall-of-fame"), false);
 assert.equal(readDraftBadges("pick").unlocked.length, 0);
+store.clear();
+
+assert.equal(nextDateKey("2026-10-10"), "2026-10-11");
+assert.equal(nextDateKey("2026-12-31"), "2027-01-01");
+assert.equal(nextDateKey("2024-02-28"), "2024-02-29");
+assert.equal(nextDateKey("2026-02-28"), "2026-03-01");
+
+const careerDailyDate = "2026-10-10";
+const careerDailyQuestions = buildCareerDaily(careerDailyDate);
+assert.equal(careerDailyQuestions.length, QUIZ_DAILY_LENGTH);
+assert.deepEqual(careerDailyQuestions, buildCareerDaily(careerDailyDate));
+assert.deepEqual(careerDailyQuestions.map((question) => question.band.id), ["easy", "medium", "medium", "hard", "hard"]);
+assert.equal(new Set(careerDailyQuestions.map((question) => question.answerId)).size, QUIZ_DAILY_LENGTH);
+for (const question of careerDailyQuestions) {
+  assert.equal(question.choices.length, 4);
+  assert.equal(new Set(question.choices).size, 4);
+  assert.ok(question.choices.includes(question.answer));
+}
+assert.notDeepEqual(
+  careerDailyQuestions.map((question) => question.answerId),
+  buildCareerDaily("2026-10-11").map((question) => question.answerId),
+);
+assert.equal(buildCareerDaily("bad-date"), null);
+for (const date of ["2024-02-29", "2026-01-01", "2026-06-15", "2026-12-31"]) {
+  const questions = buildCareerDaily(date);
+  assert.equal(questions.length, QUIZ_DAILY_LENGTH);
+  assert.deepEqual(questions, buildCareerDaily(date));
+}
+
+const draftNow = new Date(2026, 9, 10);
+const draftYearDaily = buildDraftDaily(players, "year", careerDailyDate, draftNow);
+const draftPickDaily = buildDraftDaily(players, "pick", careerDailyDate, draftNow);
+assert.equal(draftYearDaily.length, QUIZ_DAILY_LENGTH);
+assert.equal(draftPickDaily.length, QUIZ_DAILY_LENGTH);
+assert.deepEqual(draftYearDaily, buildDraftDaily(players, "year", careerDailyDate, draftNow));
+assert.deepEqual(draftPickDaily, buildDraftDaily(players, "pick", careerDailyDate, draftNow));
+assert.notDeepEqual(
+  draftYearDaily.map((question) => [question.id, ...question.choices]),
+  buildDraftDaily(players, "year", "2026-11-02", draftNow).map((question) => [question.id, ...question.choices]),
+);
+for (const question of draftYearDaily) {
+  const player = players.find((item) => item.id === question.id);
+  assert.equal(question.mode, "year");
+  assert.equal(question.answer, player.draftYear);
+  assert.ok(question.choices.includes(player.draftYear));
+  assert.equal(new Set(question.choices).size, 4);
+}
+for (const question of draftPickDaily) {
+  const player = players.find((item) => item.id === question.id);
+  assert.equal(question.mode, "pick");
+  assert.equal(question.answer, player.draftPick);
+  assert.ok(question.choices.includes(player.draftPick));
+  assert.equal(new Set(question.choices).size, 4);
+}
+assert.equal(buildDraftDaily([], "year", careerDailyDate, draftNow), null);
+assert.equal(buildDraftDaily(players, "other", careerDailyDate, draftNow), null);
+assert.ok(draftYearDaily.every((question) => question.mode === "year"));
+assert.ok(draftPickDaily.every((question) => question.mode === "pick"));
+
+let quizRecord = emptyQuizDailyRecord();
+assert.equal(quizRunStatus(quizRecord, careerDailyDate), "new");
+assert.equal(noteQuizAnswer(quizRecord, { date: careerDailyDate, index: 0, correct: 2, total: 5 }).accepted, false);
+const firstStep = noteQuizAnswer(quizRecord, { date: careerDailyDate, index: 0, correct: 1, total: 5 });
+assert.equal(firstStep.accepted, true);
+assert.equal(firstStep.finished, false);
+assert.equal(firstStep.record.active.index, 1);
+assert.equal(firstStep.record.active.correct, 1);
+assert.equal(noteQuizAnswer(firstStep.record, { date: careerDailyDate, index: 0, correct: 1, total: 5 }).accepted, false);
+quizRecord = firstStep.record;
+for (let index = 1; index < QUIZ_DAILY_LENGTH; index += 1) {
+  const noted = noteQuizAnswer(quizRecord, {
+    date: careerDailyDate,
+    index,
+    correct: index === QUIZ_DAILY_LENGTH - 1 ? 4 : index,
+    total: 5,
+  });
+  assert.equal(noted.accepted, true);
+  quizRecord = noted.record;
+}
+assert.equal(quizRecord.days[careerDailyDate].correct, 4);
+assert.equal(quizRecord.days[careerDailyDate].total, 5);
+assert.equal(quizRecord.active, null);
+assert.equal(quizRunStatus(quizRecord, careerDailyDate), "complete");
+const lockedQuiz = noteQuizAnswer(quizRecord, { date: careerDailyDate, index: 0, correct: 5, total: 5 });
+assert.equal(lockedQuiz.accepted, false);
+assert.equal(lockedQuiz.record.days[careerDailyDate].correct, 4);
+
+store.clear();
+assert.equal(writeQuizDailyRecord(CAREER_DAILY_KEY, firstStep.record), true);
+const resumedQuiz = readQuizDailyRecord(CAREER_DAILY_KEY);
+assert.equal(resumedQuiz.active.index, 1);
+assert.equal(resumedQuiz.active.correct, 1);
+assert.equal(quizRunStatus(resumedQuiz, careerDailyDate), "progress");
+assert.deepEqual(buildCareerDaily(careerDailyDate), careerDailyQuestions);
+failWrite = true;
+assert.equal(writeQuizDailyRecord(CAREER_DAILY_KEY, quizRecord), false);
+failWrite = false;
+store.clear();
+
+function finishDates(dates, correct) {
+  return dates.reduce((record, date) => commitQuizResult(record, {
+    date,
+    correct,
+    total: QUIZ_DAILY_LENGTH,
+  }), emptyQuizDailyRecord());
+}
+
+const scattered = finishDates(["2026-10-01", "2026-10-03", "2026-10-10"], 2);
+assert.equal(activeQuizStreak(scattered, "2026-10-10"), 1);
+assert.equal(longestConsecutive(scattered.completedDates), 1);
+const scatteredBadges = applyModeDailyBadges({ unlocked: [] }, scattered, "2026-10-10");
+assert.deepEqual(scatteredBadges.fresh.map((badge) => badge.name), ["Daily Debut", "Daily Regular"]);
+assert.equal(scatteredBadges.state.unlocked.includes("perfect-day"), false);
+assert.equal(scatteredBadges.state.unlocked.includes("daily-streak"), false);
+
+const week = finishDates(["2026-10-04", "2026-10-05", "2026-10-06", "2026-10-07", "2026-10-08", "2026-10-09", "2026-10-10"], 5);
+assert.equal(activeQuizStreak(week, "2026-10-10"), 7);
+assert.equal(activeQuizStreak(week, "2026-10-12"), 0);
+const weekBadges = applyModeDailyBadges({ unlocked: [] }, week, "2026-10-10");
+assert.ok(weekBadges.state.unlocked.includes("perfect-day"));
+assert.ok(weekBadges.state.unlocked.includes("daily-streak"));
+assert.ok(weekBadges.state.unlocked.includes("perfect-week"));
+assert.equal(weekBadges.state.unlocked.includes("perfect-month"), false);
+assert.equal(weekBadges.state.unlocked.includes("ten-day-player"), false);
+assert.equal(weekBadges.state.unlocked.includes("monthly-master"), false);
+assert.equal(applyModeDailyBadges(weekBadges.state, week, "2026-10-10").fresh.length, 0);
+
+const monthDates = [];
+let cursor = "2026-09-11";
+for (let count = 0; count < 30; count += 1) {
+  monthDates.push(cursor);
+  cursor = nextDateKey(cursor);
+}
+assert.equal(monthDates.at(-1), "2026-10-10");
+const month = finishDates(monthDates, 3);
+const monthBadges = applyModeDailyBadges({ unlocked: [] }, month, "2026-10-10");
+assert.equal(longestConsecutive(month.completedDates), 30);
+assert.ok(monthBadges.state.unlocked.includes("monthly-master"));
+assert.ok(monthBadges.state.unlocked.includes("ten-day-player"));
+assert.ok(monthBadges.state.unlocked.includes("dedicated-fan"));
+assert.equal(monthBadges.state.unlocked.includes("perfect-day"), false);
+assert.equal(monthBadges.state.unlocked.includes("perfect-week"), false);
+assert.equal(monthBadges.state.unlocked.includes("perfect-month"), false);
+assert.equal(monthBadges.state.unlocked.includes("half-century-club"), false);
+assert.equal(monthBadges.fresh.length, 6);
+assert.equal(BADGES.some((badge) => badge.id === "daily-grinder" || badge.id === "monthly-regular"), false);
+assert.equal(BADGES.some((badge) => badge.id === "perfect-week" || badge.id === "daily-legend"), false);
+
+const higherPerfectDay = commitOfficialResult(emptyDailyRecord(), {
+  date: "2026-10-10",
+  correct: DAILY_LENGTH,
+  total: DAILY_LENGTH,
+  score: 20,
+  difficulty: "Easy",
+});
+const higherPerfectBadges = applyModeDailyBadges({ unlocked: [] }, higherPerfectDay, "2026-10-10");
+assert.ok(higherPerfectBadges.state.unlocked.includes("daily-debut"));
+assert.ok(higherPerfectBadges.state.unlocked.includes("perfect-day"));
+const higherShort = commitOfficialResult(emptyDailyRecord(), {
+  date: "2026-10-10",
+  correct: DAILY_LENGTH - 1,
+  total: DAILY_LENGTH,
+  score: 10,
+  difficulty: "Easy",
+});
+assert.equal(applyModeDailyBadges({ unlocked: [] }, higherShort, "2026-10-10").state.unlocked.includes("perfect-day"), false);
+
+function dateSpan(start, count) {
+  const dates = [];
+  let cursor = start;
+  for (let index = 0; index < count; index += 1) {
+    dates.push(cursor);
+    cursor = nextDateKey(cursor);
+  }
+  return dates;
+}
+
+const sixPerfect = finishDates(dateSpan("2026-10-05", 6), QUIZ_DAILY_LENGTH);
+assert.equal(applyModeDailyBadges({ unlocked: [] }, sixPerfect, "2026-10-10").state.unlocked.includes("perfect-week"), false);
+const perfectMonth = finishDates(dateSpan("2026-09-11", 30), QUIZ_DAILY_LENGTH);
+const perfectMonthBadges = applyModeDailyBadges({ unlocked: [] }, perfectMonth, "2026-10-10");
+assert.ok(perfectMonthBadges.state.unlocked.includes("perfect-week"));
+assert.ok(perfectMonthBadges.state.unlocked.includes("perfect-month"));
+assert.equal(modeDailyStats(perfectMonth, "2026-10-10").perfectStreak, 30);
+
+const tenDays = finishDates(dateSpan("2026-01-01", 10), 1);
+const tenStats = modeDailyStats(tenDays, "2026-01-10");
+assert.equal(tenStats.differentDays, 10);
+assert.ok(applyModeDailyBadges({ unlocked: [] }, tenDays, "2026-01-10").state.unlocked.includes("ten-day-player"));
+assert.equal(applyModeDailyBadges({ unlocked: [] }, tenDays, "2026-01-10").state.unlocked.includes("dedicated-fan"), false);
+const tenBadge = MODE_DAILY_BADGES.find((badge) => badge.id === "ten-day-player");
+const dedicatedBadge = MODE_DAILY_BADGES.find((badge) => badge.id === "dedicated-fan");
+const perfectWeekBadge = MODE_DAILY_BADGES.find((badge) => badge.id === "perfect-week");
+assert.equal(modeDailyBadgeProgress(dedicatedBadge, { unlocked: [] }, tenStats), "10 of 25 days");
+assert.equal(modeDailyBadgeProgress(tenBadge, { unlocked: ["ten-day-player"] }, tenStats), "Unlocked");
+assert.equal(modeDailyBadgeProgress(perfectWeekBadge, { unlocked: [] }, modeDailyStats(sixPerfect, "2026-10-10")), "6 of 7 days");
+
+const fifty = finishDates(dateSpan("2026-01-01", 50), 2);
+const hundred = finishDates(dateSpan("2025-01-01", 100), 2);
+const legend = finishDates(dateSpan("2025-01-01", 365), 2);
+assert.ok(applyModeDailyBadges({ unlocked: [] }, fifty, "2026-02-19").state.unlocked.includes("half-century-club"));
+assert.equal(applyModeDailyBadges({ unlocked: [] }, fifty, "2026-02-19").state.unlocked.includes("century-club"), false);
+assert.ok(applyModeDailyBadges({ unlocked: [] }, hundred, "2025-04-10").state.unlocked.includes("century-club"));
+assert.equal(applyModeDailyBadges({ unlocked: [] }, hundred, "2025-04-10").state.unlocked.includes("daily-legend"), false);
+assert.ok(applyModeDailyBadges({ unlocked: [] }, legend, "2025-12-31").state.unlocked.includes("daily-legend"));
+assert.equal(applyModeDailyBadges({ unlocked: [] }, legend, "2025-12-31").state.unlocked.includes("perfect-day"), false);
+
+function finishHigher(dates, correct) {
+  return dates.reduce((record, date) => commitOfficialResult(record, {
+    date,
+    correct,
+    total: DAILY_LENGTH,
+    score: correct,
+    difficulty: "Easy",
+  }), emptyDailyRecord());
+}
+const higherWeek = finishHigher(dateSpan("2026-10-04", 7), DAILY_LENGTH);
+const higherWeekBadges = applyModeDailyBadges({ unlocked: [] }, higherWeek, "2026-10-10");
+assert.ok(higherWeekBadges.state.unlocked.includes("perfect-week"));
+assert.equal(higherWeekBadges.state.unlocked.includes("perfect-month"), false);
+const higherImperfectWeek = finishHigher(dateSpan("2026-10-04", 7), DAILY_LENGTH - 1);
+assert.equal(applyModeDailyBadges({ unlocked: [] }, higherImperfectWeek, "2026-10-10").state.unlocked.includes("perfect-week"), false);
+assert.ok(applyModeDailyBadges({ unlocked: [] }, higherImperfectWeek, "2026-10-10").state.unlocked.includes("daily-streak"));
+
+const yearSameDay = finishDates(["2026-10-09"], 4);
+const pickSameDay = finishDates(["2026-10-09"], QUIZ_DAILY_LENGTH);
+const sameDay = mergeModeDailyRecords([yearSameDay, pickSameDay]);
+assert.deepEqual(sameDay.completedDates, ["2026-10-09"]);
+assert.equal(modeDailyStats(sameDay, "2026-10-09").differentDays, 1);
+assert.equal(modeDailyStats(sameDay, "2026-10-09").perfect, true);
+assert.equal(sameDay.days["2026-10-09"].correct, QUIZ_DAILY_LENGTH);
+const bothImperfect = mergeModeDailyRecords([
+  finishDates(["2026-10-09"], 3),
+  finishDates(["2026-10-09"], 4),
+]);
+assert.equal(modeDailyStats(bothImperfect, "2026-10-09").perfect, false);
+assert.equal(bothImperfect.days["2026-10-09"].correct, 4);
+const yearDays = finishDates(["2026-10-01", "2026-10-02"], QUIZ_DAILY_LENGTH);
+const pickDays = finishDates(["2026-10-02", "2026-10-03"], 3);
+const sharedDays = mergeModeDailyRecords([yearDays, pickDays]);
+assert.deepEqual(sharedDays.completedDates, ["2026-10-01", "2026-10-02", "2026-10-03"]);
+assert.equal(sharedDays.days["2026-10-02"].correct, QUIZ_DAILY_LENGTH);
+assert.equal(modeDailyStats(sharedDays, "2026-10-03").perfectStreak, 0);
+assert.equal(modeDailyStats(sharedDays, "2026-10-02").perfectStreak, 2);
+
+store.clear();
+writeStorage(CAREER_BEST_KEY, "12");
+writeStorage(DRAFT_BEST_KEYS.year, "9");
+writeStorage(DRAFT_BEST_KEYS.pick, "6");
+writeStorage(DRAFT_DAILY_KEYS.year, JSON.stringify(week));
+writeStorage(CAREER_DAILY_BADGE_KEY, JSON.stringify(weekBadges.state));
+assert.equal(readStoredNumber(CAREER_BEST_KEY), 12);
+assert.equal(readStoredNumber(DRAFT_BEST_KEYS.year), 9);
+assert.equal(readStoredNumber(DRAFT_BEST_KEYS.pick), 6);
+assert.equal(readCareerBadges().unlocked.includes("daily-debut"), false);
+assert.equal(readDraftBadges("year").unlocked.includes("daily-debut"), false);
+assert.equal(readDraftBadges("pick").unlocked.includes("perfect-day"), false);
+assert.ok(readModeDailyBadges(CAREER_DAILY_BADGE_KEY, week, "2026-10-10").unlocked.includes("daily-streak"));
+assert.equal(readModeDailyBadges(DRAFT_DAILY_BADGE_KEYS.year, readQuizDailyRecord(DRAFT_DAILY_KEYS.year), "2026-10-10").unlocked.includes("perfect-day"), true);
+assert.equal(readModeDailyBadges(DRAFT_DAILY_BADGE_KEYS.pick, emptyQuizDailyRecord(), "2026-10-10").unlocked.includes("daily-debut"), false);
+writeStorage(DRAFT_DAILY_BADGE_KEYS.year, JSON.stringify({ unlocked: ["daily-debut"] }));
+writeStorage(DRAFT_DAILY_BADGE_KEYS.pick, JSON.stringify({ unlocked: ["daily-regular"] }));
+const migrated = readUnlockedModeDailyBadges(DRAFT_DAILY_BADGE_KEY);
+assert.ok(migrated.unlocked.includes("daily-debut"));
+assert.ok(migrated.unlocked.includes("daily-regular"));
+const sharedDraft = syncModeDailyBadges(
+  DRAFT_DAILY_BADGE_KEY,
+  DRAFT_DAILY_KEYS.year,
+  "2026-10-10",
+  () => mergeModeDailyRecords([
+    readQuizDailyRecord(DRAFT_DAILY_KEYS.year),
+    readQuizDailyRecord(DRAFT_DAILY_KEYS.pick),
+  ]),
+);
+assert.ok(sharedDraft.unlocked.includes("perfect-day"));
+assert.ok(sharedDraft.unlocked.includes("perfect-week"));
+assert.ok(sharedDraft.unlocked.includes("daily-debut"));
+const reloaded = readUnlockedModeDailyBadges(DRAFT_DAILY_BADGE_KEY);
+assert.ok(reloaded.unlocked.includes("perfect-week"));
+assert.equal(applyModeDailyBadges(reloaded, readQuizDailyRecord(DRAFT_DAILY_KEYS.year), "2026-10-10").fresh.length, 0);
+writeStorage(HIGHER_DAILY_BADGE_KEY, JSON.stringify(higherWeekBadges.state));
+assert.ok(readUnlockedModeDailyBadges(HIGHER_DAILY_BADGE_KEY).unlocked.includes("perfect-week"));
+assert.equal(readQuizDailyRecord(CAREER_DAILY_KEY).completedDates.length, 0);
 store.clear();
 
 console.log("Gameplay checks passed.");

@@ -19,6 +19,7 @@ export default function Board({
   onPick,
   onAdvance,
   onMenu,
+  onAwards,
 }) {
   const leaderId = higherId(matchup);
   const tied = matchup.left[matchup.category.id] === matchup.right[matchup.category.id];
@@ -36,11 +37,6 @@ export default function Board({
           <span>{matchup.band.label}</span>
         </p>
         <h1>{matchup.category.question}</h1>
-        {onMenu ? (
-          <button type="button" className="lobby-link board-leave" onClick={onMenu}>
-            All Games
-          </button>
-        ) : null}
       </div>
       <div className="cards">
         <PlayerCard
@@ -69,14 +65,20 @@ export default function Board({
       </div>
       {phase === "revealing" ? (
         <RevealBar
-          matchup={matchup}
-          result={result}
           unlockedBadges={unlockedBadges}
           callout={callout}
           holdMs={holdMs}
           onAdvance={onAdvance}
         />
       ) : null}
+      <div className="career-links">
+        <button type="button" className="lobby-link" onClick={onAwards}>
+          Achievements
+        </button>
+        <button type="button" className="lobby-link" onClick={onMenu}>
+          All Games
+        </button>
+      </div>
     </section>
   );
 }

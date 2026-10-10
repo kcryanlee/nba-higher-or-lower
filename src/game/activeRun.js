@@ -2,6 +2,7 @@ import { careerPlayers } from "../data/players.js";
 import { categoryById, statGap } from "./categories.js";
 import { bandForStreak } from "./difficulty.js";
 import { draftChoices, draftPool, draftQuestion } from "./draft.js";
+import { pairKey } from "./selectMatchup.js";
 import { readJsonStorage, removeStorage, writeStorage } from "./storage.js";
 
 export const ACTIVE_RUN_KEY = "nba-active-run";
@@ -36,12 +37,18 @@ export function restoreClassicRun(players) {
   const revealing = saved.phase === "revealing"
     && (saved.result === "correct" || saved.result === "wrong" || saved.result === "push")
     && (saved.pickedId === left.id || saved.pickedId === right.id);
+  const currentKey = pairKey(category.id, left, right);
+  const usedKeys = Array.isArray(saved.usedKeys)
+    ? saved.usedKeys.filter((key) => typeof key === "string" && key.length > 0)
+    : [];
+  if (!usedKeys.includes(currentKey)) usedKeys.push(currentKey);
 
   return {
     phase: revealing ? "revealing" : "playing",
     streak: saved.streak,
     pickedId: revealing ? saved.pickedId : null,
     result: revealing ? saved.result : null,
+    usedKeys,
     matchup: {
       category,
       left,

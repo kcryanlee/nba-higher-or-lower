@@ -102,22 +102,22 @@ export function eligibleCareers(bandId) {
   return CAREERS.filter((career) => career.stops.length === 1);
 }
 
-function shuffle(items) {
+function shuffle(items, random = Math.random) {
   const copy = [...items];
   for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(Math.random() * (index + 1));
+    const swap = Math.floor(random() * (index + 1));
     [copy[index], copy[swap]] = [copy[swap], copy[index]];
   }
   return copy;
 }
 
-function pickWeighted(careers, weightOf) {
+function pickWeighted(careers, weightOf, random) {
   const bag = [];
   for (const career of careers) {
     const weight = Math.max(1, weightOf(career));
     for (let count = 0; count < weight; count += 1) bag.push(career);
   }
-  return shuffle(bag)[0];
+  return shuffle(bag, random)[0];
 }
 
 function poolFor(bandId) {
@@ -162,18 +162,18 @@ function distractorScore(answer, candidate) {
   return score;
 }
 
-function selectDistractors(answer, bandId) {
+function selectDistractors(answer, bandId, random) {
   const ranked = CAREERS.filter((career) => careerChoiceAllowed(answer, career, bandId))
     .map((career) => ({ career, score: distractorScore(answer, career) }))
     .sort((left, right) => right.score - left.score);
   const plausible = ranked.filter((item) => item.score >= 3);
   const shortlist = (plausible.length >= 3 ? plausible : ranked).slice(0, 6);
-  return shuffle(shortlist)
+  return shuffle(shortlist, random)
     .slice(0, 3)
     .map((item) => item.career);
 }
 
-function uniqueChoices(answer, distractors) {
+function uniqueChoices(answer, distractors, random) {
   const names = [];
   const seenIds = new Set([answer.id]);
   const seenNames = new Set([answer.name]);
@@ -184,17 +184,18 @@ function uniqueChoices(answer, distractors) {
     names.push(career.name);
   }
   if (names.length < 3) return null;
-  return shuffle([answer.name, ...names.slice(0, 3)]);
+  return shuffle([answer.name, ...names.slice(0, 3)], random);
 }
 
-export function selectCareerQuestion(streak, { usedIds = [] } = {}) {
-  const band = careerBand(streak);
+export function selectCareerQuestionForBand(bandId, { usedIds = [], random = Math.random } = {}) {
+  if (!LABELS[bandId]) return null;
+  const band = { id: bandId, label: LABELS[bandId] };
   const used = new Set(Array.isArray(usedIds) ? usedIds.filter((id) => Number.isInteger(id)) : []);
-  let pool = poolFor(band.id).filter((career) => !used.has(career.id));
+  let pool = poolFor(bandId).filter((career) => !used.has(career.id));
 
   while (pool.length) {
-    const answer = pickWeighted(pool, (career) => weightFor(band.id, career));
-    const choices = uniqueChoices(answer, selectDistractors(answer, band.id));
+    const answer = pickWeighted(pool, (career) => weightFor(bandId, career), random);
+    const choices = uniqueChoices(answer, selectDistractors(answer, bandId, random), random);
     if (choices) {
       return {
         band,
@@ -209,6 +210,10 @@ export function selectCareerQuestion(streak, { usedIds = [] } = {}) {
   }
 
   return null;
+}
+
+export function selectCareerQuestion(streak, options = {}) {
+  return selectCareerQuestionForBand(careerBand(streak).id, options);
 }
 
 export function formatYears(stop) {

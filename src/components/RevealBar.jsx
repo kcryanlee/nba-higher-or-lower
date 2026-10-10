@@ -2,17 +2,11 @@ import { useEffect, useRef } from "react";
 import { REVEAL_MS } from "../game/feedback.js";
 
 export default function RevealBar({
-  matchup,
-  result,
   onAdvance,
   unlockedBadges = [],
   callout = "",
   holdMs = REVEAL_MS,
 }) {
-  const { category, left, right } = matchup;
-  const correct = result === "correct";
-  const tie = result === "push" || left[category.id] === right[category.id];
-  const leftWins = !tie && left[category.id] > right[category.id];
   const onAdvanceRef = useRef(onAdvance);
 
   useEffect(() => {
@@ -24,29 +18,16 @@ export default function RevealBar({
     return () => window.clearTimeout(timer);
   }, [holdMs]);
 
+  if (!callout && unlockedBadges.length === 0) return null;
+
   return (
-    <section className={`reveal ${tie ? "is-equal" : correct ? "is-correct" : "is-wrong"}`} aria-live="polite">
+    <section className="board-notes" aria-live="polite">
       {callout ? <p className="streak-callout">{callout}</p> : null}
-      <p className="reveal-title">{tie ? "Equal" : correct ? "Correct" : "Wrong"}</p>
       {unlockedBadges.map((badge) => (
         <p key={badge.id} className="unlock">
           Badge unlocked · {badge.name}
         </p>
       ))}
-      <div className="reveal-stats">
-        <p className="reveal-player">
-          <span className="reveal-name">{left.name}</span>
-          <strong className={`reveal-value ${tie ? "is-equal" : leftWins ? "is-higher" : "is-lower"}`}>
-            {category.format(left[category.id])}
-          </strong>
-        </p>
-        <p className="reveal-player">
-          <span className="reveal-name">{right.name}</span>
-          <strong className={`reveal-value ${tie ? "is-equal" : leftWins ? "is-lower" : "is-higher"}`}>
-            {category.format(right[category.id])}
-          </strong>
-        </p>
-      </div>
     </section>
   );
 }

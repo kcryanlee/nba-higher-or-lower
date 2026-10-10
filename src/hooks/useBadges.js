@@ -2,7 +2,6 @@ import { useCallback, useRef, useState } from "react";
 import {
   BADGE_KEY,
   applyAnswer,
-  applyDailyCompletion,
   readBadgeState,
 } from "../game/badges.js";
 import { writeStorage } from "../game/storage.js";
@@ -31,11 +30,6 @@ export function useBadges() {
     save(state, unlocked);
   }, [save]);
 
-  const recordDaily = useCallback((event) => {
-    const { state, fresh: unlocked } = applyDailyCompletion(snapshotRef.current, event);
-    save(state, unlocked);
-  }, [save]);
-
   const dismiss = useCallback(() => setFresh([]), []);
   const acknowledge = useCallback(() => setCelebrate([]), []);
 
@@ -44,7 +38,6 @@ export function useBadges() {
     fresh,
     celebrate,
     recordAnswer,
-    recordDaily,
     dismiss,
     acknowledge,
   };

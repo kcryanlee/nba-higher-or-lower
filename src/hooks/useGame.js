@@ -20,6 +20,7 @@ export function useGame(players, { onAnswer } = {}) {
   const [matchup, setMatchup] = useState(restored?.matchup ?? null);
   const [pickedId, setPickedId] = useState(restored?.pickedId ?? null);
   const [result, setResult] = useState(restored?.result ?? null);
+  const [usedKeys, setUsedKeys] = useState(restored?.usedKeys ?? []);
   const locked = useRef(restored?.phase === "revealing");
   const onAnswerRef = useRef(onAnswer);
 
@@ -39,14 +40,16 @@ export function useGame(players, { onAnswer } = {}) {
         leftId: matchup.left.id,
         rightId: matchup.right.id,
         key: matchup.key,
+        usedKeys,
       });
       return;
     }
     if (phase === "start" || phase === "gameover") clearActiveRun("classic");
-  }, [phase, streak, matchup, pickedId, result]);
+  }, [phase, streak, matchup, pickedId, result, usedKeys]);
 
-  function deal(nextStreak, previousKey) {
-    const next = selectMatchup(players, nextStreak, previousKey);
+  function deal(nextStreak, blocked) {
+    const next = selectMatchup(players, nextStreak, new Set(blocked));
+    setUsedKeys(next ? [...new Set([...blocked, next.key])] : [...blocked]);
     setMatchup(next);
     setPickedId(null);
     setResult(null);
@@ -56,7 +59,7 @@ export function useGame(players, { onAnswer } = {}) {
 
   function start() {
     setStreak(0);
-    deal(0, null);
+    deal(0, []);
   }
 
   function discard() {
@@ -108,7 +111,7 @@ export function useGame(players, { onAnswer } = {}) {
     if (phase !== "revealing" || !locked.current) return;
     locked.current = false;
     if ((result === "correct" || result === "push") && matchup) {
-      deal(streak, matchup.key);
+      deal(streak, usedKeys);
       return;
     }
     setPhase("gameover");

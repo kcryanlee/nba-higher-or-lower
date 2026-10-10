@@ -76,9 +76,11 @@ function shuffleWith(list, random) {
   return copy;
 }
 
-function choosePair(matches, blocked, random, category) {
+function choosePair(matches, blocked, usedPlayers, random, category) {
   const match = matches[Math.floor(random() * matches.length)];
   blocked.add(match.key);
+  usedPlayers.add(match.first.id);
+  usedPlayers.add(match.second.id);
   const [left, right] = random() < 0.5
     ? [match.first, match.second]
     : [match.second, match.first];
@@ -93,19 +95,33 @@ function choosePair(matches, blocked, random, category) {
   };
 }
 
-function takePair(players, category, requested, blocked, random) {
+function freshPairs(matches, usedPlayers, freshOnly) {
+  if (!freshOnly) return matches;
+  return matches.filter((match) => !usedPlayers.has(match.first.id) && !usedPlayers.has(match.second.id));
+}
+
+function searchPairs(players, category, requested, blocked, usedPlayers, random, freshOnly) {
   for (let step = 0; step <= 4; step += 1) {
     const range = step === 0
       ? requested.gaps[category.id]
       : widenedRange(requested.id, category.id, step);
-    const matches = collectPairs(players, category, range, blocked);
+    const matches = freshPairs(collectPairs(players, category, range, blocked), usedPlayers, freshOnly);
     if (matches.length === 0) continue;
-    return choosePair(matches, blocked, random, category);
+    return choosePair(matches, blocked, usedPlayers, random, category);
   }
 
-  const fallback = collectPairs(players, category, { min: 0, max: Infinity }, blocked);
+  const fallback = freshPairs(
+    collectPairs(players, category, { min: 0, max: Infinity }, blocked),
+    usedPlayers,
+    freshOnly,
+  );
   if (fallback.length === 0) return null;
-  return choosePair(fallback, blocked, random, category);
+  return choosePair(fallback, blocked, usedPlayers, random, category);
+}
+
+function takePair(players, category, requested, blocked, usedPlayers, random) {
+  return searchPairs(players, category, requested, blocked, usedPlayers, random, true)
+    ?? searchPairs(players, category, requested, blocked, usedPlayers, random, false);
 }
 
 export function buildDaily(players, dateKey) {
@@ -116,8 +132,9 @@ export function buildDaily(players, dateKey) {
     const extras = shuffleWith(CATEGORIES, random).slice(0, DAILY_LENGTH - categories.length);
     categories.push(...extras);
     const blocked = new Set();
+    const usedPlayers = new Set();
     const questions = categories.map((category, index) => (
-      takePair(players, category, BANDS[SLOT_BANDS[index]], blocked, random)
+      takePair(players, category, BANDS[SLOT_BANDS[index]], blocked, usedPlayers, random)
     ));
 
     if (questions.length !== DAILY_LENGTH || questions.some((question) => !question)) return null;

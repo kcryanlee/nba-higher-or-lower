@@ -31,6 +31,9 @@ export default function CareerGame({
   onAgain,
   onMenu,
   onAwards,
+  onDaily,
+  kicker,
+  menuLabel = "All Games",
   unlockedBadges = [],
 }) {
   const onAdvanceRef = useRef(onAdvance);
@@ -58,11 +61,16 @@ export default function CareerGame({
           <button type="button" className="action" onClick={onAgain}>
             Play again
           </button>
+          {onDaily ? (
+            <button type="button" className="action secondary" onClick={onDaily}>
+              Today&apos;s Challenge
+            </button>
+          ) : null}
           <button type="button" className="action secondary" onClick={onAwards}>
             Achievements
           </button>
           <button type="button" className="action secondary" onClick={onMenu}>
-            All Games
+            {menuLabel}
           </button>
         </div>
       </section>
@@ -74,7 +82,7 @@ export default function CareerGame({
   return (
     <section className="panel career-board">
       <p className="band">
-        Career Path
+        {kicker || "Career Path"}
         <span className="score-dot" aria-hidden="true">
           {" "}
           •{" "}
@@ -126,11 +134,16 @@ export default function CareerGame({
           ))
         : null}
       <div className="career-links">
+        {onDaily ? (
+          <button type="button" className="lobby-link" onClick={onDaily}>
+            Today&apos;s Challenge
+          </button>
+        ) : null}
         <button type="button" className="lobby-link" onClick={onAwards}>
           Achievements
         </button>
         <button type="button" className="lobby-link" onClick={onMenu}>
-          All Games
+          {menuLabel}
         </button>
       </div>
     </section>

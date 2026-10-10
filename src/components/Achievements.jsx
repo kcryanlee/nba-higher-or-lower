@@ -10,14 +10,13 @@ export default function Achievements({
   catalog = BADGES,
   progressFor,
   eyebrow = "Milestones",
+  lede = "Badges stay on this device and show up the moment you earn them.",
 }) {
   return (
     <section className="panel awards">
       <p className="eyebrow">{eyebrow}</p>
       <h1 className="section-title">Achievements</h1>
-      <p className="lede">
-        Badges stay on this device and show up the moment you earn them.
-      </p>
+      {lede ? <p className="lede">{lede}</p> : null}
       <div className="award-grid">
         {catalog.map((badge) => {
           const progress = progressFor

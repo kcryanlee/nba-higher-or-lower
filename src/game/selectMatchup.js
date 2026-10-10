@@ -42,15 +42,21 @@ export function collectPairs(players, category, range, blocked = new Set()) {
   return matches;
 }
 
-export function selectMatchup(players, streak, previousKey = null) {
+function blockedKeys(usedKeys) {
+  if (usedKeys instanceof Set) return usedKeys;
+  if (typeof usedKeys === "string" && usedKeys) return new Set([usedKeys]);
+  return new Set();
+}
+
+export function selectMatchup(players, streak, usedKeys = null) {
   const band = bandForStreak(streak);
+  const blocked = blockedKeys(usedKeys);
 
   for (const category of shuffle(CATEGORIES)) {
     for (let step = 0; step <= 4; step += 1) {
       const range = step === 0
         ? band.gaps[category.id]
         : widenedRange(band.id, category.id, step);
-      const blocked = previousKey ? new Set([previousKey]) : new Set();
       const matches = collectPairs(players, category, range, blocked);
       if (matches.length === 0) continue;
 
@@ -74,13 +80,15 @@ export function selectMatchup(players, streak, previousKey = null) {
       for (let rightIndex = leftIndex + 1; rightIndex < eligible.length; rightIndex += 1) {
         const left = eligible[leftIndex];
         const right = eligible[rightIndex];
+        const key = pairKey(category.id, left, right);
+        if (blocked.has(key)) continue;
         const gap = statGap(category.id, left[category.id], right[category.id]);
         if (!(gap > 0) || left[category.id] === right[category.id]) continue;
         return {
           category,
           left,
           right,
-          key: pairKey(category.id, left, right),
+          key,
           gap,
           band,
         };
