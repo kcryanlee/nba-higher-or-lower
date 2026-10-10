@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { formatYears } from "../game/careerPath.js";
 import { BADGE_REVEAL_MS, REVEAL_MS } from "../game/feedback.js";
 import { teamLogoUrl } from "../game/teams.js";
+import EndActions from "./EndActions.jsx";
+import ScoreCard from "./ScoreCard.jsx";
 
 function CareerStop({ stop, bandId }) {
   const [failed, setFailed] = useState(false);
@@ -51,28 +53,22 @@ export default function CareerGame({
 
   if (phase === "gameover") {
     return (
-      <section className="panel career-over">
-        <p className="eyebrow">Career Path</p>
-        <h1 className="section-title">{streak}</h1>
-        <p className="streak-label">Win streak</p>
-        <p className="badge">Best {best}</p>
-        <p className="lede">The player was {question.answer}.</p>
-        <div className="actions">
-          <button type="button" className="action" onClick={onAgain}>
-            Play again
-          </button>
-          {onDaily ? (
-            <button type="button" className="action secondary" onClick={onDaily}>
-              Today&apos;s Challenge
-            </button>
-          ) : null}
-          <button type="button" className="action secondary" onClick={onAwards}>
-            Achievements
-          </button>
-          <button type="button" className="action secondary" onClick={onMenu}>
-            {menuLabel}
-          </button>
-        </div>
+      <section className="panel game-over">
+        <ScoreCard
+          title="Career Path"
+          streak={streak}
+          best={best}
+          detail={`The player was ${question.answer}.`}
+        />
+        <EndActions
+          title="Career Path"
+          streak={streak}
+          best={best}
+          fileName="nba-career-path.png"
+          onAgain={onAgain}
+          onAwards={onAwards}
+          onMenu={onMenu}
+        />
       </section>
     );
   }

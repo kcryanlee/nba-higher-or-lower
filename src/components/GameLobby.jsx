@@ -45,7 +45,7 @@ export default function GameLobby({
           <span>{dailyLine}</span>
           {dailyStreak > 0 ? (
             <strong>
-              {dailyStreak}-day daily streak
+              🔥 {dailyStreak}-day daily streak
             </strong>
           ) : (
             <strong>Same five questions for everyone today</strong>

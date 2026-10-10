@@ -809,6 +809,11 @@ h1.section-title {
   margin-top: 8px;
 }
 
+.game-over .actions {
+  width: min(520px, 100%);
+  justify-content: center;
+}
+
 .actions .action {
   margin-top: 0;
 }
@@ -907,6 +912,11 @@ h1.section-title {
 .reached {
   letter-spacing: 0.16em;
   font-size: 1.15rem;
+}
+
+.score-card .reached {
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .badge {

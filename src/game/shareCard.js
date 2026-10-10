@@ -2,15 +2,14 @@ export function gameLink() {
   return `${window.location.origin}${window.location.pathname}`;
 }
 
-export function shareMessage({ streak, difficulty, best, link }) {
+export function shareMessage({ title, streak, best, detail, link }) {
   const lines = [
-    "🏀 NBA HIGHER OR LOWER",
+    `🏀 ${title.toUpperCase()}`,
     `🔥 ${streak} WIN STREAK`,
     `🏆 BEST ${best}`,
-    `DIFFICULTY: ${difficulty.toUpperCase()}`,
-    "Think you know the NBA better than me?",
-    `Beat my streak → ${link}`,
   ];
+  if (detail) lines.push(detail.toUpperCase());
+  lines.push("Think you know the NBA better than me?", `Beat my streak → ${link}`);
   return lines.join("\n");
 }
 
@@ -45,11 +44,17 @@ function drawStreakMark(ctx, streak, x, y) {
   ctx.fillText(number, cursor, y);
 }
 
-export async function renderShareCard({ streak, difficulty, best }) {
+export async function renderShareCard({
+  title,
+  streak,
+  best,
+  detail,
+  fileName = "nba-higher-or-lower.png",
+}) {
   await document.fonts.ready;
 
   const width = 900;
-  const height = 1120;
+  const height = 1200;
   const canvas = document.createElement("canvas");
   canvas.width = width * 2;
   canvas.height = height * 2;
@@ -68,21 +73,32 @@ export async function renderShareCard({ streak, difficulty, best }) {
   ctx.stroke();
 
   const mid = width / 2;
-  centerText(ctx, "NBA HIGHER OR LOWER", mid, 168, "600 42px Oswald, Impact, sans-serif", "#f4efe4");
+  centerText(ctx, title.toUpperCase(), mid, 168, "600 42px Oswald, Impact, sans-serif", "#f4efe4");
   drawStreakMark(ctx, streak, mid, 360);
   centerText(ctx, "WIN STREAK", mid, 470, "500 36px Oswald, Impact, sans-serif", "#d7c8b2");
   centerText(ctx, `🏆  BEST ${best}`, mid, 620, "600 40px Oswald, Impact, sans-serif", "#ffb15a");
-  centerText(
-    ctx,
-    `DIFFICULTY: ${difficulty.toUpperCase()}`,
-    mid,
-    700,
-    "600 40px Oswald, Impact, sans-serif",
-    "#f4efe4",
-  );
+  if (detail) {
+    centerText(
+      ctx,
+      detail.toUpperCase(),
+      mid,
+      700,
+      "600 40px Oswald, Impact, sans-serif",
+      "#f4efe4",
+    );
+  }
   centerText(ctx, "CAN YOU BEAT MY STREAK?", mid, 900, "600 34px Oswald, Impact, sans-serif", "#f4efe4");
   centerText(ctx, "PLAY NOW  →", mid, 990, "600 36px Oswald, Impact, sans-serif", "#ff7a1a");
+  centerText(ctx, "NBA Mini Games", mid, 1088, "500 22px Oswald, Impact, sans-serif", "rgba(244, 239, 228, 0.72)");
+  centerText(
+    ctx,
+    "nba-minigames-hub.vercel.app",
+    mid,
+    1124,
+    "500 18px Barlow, Segoe UI, sans-serif",
+    "rgba(183, 170, 152, 0.9)",
+  );
 
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-  return new File([blob], "nba-higher-or-lower.png", { type: "image/png" });
+  return new File([blob], fileName, { type: "image/png" });
 }

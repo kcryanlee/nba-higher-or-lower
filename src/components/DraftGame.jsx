@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { approvedPlayerImage, playerImageUrl } from "../data/playerMedia.js";
-import { draftModeLabel, draftPrompt, formatDraftChoice, formatDraftFact, formatDraftReveal } from "../game/draft.js";
+import { draftModeLabel, draftPrompt, formatDraftChoice, formatDraftReveal } from "../game/draft.js";
 import { teamColors, teamLogoUrl } from "../game/teams.js";
+import EndActions from "./EndActions.jsx";
+import ScoreCard from "./ScoreCard.jsx";
 
 function PlayerSilhouette() {
   return (
@@ -84,32 +86,22 @@ export default function DraftGame({
   if ((phase === "gameover" || phase === "cleared") && question) {
     const cleared = phase === "cleared";
     return (
-      <section className="panel draft-over">
-        <p className="eyebrow">{cleared ? "Round complete" : label}</p>
-        <h1 className="section-title">{streak}</h1>
-        <p className="streak-label">Win streak</p>
-        <p className="badge">Best {best}</p>
-        <p className="lede">
-          {cleared
-            ? `That's every player available for ${label}.`
-            : formatDraftFact(question.name, mode, question.answer)}
-        </p>
-        <div className="actions">
-          <button type="button" className="action" onClick={onAgain}>
-            Play again
-          </button>
-          {onDaily ? (
-            <button type="button" className="action secondary" onClick={onDaily}>
-              Today&apos;s Challenge
-            </button>
-          ) : null}
-          <button type="button" className="action secondary" onClick={onAwards}>
-            Achievements
-          </button>
-          <button type="button" className="action secondary" onClick={onMenu}>
-            {menuLabel}
-          </button>
-        </div>
+      <section className="panel game-over">
+        <ScoreCard
+          title="Draft Pick"
+          streak={streak}
+          best={best}
+          detail={cleared ? `That's every player available for ${label}.` : null}
+        />
+        <EndActions
+          title="Draft Pick"
+          streak={streak}
+          best={best}
+          fileName="nba-draft-pick.png"
+          onAgain={onAgain}
+          onAwards={onAwards}
+          onMenu={onMenu}
+        />
       </section>
     );
   }
