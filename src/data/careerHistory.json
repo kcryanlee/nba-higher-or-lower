@@ -1481,6 +1481,11 @@
         "team": "Cleveland Cavaliers",
         "start": 2026,
         "end": 2026
+      },
+      {
+        "team": "Charlotte Hornets",
+        "start": 2026,
+        "end": 2027
       }
     ]
   },
@@ -2286,11 +2291,6 @@
         "team": "Atlanta Hawks",
         "start": 2022,
         "end": 2024
-      },
-      {
-        "team": "Washington Wizards",
-        "start": 2024,
-        "end": 2025
       },
       {
         "team": "New Orleans Pelicans",
