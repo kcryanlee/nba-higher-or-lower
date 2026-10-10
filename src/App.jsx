@@ -212,6 +212,20 @@ export default function App() {
     setScreen("daily");
   }
 
+  function practiceCareerDaily() {
+    if (!careerDaily.available) return;
+    careerDailyBadges.dismiss();
+    careerDaily.start(true);
+    setScreen("career-daily");
+  }
+
+  function practiceDraftDaily() {
+    if (!draftDaily.available) return;
+    draftDailyBadges.dismiss();
+    draftDaily.start(true);
+    setScreen("draft-daily");
+  }
+
   function leaveClassic() {
     game.discard();
     setScreen("hub");
@@ -283,6 +297,12 @@ export default function App() {
         <p className="brand">NBA Mini Games</p>
         {careerDailyLive ? (
           <p className="scoreboard">
+            {careerDaily.practice ? <span>Practice</span> : null}
+            {careerDaily.practice ? (
+              <span className="score-dot" aria-hidden="true">
+                •
+              </span>
+            ) : null}
             <span>
               Question <strong>{Math.min(careerDaily.index + 1, careerDaily.total)}</strong>
               {" / "}
@@ -301,6 +321,12 @@ export default function App() {
           </p>
         ) : draftDailyLive ? (
           <p className="scoreboard">
+            {draftDaily.practice ? <span>Practice</span> : null}
+            {draftDaily.practice ? (
+              <span className="score-dot" aria-hidden="true">
+                •
+              </span>
+            ) : null}
             <span>
               Question <strong>{Math.min(draftDaily.index + 1, draftDaily.total)}</strong>
               {" / "}
@@ -567,12 +593,10 @@ export default function App() {
 
         {screen === "career-daily" && careerDaily.phase === "results" && careerDaily.attempt ? (
           <QuizDailyScore
-            eyebrow="Career Path Daily"
             attempt={careerDaily.attempt}
             unlockedBadges={careerDailyBadges.fresh}
+            onPractice={practiceCareerDaily}
             onAwards={() => openCareerDailyAwards("career-daily")}
-            onBack={leaveCareerDaily}
-            backLabel="Career Path"
             onMenu={() => {
               careerDaily.leave();
               careerDailyBadges.dismiss();
@@ -632,12 +656,10 @@ export default function App() {
 
         {screen === "draft-daily" && draftDaily.phase === "results" && draftDaily.attempt ? (
           <QuizDailyScore
-            eyebrow={`${draftDailyTitle(draftLobbyMode)} Daily`}
             attempt={draftDaily.attempt}
             unlockedBadges={draftDailyBadges.fresh}
+            onPractice={practiceDraftDaily}
             onAwards={() => openDraftDailyAwards("draft-daily")}
-            onBack={leaveDraftDaily}
-            backLabel={draftDailyTitle(draftLobbyMode)}
             onMenu={() => {
               draftDaily.leave();
               draftDailyBadges.dismiss();

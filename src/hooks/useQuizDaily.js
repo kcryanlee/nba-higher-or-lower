@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { formatDailyDate, todayKey } from "../game/daily.js";
+import { accuracyFor, formatDailyDate, todayKey } from "../game/daily.js";
 import { playBuzzer } from "../game/feedback.js";
 import {
   activeQuizStreak,
@@ -35,10 +35,12 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete } = {}) {
   const [choice, setChoice] = useState(null);
   const [result, setResult] = useState(null);
   const [attempt, setAttempt] = useState(null);
+  const [practice, setPractice] = useState(false);
   const date = phase === "playing" || phase === "revealing" ? puzzleDate : today;
   const onCompleteRef = useRef(onComplete);
   const recordRef = useRef(record);
   const locked = useRef(false);
+  const practiceRef = useRef(false);
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
@@ -61,15 +63,23 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete } = {}) {
   const official = record.days[today] ?? null;
   const active = !official && record.active?.date === today ? record.active : null;
 
-  function present(saved, runDate) {
+  function present(saved, runDate, source = null) {
     const day = saved.days[runDate];
-    if (!day) return null;
+    const correct = source?.correct ?? day?.correct;
+    const total = source?.total ?? day?.total;
+    if (correct == null || !total) return null;
     return {
       date: runDate,
       dateLabel: formatDailyDate(runDate),
-      correct: day.correct,
-      total: day.total,
+      correct,
+      total,
+      accuracy: accuracyFor(correct, total),
       streak: activeQuizStreak(saved, runDate),
+      bestCorrect: quizBestCorrect(saved),
+      bestTotal: QUIZ_DAILY_LENGTH,
+      practice: Boolean(source?.practice),
+      officialCorrect: day?.correct ?? correct,
+      officialTotal: day?.total ?? total,
     };
   }
 
@@ -85,7 +95,7 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete } = {}) {
     }
   }
 
-  function start() {
+  function start(nextPractice = false) {
     if (!available) return;
     const runDate = todayKey();
     const saved = recordRef.current;
@@ -93,11 +103,15 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete } = {}) {
     setPuzzleDate(runDate);
     setChoice(null);
     setResult(null);
-    if (saved.days[runDate]) {
+    if (!nextPractice && saved.days[runDate]) {
+      practiceRef.current = false;
+      setPractice(false);
       finish(saved, runDate);
       return;
     }
-    const run = saved.active?.date === runDate ? saved.active : null;
+    const run = !nextPractice && saved.active?.date === runDate ? saved.active : null;
+    practiceRef.current = Boolean(nextPractice);
+    setPractice(Boolean(nextPractice));
     setIndex(run ? run.index : 0);
     setCorrectCount(run ? run.correct : 0);
     setAttempt(null);
@@ -106,6 +120,8 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete } = {}) {
 
   function leave() {
     locked.current = false;
+    practiceRef.current = false;
+    setPractice(false);
     setChoice(null);
     setResult(null);
     setPhase("idle");
@@ -119,6 +135,16 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete } = {}) {
 
     const correct = nextChoice === question.answer;
     const nextCorrect = correct ? correctCount + 1 : correctCount;
+
+    if (practiceRef.current) {
+      if (!correct) playBuzzer();
+      if (correct) setCorrectCount(nextCorrect);
+      setChoice(nextChoice);
+      setResult(correct ? "correct" : "wrong");
+      setPhase("revealing");
+      return;
+    }
+
     let noted = null;
     try {
       noted = noteQuizAnswer(recordRef.current, {
@@ -158,6 +184,17 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete } = {}) {
       return;
     }
 
+    if (practiceRef.current) {
+      const saved = recordRef.current;
+      setAttempt(present(saved, date, {
+        correct: correctCount,
+        total: QUIZ_DAILY_LENGTH,
+        practice: true,
+      }));
+      setPhase("results");
+      return;
+    }
+
     let saved = recordRef.current;
     if (!saved.days[date]) {
       const noted = noteQuizAnswer(saved, {
@@ -183,6 +220,7 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete } = {}) {
     choice,
     result,
     attempt,
+    practice,
     available,
     official,
     active,
