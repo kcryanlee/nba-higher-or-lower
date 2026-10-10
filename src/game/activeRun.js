@@ -1,6 +1,7 @@
 import { careerPlayers } from "../data/players.js";
 import { categoryById, statGap } from "./categories.js";
 import { bandForStreak } from "./difficulty.js";
+import { draftChoices, draftPool, draftQuestion } from "./draft.js";
 import { readJsonStorage, removeStorage, writeStorage } from "./storage.js";
 
 export const ACTIVE_RUN_KEY = "nba-active-run";
@@ -8,7 +9,7 @@ export const ACTIVE_RUN_KEY = "nba-active-run";
 export function readActiveRun() {
   const saved = readJsonStorage(ACTIVE_RUN_KEY);
   if (!saved || (saved.phase !== "playing" && saved.phase !== "revealing")) return null;
-  if (saved.game !== "classic" && saved.game !== "career") return null;
+  if (saved.game !== "classic" && saved.game !== "career" && saved.game !== "draft") return null;
   if (!Number.isInteger(saved.streak) || saved.streak < 0) return null;
   return saved;
 }
@@ -90,8 +91,50 @@ export function restoreCareerRun() {
   };
 }
 
+export function restoreDraftRun(players) {
+  const saved = readActiveRun();
+  if (!saved || saved.game !== "draft" || !Array.isArray(players)) return null;
+  if (saved.mode !== "year" && saved.mode !== "pick") return null;
+  if (!Number.isInteger(saved.playerId)) return null;
+
+  const player = draftPool(players, saved.mode).find((item) => item.id === saved.playerId);
+  if (!player) return null;
+
+  const usedIds = Array.isArray(saved.usedIds)
+    ? saved.usedIds.filter((id) => Number.isInteger(id))
+    : [];
+  if (!usedIds.includes(player.id)) usedIds.push(player.id);
+
+  const answer = saved.mode === "year" ? player.draftYear : player.draftPick;
+  const savedChoices = Array.isArray(saved.choices)
+    && saved.choices.length === 4
+    && new Set(saved.choices).size === 4
+    && saved.choices.every((value) => Number.isInteger(value))
+    && saved.choices.includes(answer)
+    ? saved.choices
+    : draftChoices(players, saved.mode, answer);
+  if (savedChoices.length !== 4) return null;
+
+  const question = { ...draftQuestion(player, saved.mode), choices: savedChoices };
+  const revealing = saved.phase === "revealing"
+    && (saved.result === "correct" || saved.result === "wrong")
+    && Number.isInteger(saved.guess)
+    && question.choices.includes(saved.guess);
+
+  return {
+    phase: revealing ? "revealing" : "playing",
+    mode: saved.mode,
+    streak: saved.streak,
+    guess: revealing ? saved.guess : null,
+    result: revealing ? saved.result : null,
+    question,
+    usedIds,
+  };
+}
+
 export function openingScreen(players) {
   if (restoreClassicRun(players)) return "classic";
   if (restoreCareerRun()) return "career";
+  if (restoreDraftRun(players)) return "draft";
   return "hub";
 }

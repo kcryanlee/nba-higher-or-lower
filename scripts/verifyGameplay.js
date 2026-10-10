@@ -23,7 +23,9 @@ import { readJsonStorage, writeStorage } from "../src/game/storage.js";
 import { players, careerPlayers } from "../src/data/players.js";
 import { careerChoiceAllowed, eligibleCareers, selectCareerQuestion } from "../src/game/careerPath.js";
 import { collectPairs } from "../src/game/selectMatchup.js";
-import { openingScreen, readActiveRun, restoreCareerRun, writeActiveRun } from "../src/game/activeRun.js";
+import { openingScreen, readActiveRun, restoreCareerRun, restoreDraftRun, writeActiveRun } from "../src/game/activeRun.js";
+import { DRAFT_BEST_KEYS, draftPool, ordinal, parseDraftAnswer, selectDraftQuestion, usableDraftYear } from "../src/game/draft.js";
+import { DRAFT_BADGE_KEYS, DRAFT_BADGES, applyDraftStreak, readDraftBadges } from "../src/game/draftBadges.js";
 import { useDaily } from "../src/hooks/useDaily.js";
 
 const store = new Map();
@@ -220,7 +222,54 @@ assert.ok(threesPairs.every((pair) => pair.first.threes > 0 && pair.second.three
 const duren = players.find((player) => player.name === "Jalen Duren");
 assert.equal(duren.threes, 0);
 assert.equal(duren.tpPct, 0);
-assert.equal(players.some((player) => Number.isInteger(player.draftYear) && Number.isInteger(player.draftPick)), false);
+const undrafted = players
+  .filter((player) => player.draftYear == null && player.draftPick == null)
+  .map((player) => player.name)
+  .sort();
+assert.deepEqual(undrafted, ["Austin Reaves", "Naji Marshall"]);
+assert.equal(draftPool(players, "year").length, players.length - undrafted.length);
+assert.equal(draftPool(players, "pick").length, players.length - undrafted.length);
+assert.equal(draftPool(players, "year").some((player) => player.name === "Austin Reaves"), false);
+assert.equal(usableDraftYear({ draftYear: 2009 }, new Date(2026, 9, 10)), true);
+assert.equal(usableDraftYear({ draftYear: 2099 }, new Date(2026, 9, 10)), false);
+assert.equal(draftPool([{ id: 1, name: "Year Only", draftYear: 2010, draftPick: null }], "pick").length, 0);
+assert.equal(parseDraftAnswer("year", "2009"), 2009);
+assert.equal(parseDraftAnswer("year", " 2011 "), 2011);
+assert.equal(parseDraftAnswer("year", "209"), null);
+assert.equal(parseDraftAnswer("year", "20090"), null);
+assert.equal(parseDraftAnswer("pick", "1"), 1);
+assert.equal(parseDraftAnswer("pick", "1st"), 1);
+assert.equal(parseDraftAnswer("pick", "2nd"), 2);
+assert.equal(parseDraftAnswer("pick", "3rd"), 3);
+assert.equal(parseDraftAnswer("pick", "11th"), 11);
+assert.equal(parseDraftAnswer("pick", "21st"), 21);
+assert.equal(parseDraftAnswer("pick", " 22nd "), 22);
+assert.equal(parseDraftAnswer("pick", "first"), null);
+assert.equal(parseDraftAnswer("pick", "1st overall"), null);
+assert.equal(ordinal(1), "1st");
+assert.equal(ordinal(2), "2nd");
+assert.equal(ordinal(3), "3rd");
+assert.equal(ordinal(4), "4th");
+assert.equal(ordinal(11), "11th");
+assert.equal(ordinal(12), "12th");
+assert.equal(ordinal(13), "13th");
+assert.equal(ordinal(21), "21st");
+assert.equal(ordinal(22), "22nd");
+assert.equal(ordinal(23), "23rd");
+const seenDraft = [];
+while (seenDraft.length < 200) {
+  const question = selectDraftQuestion(players, "pick", seenDraft, () => 0);
+  if (!question) break;
+  assert.equal(seenDraft.includes(question.id), false);
+  assert.equal(question.answer, players.find((player) => player.id === question.id).draftPick);
+  assert.equal(question.choices.length, 4);
+  assert.equal(new Set(question.choices).size, 4);
+  assert.ok(question.choices.includes(question.answer));
+  seenDraft.push(question.id);
+}
+assert.equal(seenDraft.length, draftPool(players, "pick").length);
+assert.equal(selectDraftQuestion(players, "pick", seenDraft), null);
+assert.equal(selectDraftQuestion(players, "year", draftPool(players, "year").map((player) => player.id)), null);
 
 store.clear();
 writeActiveRun({
@@ -294,6 +343,55 @@ assert.ok(refreshed.usedIds.includes(firstCareer.answerId));
 assert.ok(refreshed.usedIds.includes(secondCareer.answerId));
 const afterRefresh = selectCareerQuestion(refreshed.streak, { usedIds: refreshed.usedIds });
 assert.equal(refreshed.usedIds.includes(afterRefresh.answerId), false);
+store.clear();
+
+const firstDraft = selectDraftQuestion(players, "year", [], () => 0);
+writeActiveRun({
+  game: "draft",
+  mode: "year",
+  phase: "playing",
+  streak: 2,
+  guess: "",
+  result: null,
+  playerId: firstDraft.id,
+  usedIds: [firstDraft.id],
+});
+assert.equal(openingScreen(players), "draft");
+const restoredDraft = restoreDraftRun(players);
+assert.equal(restoredDraft.question.id, firstDraft.id);
+assert.equal(restoredDraft.question.answer, firstDraft.answer);
+assert.equal(restoredDraft.usedIds.includes(firstDraft.id), true);
+assert.equal(restoredDraft.question.choices.length, 4);
+assert.ok(restoredDraft.question.choices.includes(restoredDraft.question.answer));
+const nextDraft = selectDraftQuestion(players, "year", restoredDraft.usedIds, () => 0);
+assert.notEqual(nextDraft.id, firstDraft.id);
+store.clear();
+
+const yearQuestion = selectDraftQuestion(players, "year", [], () => 0.2);
+assert.equal(yearQuestion.choices.length, 4);
+assert.ok(yearQuestion.choices.every((choice) => Number.isInteger(choice) && choice >= 1947 && choice <= 2026));
+const sameDraft = selectDraftQuestion(players, "year", [], () => 0);
+assert.notEqual(selectDraftQuestion(players, "year", [sameDraft.id], () => 0).id, sameDraft.id);
+assert.equal(selectDraftQuestion(players, "year", [], () => 0).id, sameDraft.id);
+
+let draftState = { unlocked: [] };
+const firstBadge = applyDraftStreak(draftState, 1);
+assert.equal(firstBadge.fresh[0].name, "First Pick");
+assert.equal(applyDraftStreak(firstBadge.state, 1).fresh.length, 0);
+const boardBadge = applyDraftStreak(firstBadge.state, 5);
+assert.equal(boardBadge.fresh[0].name, "On the Board");
+assert.equal(applyDraftStreak({ unlocked: [] }, 30).fresh.some((badge) => badge.name === "No. 1 Pick"), false);
+const allBadges = applyDraftStreak({ unlocked: [] }, 50);
+assert.equal(allBadges.fresh.length, DRAFT_BADGES.length);
+assert.equal(allBadges.fresh.at(-1).name, "Hall of Fame");
+assert.equal(applyDraftStreak(allBadges.state, 50).fresh.length, 0);
+writeStorage(DRAFT_BADGE_KEYS.year, JSON.stringify(boardBadge.state));
+writeStorage(DRAFT_BEST_KEYS.year, "10");
+const savedYearBadges = readDraftBadges("year");
+assert.ok(savedYearBadges.unlocked.includes("first-pick"));
+assert.ok(savedYearBadges.unlocked.includes("draft-expert"));
+assert.equal(savedYearBadges.unlocked.includes("hall-of-fame"), false);
+assert.equal(readDraftBadges("pick").unlocked.length, 0);
 store.clear();
 
 console.log("Gameplay checks passed.");

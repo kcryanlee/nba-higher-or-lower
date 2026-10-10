@@ -1,4 +1,5 @@
 import { players } from "../data/players.js";
+import { draftPool } from "../game/draft.js";
 
 const GAMES = [
   {
@@ -16,8 +17,8 @@ const GAMES = [
   {
     id: "draft",
     name: "Draft Pick",
-    detail: "Guess where a player was selected.",
-    ready: false,
+    detail: "Guess the draft year or the overall pick.",
+    ready: true,
   },
   {
     id: "scored",
@@ -33,17 +34,17 @@ const GAMES = [
   },
 ];
 
-function draftHasAnswers(roster) {
-  return roster.some((player) => Number.isInteger(player.draftYear) && Number.isInteger(player.draftPick));
-}
-
-function listedReady(game) {
-  if (game.id === "draft") return game.ready && draftHasAnswers(players);
+function listedReady(game, modes) {
+  if (game.id === "draft") return game.ready && (modes.year || modes.pick);
   return game.ready;
 }
 
-export default function HubScreen({ onHigher, onCareer }) {
+export default function HubScreen({ onHigher, onCareer, onDraftYear, onDraftPick }) {
   const actions = { higher: onHigher, career: onCareer };
+  const draftModes = {
+    year: draftPool(players, "year").length > 0,
+    pick: draftPool(players, "pick").length > 0,
+  };
 
   return (
     <section className="panel hub">
@@ -52,10 +53,23 @@ export default function HubScreen({ onHigher, onCareer }) {
       <p className="lede">Test how well you really know basketball.</p>
       <div className="hub-grid">
         {GAMES.map((game) => (
-          <article key={game.id} className={`hub-card ${listedReady(game) ? "" : "is-soon"}`}>
+          <article key={game.id} className={`hub-card ${listedReady(game, draftModes) ? "" : "is-soon"}`}>
             <h2>{game.name}</h2>
             <p>{game.detail}</p>
-            {listedReady(game) ? (
+            {game.id === "draft" && listedReady(game, draftModes) ? (
+              <div className="hub-modes">
+                {draftModes.year ? (
+                  <button type="button" className="action" onClick={onDraftYear}>
+                    Draft Year
+                  </button>
+                ) : null}
+                {draftModes.pick ? (
+                  <button type="button" className="action" onClick={onDraftPick}>
+                    Draft Pick
+                  </button>
+                ) : null}
+              </div>
+            ) : listedReady(game, draftModes) ? (
               <button type="button" className="action" onClick={actions[game.id]}>
                 Play
               </button>

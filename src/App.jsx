@@ -4,6 +4,7 @@ import Achievements from "./components/Achievements.jsx";
 import Board from "./components/Board.jsx";
 import CareerGame from "./components/CareerGame.jsx";
 import DailyScore from "./components/DailyScore.jsx";
+import DraftGame from "./components/DraftGame.jsx";
 import GameOver from "./components/GameOver.jsx";
 import HubScreen from "./components/HubScreen.jsx";
 import StartScreen from "./components/StartScreen.jsx";
@@ -11,17 +12,16 @@ import { dataDisclaimer, dataSeasonLine } from "./data/dataConfig.js";
 import { players } from "./data/players.js";
 import { openingScreen } from "./game/activeRun.js";
 import { CAREER_BADGES, careerBadgeProgress } from "./game/careerBadges.js";
+import { DRAFT_BADGES, draftBadgeProgress } from "./game/draftBadges.js";
+import { draftModeLabel } from "./game/draft.js";
 import { BADGE_REVEAL_MS, MILESTONE_MS, REVEAL_MS, milestoneBanner, streakCallout } from "./game/feedback.js";
 import { useBadges } from "./hooks/useBadges.js";
 import { useCareer } from "./hooks/useCareer.js";
 import { useCareerBadges } from "./hooks/useCareerBadges.js";
 import { useDaily } from "./hooks/useDaily.js";
+import { useDraft } from "./hooks/useDraft.js";
+import { useDraftBadges } from "./hooks/useDraftBadges.js";
 import { useGame } from "./hooks/useGame.js";
-
-function confirmLeave(active) {
-  if (!active) return true;
-  return window.confirm("Leave this game? Your current run will be lost.");
-}
 
 export default function App() {
   const [screen, setScreen] = useState(() => openingScreen(players));
@@ -34,6 +34,8 @@ export default function App() {
   });
   const careerBadges = useCareerBadges();
   const career = useCareer({ onCorrect: careerBadges.recordStreak });
+  const draftBadges = useDraftBadges();
+  const draft = useDraft(players, { onCorrect: draftBadges.recordStreak });
 
   function openAwards(from) {
     setAwardsReturn(from);
@@ -44,6 +46,17 @@ export default function App() {
     careerBadges.dismiss();
     career.start();
     setScreen("career");
+  }
+
+  function playDraft(mode) {
+    draftBadges.dismiss();
+    if (!draft.start(mode)) return;
+    setScreen("draft");
+  }
+
+  function advanceDraft() {
+    draftBadges.dismiss();
+    draft.advance();
   }
 
   function advanceCareer() {
@@ -79,16 +92,17 @@ export default function App() {
   }
 
   function leaveClassic() {
-    const active = game.phase === "playing" || game.phase === "revealing";
-    if (!confirmLeave(active)) return;
     game.discard();
     setScreen("hub");
   }
 
   function leaveCareer() {
-    const active = career.phase === "playing" || career.phase === "revealing";
-    if (!confirmLeave(active)) return;
     career.discard();
+    setScreen("hub");
+  }
+
+  function leaveDraft() {
+    draft.discard();
     setScreen("hub");
   }
 
@@ -109,8 +123,13 @@ export default function App() {
 
   const classicLive = screen === "classic" && (game.phase === "playing" || game.phase === "revealing");
   const careerLive = career.phase === "playing" || career.phase === "revealing";
+  const draftSurface = screen === "draft" || screen === "draft-awards";
+  const draftLive = draftSurface && (draft.phase === "playing" || draft.phase === "revealing");
+  const draftWrong = screen === "draft" && draftLive && draft.result === "wrong";
   const dailyLive = screen === "daily" && (daily.phase === "playing" || daily.phase === "revealing");
-  const wrongFlash = (classicLive && game.result === "wrong") || (dailyLive && daily.result === "wrong");
+  const wrongFlash = (classicLive && game.result === "wrong")
+    || (dailyLive && daily.result === "wrong")
+    || draftWrong;
   const milestone =
     classicLive && game.result === "correct" ? milestoneBanner(game.streak) : "";
 
@@ -171,6 +190,24 @@ export default function App() {
           <p className="scoreboard">
             <span>Pick a game</span>
           </p>
+        ) : draftLive ? (
+          <p className="scoreboard">
+            <span>
+              Streak <strong>{draft.streak}</strong>
+            </span>
+            <span className="score-dot" aria-hidden="true">
+              •
+            </span>
+            <span>
+              Best <strong>{draft.best}</strong>
+            </span>
+          </p>
+        ) : draftSurface ? (
+          <p className="scoreboard">
+            <span>
+              Best <strong>{draft.best}</strong>
+            </span>
+          </p>
         ) : classicLive ? (
           <p className="scoreboard">
             <span>
@@ -193,7 +230,14 @@ export default function App() {
       </header>
 
       <main className="frame">
-        {screen === "hub" ? <HubScreen onHigher={() => setScreen("menu")} onCareer={playCareer} /> : null}
+        {screen === "hub" ? (
+          <HubScreen
+            onHigher={() => setScreen("menu")}
+            onCareer={playCareer}
+            onDraftYear={() => playDraft("year")}
+            onDraftPick={() => playDraft("pick")}
+          />
+        ) : null}
 
         {screen === "menu" ? (
           <StartScreen
@@ -206,6 +250,39 @@ export default function App() {
             onDaily={openDaily}
             onAwards={() => openAwards("menu")}
             onHub={() => setScreen("hub")}
+          />
+        ) : null}
+
+        {screen === "draft" ? (
+          <DraftGame
+            phase={draft.phase}
+            mode={draft.mode}
+            streak={draft.streak}
+            best={draft.best}
+            question={draft.question}
+            result={draft.result}
+            guess={draft.guess}
+            unlockedBadges={draftBadges.freshMode === draft.mode ? draftBadges.fresh : []}
+            onSubmit={draft.submit}
+            onAdvance={advanceDraft}
+            onAgain={() => playDraft(draft.mode)}
+            onAwards={() => setScreen("draft-awards")}
+            onMenu={leaveDraft}
+          />
+        ) : null}
+
+        {screen === "draft-awards" && (draft.mode === "year" || draft.mode === "pick") ? (
+          <Achievements
+            badges={draftBadges.snapshots[draft.mode]}
+            best={draft.best}
+            celebrate={draftBadges.celebrate[draft.mode]}
+            catalog={DRAFT_BADGES}
+            progressFor={(badge) => draftBadgeProgress(badge, draftBadges.snapshots[draft.mode], draft.best)}
+            eyebrow={draftModeLabel(draft.mode)}
+            onBack={() => {
+              draftBadges.acknowledge(draft.mode);
+              setScreen("draft");
+            }}
           />
         ) : null}
 
