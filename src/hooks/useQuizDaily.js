@@ -11,21 +11,23 @@ import {
   writeQuizDailyRecord,
 } from "../game/quizDaily.js";
 
-function questionReady(question, choiceCount) {
-  return Boolean(question)
+function questionReady(question, choiceCount, accepts) {
+  const listed = Boolean(question)
     && Array.isArray(question.choices)
     && question.choices.length === choiceCount
-    && new Set(question.choices).size === choiceCount
-    && question.choices.includes(question.answer);
+    && new Set(question.choices).size === choiceCount;
+  if (!listed) return false;
+  if (typeof accepts === "function") return question.choices.some((choice) => accepts(question, choice) === true);
+  return question.choices.includes(question.answer);
 }
 
-function setReady(questions, choiceCount) {
+function setReady(questions, choiceCount, accepts) {
   return Array.isArray(questions)
     && questions.length === QUIZ_DAILY_LENGTH
-    && questions.every((question) => questionReady(question, choiceCount));
+    && questions.every((question) => questionReady(question, choiceCount, accepts));
 }
 
-export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount = 4 } = {}) {
+export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount = 4, accepts } = {}) {
   const today = todayKey();
   const [record, setRecord] = useState(() => readQuizDailyRecord(storageKey));
   const [phase, setPhase] = useState("idle");
@@ -38,12 +40,14 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount
   const [practice, setPractice] = useState(false);
   const date = phase === "playing" || phase === "revealing" ? puzzleDate : today;
   const onCompleteRef = useRef(onComplete);
+  const acceptsRef = useRef(accepts);
   const recordRef = useRef(record);
   const locked = useRef(false);
   const practiceRef = useRef(false);
 
   useEffect(() => {
     onCompleteRef.current = onComplete;
+    acceptsRef.current = accepts;
   });
 
   useEffect(() => {
@@ -53,11 +57,11 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount
   const questions = useMemo(() => {
     try {
       const built = questionsFor?.(date);
-      return setReady(built, choiceCount) ? built : null;
+      return setReady(built, choiceCount, accepts) ? built : null;
     } catch {
       return null;
     }
-  }, [date, questionsFor, choiceCount]);
+  }, [date, questionsFor, choiceCount, accepts]);
 
   const available = Array.isArray(questions) && questions.length === QUIZ_DAILY_LENGTH;
   const official = record.days[today] ?? null;
@@ -130,10 +134,12 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount
   function pick(nextChoice) {
     if (locked.current || phase !== "playing") return;
     const question = questions?.[index];
-    if (!questionReady(question, choiceCount) || !question.choices.includes(nextChoice)) return;
+    if (!questionReady(question, choiceCount, acceptsRef.current) || !question.choices.includes(nextChoice)) return;
     locked.current = true;
 
-    const correct = nextChoice === question.answer;
+    const correct = typeof acceptsRef.current === "function"
+      ? acceptsRef.current(question, nextChoice) === true
+      : nextChoice === question.answer;
     const nextCorrect = correct ? correctCount + 1 : correctCount;
 
     if (practiceRef.current) {

@@ -1895,3 +1895,160 @@ h1.section-title {
     transform: none !important;
   }
 }
+
+.chain-board {
+  text-align: center;
+}
+
+.chain-hint {
+  margin: 8px auto 0;
+  max-width: 38rem;
+  color: #d7c8b2;
+  line-height: 1.4;
+}
+
+.chain-targets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 16px auto;
+  max-width: 560px;
+}
+
+.chain-target {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 10px;
+  border: 1px solid rgba(244, 239, 228, 0.22);
+  border-radius: 16px;
+  background: rgba(10, 22, 38, 0.72);
+}
+
+.chain-target img,
+.chain-fallback {
+  width: 112px;
+  height: 78px;
+  border-radius: 12px;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.chain-fallback {
+  display: grid;
+  place-items: center;
+  background: #1a3a63;
+  color: #fff8ee;
+  font-family: "Oswald", Impact, sans-serif;
+  font-size: 2rem;
+}
+
+.chain-target h2 {
+  margin: 0;
+  max-width: 100%;
+  font-size: clamp(1rem, 2.4vw, 1.45rem);
+  line-height: 1.1;
+}
+
+.chain-board .career-choice:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.chain-board .career-choice.is-correct {
+  color: #7dffc3;
+  box-shadow: inset 0 0 0 2px #3dd68c;
+}
+
+.chain-board .career-choice.is-wrong {
+  color: #ff8b98;
+  box-shadow: inset 0 0 0 2px #ff5d73;
+}
+
+
+.chain-reveal {
+  margin: 16px auto 0;
+  max-width: 640px;
+  text-align: left;
+}
+
+.chain-subject {
+  margin: 10px 0 6px;
+  text-align: center;
+  font-family: "Oswald", Impact, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.chain-connections {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chain-connections li {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(10, 22, 38, 0.72);
+}
+
+.chain-connections strong {
+  font-family: "Oswald", Impact, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.chain-stint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  color: #f4efe4;
+}
+
+.chain-stint img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.chain-seasons {
+  color: #ffb15a;
+}
+
+.chain-also {
+  margin: 8px 0 0;
+  color: #d7c8b2;
+  text-align: center;
+}
+
+@media (max-width: 800px) {
+  .chain-targets {
+    gap: 8px;
+  }
+
+  .chain-target {
+    padding: 8px;
+  }
+
+  .chain-target img,
+  .chain-fallback {
+    width: 84px;
+    height: 60px;
+  }
+
+  .chain-target h2 {
+    font-size: 0.95rem;
+  }
+
+  .chain-board .section-title {
+    font-size: 1.45rem;
+    line-height: 1.05;
+  }
+}

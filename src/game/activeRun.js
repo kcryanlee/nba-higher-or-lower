@@ -1,4 +1,5 @@
 import { careerPlayers } from "../data/players.js";
+import { auditChainQuestion, gradeChainChoice } from "./chain.js";
 import { categoryById, statGap } from "./categories.js";
 import { bandForStreak } from "./difficulty.js";
 import { draftChoices, draftPool, draftQuestion } from "./draft.js";
@@ -11,7 +12,7 @@ export const ACTIVE_RUN_KEY = "nba-active-run";
 export function readActiveRun() {
   const saved = readJsonStorage(ACTIVE_RUN_KEY);
   if (!saved || (saved.phase !== "playing" && saved.phase !== "revealing")) return null;
-  if (saved.game !== "classic" && saved.game !== "career" && saved.game !== "draft" && saved.game !== "scored") return null;
+  if (saved.game !== "classic" && saved.game !== "career" && saved.game !== "draft" && saved.game !== "scored" && saved.game !== "chain") return null;
   if (!Number.isInteger(saved.streak) || saved.streak < 0) return null;
   return saved;
 }
@@ -194,10 +195,46 @@ export function restoreScoredRun() {
   };
 }
 
+export function restoreChainRun() {
+  const saved = readActiveRun();
+  const question = saved?.question;
+  if (!saved || saved.game !== "chain" || auditChainQuestion(question).length) return null;
+
+  const usedKeys = Array.isArray(saved.usedKeys)
+    ? saved.usedKeys.filter((key) => typeof key === "string" && key.length > 0)
+    : [];
+  if (!usedKeys.includes(question.key)) usedKeys.push(question.key);
+
+  if (saved.phase === "revealing") {
+    const grade = gradeChainChoice(question, saved.picked);
+    const matches = Boolean(grade)
+      && ((saved.result === "correct" && grade.correct) || (saved.result === "wrong" && !grade.correct));
+    if (!matches) return null;
+    return {
+      phase: "revealing",
+      streak: saved.streak,
+      picked: saved.picked,
+      result: saved.result,
+      question,
+      usedKeys,
+    };
+  }
+
+  return {
+    phase: "playing",
+    streak: saved.streak,
+    picked: null,
+    result: null,
+    question,
+    usedKeys,
+  };
+}
+
 export function openingScreen(players) {
   if (restoreClassicRun(players)) return "classic";
   if (restoreCareerRun()) return "career";
   if (restoreDraftRun(players)) return "draft";
   if (restoreScoredRun()) return "scored";
+  if (restoreChainRun()) return "chain";
   return "hub";
 }

@@ -30,7 +30,7 @@ const GAMES = [
     id: "chain",
     name: "Teammate Chain",
     detail: "Find the player who links two careers.",
-    ready: false,
+    ready: true,
   },
 ];
 
@@ -39,8 +39,8 @@ function listedReady(game, modes) {
   return game.ready;
 }
 
-export default function HubScreen({ onHigher, onCareer, onDraftYear, onDraftPick, onScored }) {
-  const actions = { higher: onHigher, career: onCareer, scored: onScored };
+export default function HubScreen({ onHigher, onCareer, onDraftYear, onDraftPick, onScored, onChain }) {
+  const actions = { higher: onHigher, career: onCareer, scored: onScored, chain: onChain };
   const draftModes = {
     year: draftPool(players, "year").length > 0,
     pick: draftPool(players, "pick").length > 0,

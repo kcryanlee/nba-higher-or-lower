@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/react";
 import Achievements from "./components/Achievements.jsx";
 import Board from "./components/Board.jsx";
 import CareerGame from "./components/CareerGame.jsx";
+import ChainGame from "./components/ChainGame.jsx";
 import DailyScore from "./components/DailyScore.jsx";
 import DraftGame from "./components/DraftGame.jsx";
 import GameLobby from "./components/GameLobby.jsx";
@@ -15,6 +16,9 @@ import { dataDisclaimer, dataSeasonLine } from "./data/dataConfig.js";
 import { players } from "./data/players.js";
 import { openingScreen } from "./game/activeRun.js";
 import { CAREER_BADGES, careerBadgeProgress } from "./game/careerBadges.js";
+import { CHAIN_BADGES, chainBadgeProgress } from "./game/chainBadges.js";
+import { chainChoiceCorrect } from "./game/chain.js";
+import { CHAIN_DAILY_KEY, buildChainDaily } from "./game/chainDaily.js";
 import { CAREER_DAILY_KEY, buildCareerDaily } from "./game/careerDaily.js";
 import { DRAFT_BADGES, draftBadgeProgress } from "./game/draftBadges.js";
 import { DRAFT_DAILY_KEYS, buildDraftDaily, draftDailyTitle } from "./game/draftDaily.js";
@@ -26,6 +30,7 @@ import { SCORED_REVEAL_MS, scoredMilestoneBanner, scoredStreakCallout } from "./
 import { BADGE_REVEAL_MS, MILESTONE_MS, REVEAL_MS, milestoneBanner, streakCallout } from "./game/feedback.js";
 import {
   CAREER_DAILY_BADGE_KEY,
+  CHAIN_DAILY_BADGE_KEY,
   DRAFT_DAILY_BADGE_KEY,
   HIGHER_DAILY_BADGE_KEY,
   MODE_DAILY_BADGES,
@@ -40,6 +45,8 @@ import { readStoredNumber } from "./game/storage.js";
 import { useBadges } from "./hooks/useBadges.js";
 import { useCareer } from "./hooks/useCareer.js";
 import { useCareerBadges } from "./hooks/useCareerBadges.js";
+import { useChain } from "./hooks/useChain.js";
+import { useChainBadges } from "./hooks/useChainBadges.js";
 import { useDaily } from "./hooks/useDaily.js";
 import { useDraft } from "./hooks/useDraft.js";
 import { useDraftBadges } from "./hooks/useDraftBadges.js";
@@ -125,6 +132,15 @@ export default function App() {
     questionsFor: buildScoredDaily,
     onComplete: scoredDailyBadges.record,
   });
+  const chainBadges = useChainBadges();
+  const chain = useChain({ onCorrect: chainBadges.recordStreak });
+  const chainDailyBadges = useModeDailyBadges(CHAIN_DAILY_BADGE_KEY, CHAIN_DAILY_KEY);
+  const chainDaily = useQuizDaily({
+    storageKey: CHAIN_DAILY_KEY,
+    questionsFor: buildChainDaily,
+    onComplete: chainDailyBadges.record,
+    accepts: chainChoiceCorrect,
+  });
   const draftSharedStats = modeDailyStats(mergeModeDailyRecords([
     draftYearDaily.record,
     draftPickDaily.record,
@@ -200,6 +216,52 @@ export default function App() {
   function openDraftDailyAwards(from) {
     setAwardsReturn(from);
     setScreen("draft-daily-awards");
+  }
+
+  function playChain() {
+    chainBadges.dismiss();
+    if (!chain.start()) return;
+    setScreen("chain");
+  }
+
+  function openChainDaily() {
+    chain.discard();
+    chainDailyBadges.dismiss();
+    if (chainDaily.available) chainDaily.start();
+    setScreen("chain-daily");
+  }
+
+  function openChainAwards(from) {
+    setAwardsReturn(from);
+    setScreen("chain-awards");
+  }
+
+  function openChainDailyAwards(from) {
+    setAwardsReturn(from);
+    setScreen("chain-daily-awards");
+  }
+
+  function practiceChainDaily() {
+    if (!chainDaily.available) return;
+    chainDailyBadges.dismiss();
+    chainDaily.start(true);
+    setScreen("chain-daily");
+  }
+
+  function leaveChain() {
+    chain.discard();
+    setScreen("hub");
+  }
+
+  function leaveChainDaily() {
+    chainDaily.leave();
+    chainDailyBadges.dismiss();
+    setScreen("chain-menu");
+  }
+
+  function advanceChain() {
+    chainBadges.dismiss();
+    chain.advance();
   }
 
   function playScored() {
@@ -350,6 +412,8 @@ export default function App() {
   const draftDailyLive = screen === "draft-daily" && (draftDaily.phase === "playing" || draftDaily.phase === "revealing");
   const scoredLive = screen === "scored" && (scored.phase === "playing" || scored.phase === "revealing");
   const scoredDailyLive = screen === "scored-daily" && (scoredDaily.phase === "playing" || scoredDaily.phase === "revealing");
+  const chainLive = chain.phase === "playing" || chain.phase === "revealing";
+  const chainDailyLive = screen === "chain-daily" && (chainDaily.phase === "playing" || chainDaily.phase === "revealing");
   const draftWrong = screen === "draft" && draftLive && draft.result === "wrong";
   const dailyLive = screen === "daily" && (daily.phase === "playing" || daily.phase === "revealing");
   const wrongFlash = (classicLive && game.result === "wrong")
@@ -357,7 +421,9 @@ export default function App() {
     || draftWrong
     || (draftDailyLive && draftDaily.result === "wrong")
     || (scoredLive && scored.result === "miss")
-    || (scoredDailyLive && scoredDaily.result === "miss");
+    || (scoredDailyLive && scoredDaily.result === "miss")
+    || (screen === "chain" && chainLive && chain.result === "wrong")
+    || (chainDailyLive && chainDaily.result === "wrong");
   const scoredBefore = scored.streak - (scored.credit ?? 0);
   const scoredMilestone = scoredLive && scored.result === "placed"
     ? scoredMilestoneBanner(scoredBefore, scored.streak)
@@ -525,6 +591,54 @@ export default function App() {
               Best <strong>{career.best}</strong>
             </span>
           </p>
+        ) : screen === "chain-menu" ? (
+          <p className="scoreboard">
+            <span>
+              Best <strong>{chain.best}</strong>
+            </span>
+          </p>
+        ) : chainDailyLive ? (
+          <p className="scoreboard">
+            {chainDaily.practice ? <span>Practice</span> : null}
+            {chainDaily.practice ? (
+              <span className="score-dot" aria-hidden="true">
+                •
+              </span>
+            ) : null}
+            <span>
+              Question <strong>{Math.min(chainDaily.index + 1, chainDaily.total)}</strong>
+              {" / "}
+              {chainDaily.total}
+            </span>
+            <span className="score-dot" aria-hidden="true">
+              •
+            </span>
+            <span>
+              Correct <strong>{chainDaily.correctCount}</strong>
+            </span>
+          </p>
+        ) : screen === "chain-daily" || screen === "chain-daily-awards" ? (
+          <p className="scoreboard">
+            <span>Today&apos;s Challenge</span>
+          </p>
+        ) : (screen === "chain" || screen === "chain-awards") && chainLive ? (
+          <p className="scoreboard">
+            <span>
+              Streak <strong>{chain.streak}</strong>
+            </span>
+            <span className="score-dot" aria-hidden="true">
+              •
+            </span>
+            <span>
+              Best <strong>{chain.best}</strong>
+            </span>
+          </p>
+        ) : screen === "chain" || screen === "chain-awards" ? (
+          <p className="scoreboard">
+            <span>
+              Best <strong>{chain.best}</strong>
+            </span>
+          </p>
         ) : screen === "hub" ? (
           <p className="scoreboard">
             <span>Pick a game</span>
@@ -576,6 +690,140 @@ export default function App() {
             onDraftYear={() => openDraftLobby("year")}
             onDraftPick={() => openDraftLobby("pick")}
             onScored={() => setScreen("scored-menu")}
+            onChain={() => setScreen("chain-menu")}
+          />
+        ) : null}
+
+        {screen === "chain-menu" ? (
+          <GameLobby
+            eyebrow="Teammate Chain"
+            title="Teammate Chain"
+            lede="Two careers. Find a player who was teammates with both."
+            best={chain.best}
+            dailyStatus={chainDaily.status}
+            dailyStreak={chainDaily.streak}
+            todayCorrect={chainDaily.official?.correct ?? 0}
+            resumeQuestion={(chainDaily.active?.index ?? 0) + 1}
+            onPlay={playChain}
+            onDaily={openChainDaily}
+            onAwards={() => openChainAwards("chain-menu")}
+            onDailyAwards={() => openChainDailyAwards("chain-menu")}
+            onHub={() => setScreen("hub")}
+          />
+        ) : null}
+
+        {screen === "chain" && chain.phase !== "gameover" && chain.question ? (
+          <ChainGame
+            phase={chain.phase}
+            streak={chain.streak}
+            best={chain.best}
+            question={chain.question}
+            picked={chain.picked}
+            result={chain.result}
+            ended={chain.ended}
+            onPick={chain.pick}
+            onAdvance={advanceChain}
+            onAgain={playChain}
+            onMenu={leaveChain}
+            onAwards={() => openChainAwards("chain")}
+            onDaily={openChainDaily}
+            unlockedBadges={chainBadges.fresh}
+          />
+        ) : null}
+
+        {screen === "chain" && chain.phase === "gameover" ? (
+          <ChainGame
+            phase={chain.phase}
+            streak={chain.streak}
+            best={chain.best}
+            question={chain.question}
+            picked={chain.picked}
+            result={chain.result}
+            ended={chain.ended}
+            onPick={chain.pick}
+            onAdvance={advanceChain}
+            onAgain={playChain}
+            onMenu={leaveChain}
+            onAwards={() => openChainAwards("chain")}
+            onDaily={openChainDaily}
+          />
+        ) : null}
+
+        {screen === "chain-awards" ? (
+          <Achievements
+            badges={chainBadges.snapshot}
+            best={chain.best}
+            celebrate={chainBadges.celebrate}
+            catalog={CHAIN_BADGES}
+            progressFor={(badge) => chainBadgeProgress(badge, chainBadges.snapshot, chain.best)}
+            eyebrow="Teammate Chain"
+            onBack={() => {
+              chainBadges.acknowledge();
+              setScreen(awardsReturn === "chain-menu" ? "chain-menu" : "chain");
+            }}
+          />
+        ) : null}
+
+        {chainDailyLive && chainDaily.question ? (
+          <ChainGame
+            phase={chainDaily.phase}
+            streak={chainDaily.correctCount}
+            best={chain.best}
+            question={chainDaily.question}
+            picked={chainDaily.choice}
+            result={chainDaily.result}
+            onPick={chainDaily.pick}
+            onAdvance={chainDaily.advance}
+            onAgain={playChain}
+            onMenu={leaveChainDaily}
+            onAwards={() => openChainDailyAwards("chain-daily")}
+            kicker="Today's Challenge"
+            menuLabel="Back"
+            unlockedBadges={chainDailyBadges.fresh}
+          />
+        ) : null}
+
+        {screen === "chain-daily" && chainDaily.phase === "results" && chainDaily.attempt ? (
+          <QuizDailyScore
+            attempt={chainDaily.attempt}
+            unlockedBadges={chainDailyBadges.fresh}
+            onPractice={practiceChainDaily}
+            onAwards={() => openChainDailyAwards("chain-daily")}
+            onMenu={() => {
+              chainDaily.leave();
+              chainDailyBadges.dismiss();
+              setScreen("hub");
+            }}
+            note="Today's puzzle uses your local date. Everyone gets the same five teammate links. The official score locks after one play."
+          />
+        ) : null}
+
+        {screen === "chain-daily" && chainDaily.phase === "idle" && !chainDaily.available ? (
+          <section className="panel daily-score">
+            <p className="eyebrow">Teammate Chain Daily</p>
+            <h1 className="section-title">Unavailable</h1>
+            <p className="lede">Today&apos;s challenge could not be built.</p>
+            <button type="button" className="action secondary" onClick={leaveChainDaily}>
+              Teammate Chain
+            </button>
+          </section>
+        ) : null}
+
+        {screen === "chain-daily-awards" ? (
+          <Achievements
+            badges={chainDailyBadges.snapshot}
+            celebrate={chainDailyBadges.celebrate}
+            catalog={MODE_DAILY_BADGES}
+            lede={null}
+            progressFor={(badge) => modeDailyBadgeProgress(badge, chainDailyBadges.snapshot, {
+              ...modeDailyStats(chainDaily.record),
+              total: QUIZ_DAILY_LENGTH,
+            })}
+            eyebrow="Teammate Chain Daily"
+            onBack={() => {
+              chainDailyBadges.acknowledge();
+              setScreen(awardsReturn === "chain-menu" ? "chain-menu" : "chain-daily");
+            }}
           />
         ) : null}
 

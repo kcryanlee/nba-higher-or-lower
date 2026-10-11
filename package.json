@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "update-nba-data": "node scripts/updateNBAData.js",
-    "build-box-scores": "node scripts/buildBoxScores.js"
+    "build-box-scores": "node scripts/buildBoxScores.js",
+    "build-teammates": "node scripts/buildTeammates.js"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

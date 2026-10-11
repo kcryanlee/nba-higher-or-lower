@@ -23,7 +23,7 @@ import { readJsonStorage, readStoredNumber, writeStorage } from "../src/game/sto
 import { players, careerPlayers } from "../src/data/players.js";
 import { careerChoiceAllowed, eligibleCareers, selectCareerQuestion } from "../src/game/careerPath.js";
 import { collectPairs } from "../src/game/selectMatchup.js";
-import { openingScreen, readActiveRun, restoreCareerRun, restoreClassicRun, restoreDraftRun, restoreScoredRun, writeActiveRun } from "../src/game/activeRun.js";
+import { openingScreen, readActiveRun, restoreCareerRun, restoreChainRun, restoreClassicRun, restoreDraftRun, restoreScoredRun, writeActiveRun } from "../src/game/activeRun.js";
 import { DRAFT_BEST_KEYS, draftPool, ordinal, parseDraftAnswer, selectDraftQuestion, usableDraftYear } from "../src/game/draft.js";
 import { DRAFT_BADGE_KEYS, DRAFT_BADGES, applyDraftStreak, readDraftBadges } from "../src/game/draftBadges.js";
 import { CAREER_BEST_KEY, readCareerBadges } from "../src/game/careerBadges.js";
@@ -67,6 +67,30 @@ import {
   writeScoredDailyRecord,
 } from "../src/game/scoredDailyRecord.js";
 import { SCORED_BEST_KEY, applyScoredStreak, readScoredBadges } from "../src/game/scoredBadges.js";
+import {
+  chainPlayerByName,
+  datesOverlap,
+  isTeammateLink,
+  linksBetween,
+  pairKey as chainPairKey,
+  stintsFor,
+  teammateErrors,
+  teammateReady,
+  teammateSource,
+  unresolvedTeammates,
+  chainPlayers,
+} from "../src/data/teammates.js";
+import {
+  auditChainQuestion,
+  chainChoiceCorrect,
+  chainPairKeys,
+  describeConnections,
+  gradeChainChoice,
+  selectChainQuestion,
+} from "../src/game/chain.js";
+import { CHAIN_DAILY_KEY, buildChainDaily } from "../src/game/chainDaily.js";
+import { CHAIN_BEST_KEY, applyChainStreak, readChainBadges } from "../src/game/chainBadges.js";
+import { mulberry32 } from "../src/game/seed.js";
 
 const store = new Map();
 let failRead = false;
@@ -986,6 +1010,332 @@ writeStorage(SCORED_BEST_KEY, "20");
 assert.ok(readScoredBadges().unlocked.includes("box-score"));
 assert.equal(readScoredBadges().unlocked.includes("sharp-shooter"), false);
 
+assert.equal(teammateReady, true);
+assert.deepEqual(teammateErrors, []);
+assert.deepEqual(unresolvedTeammates, []);
+assert.match(teammateSource.source, /ESPN/);
+assert.match(teammateSource.rule, /regular-season appearance/);
+assert.match(teammateSource.rule, /appearance dates overlap/);
+assert.match(teammateSource.rule, /not enough/);
+assert.equal(chainPlayers.length, players.length);
+
+const curry = chainPlayerByName("Stephen Curry");
+const durant = chainPlayerByName("Kevin Durant");
+const lebron = chainPlayerByName("LeBron James");
+const draymond = chainPlayerByName("Draymond Green");
+const harden = chainPlayerByName("James Harden");
+assert.ok(curry && durant && lebron && draymond && harden);
+
+const curryDurant = linksBetween(curry.id, durant.id);
+assert.ok(curryDurant.some((link) => link.season === "2016-17" && link.team === "Golden State Warriors"));
+assert.ok(curryDurant.some((link) => link.season === "2017-18" && link.team === "Golden State Warriors"));
+assert.ok(curryDurant.some((link) => link.season === "2018-19" && link.team === "Golden State Warriors"));
+assert.equal(curryDurant.some((link) => link.season === "2015-16"), false);
+assert.equal(linksBetween(curry.id, lebron.id).length, 0);
+assert.equal(isTeammateLink(curry.id, lebron.id, durant.id), false);
+
+const durantEarly = stintsFor(durant.id).filter((stint) => stint.season === "2007-08");
+assert.deepEqual(durantEarly.map((stint) => stint.team), ["Seattle SuperSonics"]);
+const hardenSplit = stintsFor(harden.id).filter((stint) => stint.season === "2020-21").map((stint) => stint.team).sort();
+assert.deepEqual(hardenSplit, ["Brooklyn Nets", "Houston Rockets"]);
+
+const lowry = chainPlayerByName("Kyle Lowry");
+const rondo = chainPlayerByName("Rajon Rondo");
+const lou = chainPlayerByName("Lou Williams");
+assert.ok(lowry && rondo && lou);
+const lou2021 = stintsFor(lou.id).filter((stint) => stint.season === "2020-21");
+const rondo2021 = stintsFor(rondo.id).filter((stint) => stint.season === "2020-21");
+for (const slug of ["la-clippers", "atlanta-hawks"]) {
+  const louStint = lou2021.find((stint) => stint.slug === slug);
+  const rondoStint = rondo2021.find((stint) => stint.slug === slug);
+  assert.ok(louStint && rondoStint, `2020-21 ${slug} stints should both exist`);
+  assert.equal(datesOverlap(louStint, rondoStint), false, `${slug} dates must not overlap`);
+}
+assert.equal(linksBetween(lou.id, rondo.id).length, 0);
+assert.equal(isTeammateLink(lou.id, lowry.id, rondo.id), false);
+assert.equal(stintsFor(lowry.id).some((stint) => stint.season === "2020-21" && stint.team === "Toronto Raptors"), true);
+const lowryRondoLinkers = chainPlayers.filter((player) => isTeammateLink(player.id, lowry.id, rondo.id));
+const lowryRondoInvalids = chainPlayers.filter((player) => (
+  player.id !== lowry.id
+  && player.id !== rondo.id
+  && player.id !== lou.id
+  && !isTeammateLink(player.id, lowry.id, rondo.id)
+));
+assert.equal(lowryRondoLinkers.some((player) => player.id === lou.id), false);
+assert.ok(lowryRondoLinkers.length >= 1);
+assert.ok(lowryRondoInvalids.length >= 2);
+const lowryRondoChoices = [lou.id, lowryRondoLinkers[0].id, lowryRondoInvalids[0].id, lowryRondoInvalids[1].id];
+const lowryRondoQuestion = {
+  key: chainPairKey(lowry.id, rondo.id),
+  targets: [
+    { id: lowry.id, name: lowry.name },
+    { id: rondo.id, name: rondo.name },
+  ],
+  choices: lowryRondoChoices,
+  names: lowryRondoChoices.map((id) => chainPlayers.find((player) => player.id === id).name),
+};
+assert.deepEqual(auditChainQuestion(lowryRondoQuestion), []);
+assert.equal(gradeChainChoice(lowryRondoQuestion, lou.id).correct, false);
+assert.equal(chainChoiceCorrect(lowryRondoQuestion, lou.id), false);
+assert.equal(gradeChainChoice(lowryRondoQuestion, lowryRondoLinkers[0].id).correct, true);
+assert.equal(describeConnections(gradeChainChoice(lowryRondoQuestion, lou.id).guess.connections).includes("No shared team"), true);
+
+const chainNames = new Map(chainPlayers.map((player) => [player.id, player.name]));
+const seasonGroups = new Map();
+let datedStints = 0;
+for (const player of chainPlayers) {
+  for (const stint of stintsFor(player.id)) {
+    datedStints += 1;
+    assert.ok(Array.isArray(stint.spans) && stint.spans.length > 0);
+    const key = `${stint.season}|${stint.slug}`;
+    if (!seasonGroups.has(key)) seasonGroups.set(key, []);
+    seasonGroups.get(key).push({ id: player.id, name: player.name, stint });
+  }
+}
+let coMemberships = 0;
+let removedFalseLinks = 0;
+let overlappingLinks = 0;
+let removedLouRondo = 0;
+const removedSamples = [];
+for (const group of seasonGroups.values()) {
+  for (let left = 0; left < group.length; left += 1) {
+    for (let right = left + 1; right < group.length; right += 1) {
+      coMemberships += 1;
+      const overlap = datesOverlap(group[left].stint, group[right].stint);
+      const linked = linksBetween(group[left].id, group[right].id).some((link) => (
+        link.season === group[left].stint.season && link.slug === group[left].stint.slug
+      ));
+      assert.equal(linked, overlap);
+      if (overlap) overlappingLinks += 1;
+      else {
+        removedFalseLinks += 1;
+        const pairNames = [group[left].name, group[right].name];
+        if (pairNames.includes("Lou Williams") && pairNames.includes("Rajon Rondo")) removedLouRondo += 1;
+        if (removedSamples.length < 12) {
+          removedSamples.push(`${group[left].name} / ${group[right].name} ${group[left].stint.season} ${group[left].stint.team}`);
+        }
+      }
+    }
+  }
+}
+assert.ok(removedFalseLinks > 0, "mid-season trades should remove at least one false link");
+assert.equal(removedLouRondo, 2);
+
+let auditedQuestions = 0;
+let auditedAnswers = 0;
+let auditedDistractors = 0;
+const chainIds = chainPlayers.map((player) => player.id);
+for (let left = 0; left < chainIds.length; left += 1) {
+  for (let right = left + 1; right < chainIds.length; right += 1) {
+    const targetA = chainIds[left];
+    const targetB = chainIds[right];
+    const linkers = [];
+    const invalids = [];
+    for (const id of chainIds) {
+      if (id === targetA || id === targetB) continue;
+      if (isTeammateLink(id, targetA, targetB)) linkers.push(id);
+      else invalids.push(id);
+    }
+    if (!linkers.length || invalids.length < 3) continue;
+    const choices = [linkers[0], ...invalids.slice(0, 3)];
+    const question = {
+      key: chainPairKey(targetA, targetB),
+      targets: [
+        { id: targetA, name: chainNames.get(targetA) },
+        { id: targetB, name: chainNames.get(targetB) },
+      ],
+      choices,
+      names: choices.map((id) => chainNames.get(id)),
+    };
+    assert.deepEqual(auditChainQuestion(question), []);
+    auditedQuestions += 1;
+    auditedAnswers += 1;
+    auditedDistractors += 3;
+    if (linkers[1] != null) {
+      const both = {
+        ...question,
+        choices: [linkers[0], linkers[1], invalids[0], invalids[1]],
+        names: [linkers[0], linkers[1], invalids[0], invalids[1]].map((id) => chainNames.get(id)),
+      };
+      assert.equal(gradeChainChoice(both, linkers[0]).correct, true);
+      assert.equal(gradeChainChoice(both, linkers[1]).correct, true);
+      assert.equal(gradeChainChoice(both, invalids[0]).correct, false);
+      assert.equal(describeConnections(gradeChainChoice(both, linkers[1]).connections).includes("No shared team"), false);
+      auditedAnswers += 1;
+    }
+  }
+}
+assert.equal(auditedQuestions, chainPairKeys().length);
+
+let auditedDailyQuestions = 0;
+for (let month = 1; month <= 12; month += 1) {
+  for (let day = 1; day <= 28; day += 1) {
+    const questions = buildChainDaily(`2026-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`);
+    assert.equal(questions.length, QUIZ_DAILY_LENGTH);
+    for (const question of questions) {
+      assert.deepEqual(auditChainQuestion(question), []);
+      const targetIds = question.targets.map((target) => target.id).sort((a, b) => a - b);
+      if (targetIds[0] === Math.min(lowry.id, rondo.id) && targetIds[1] === Math.max(lowry.id, rondo.id)) {
+        assert.equal(question.choices.includes(lou.id) && chainChoiceCorrect(question, lou.id), false);
+      }
+      auditedDailyQuestions += 1;
+    }
+  }
+}
+
+for (const player of chainPlayers) {
+  for (const stint of stintsFor(player.id)) {
+    assert.equal(/total/i.test(`${stint.team} ${stint.slug}`), false);
+    assert.equal(stint.team === "LA Clippers", false);
+    assert.ok(stint.games >= 1 && stint.games <= 82);
+  }
+}
+assert.ok(chainPlayers.some((player) => stintsFor(player.id).some((stint) => stint.team === "Los Angeles Clippers")));
+
+const chainRandom = mulberry32(11);
+const chainUsed = [];
+for (let index = 0; index < 30; index += 1) {
+  const question = selectChainQuestion({ usedKeys: chainUsed, random: chainRandom });
+  assert.ok(question, "a chain question should be available");
+  assert.equal(chainUsed.includes(question.key), false);
+  assert.equal(chainPairKey(question.targets[1].id, question.targets[0].id), question.key);
+  assert.deepEqual(auditChainQuestion(question), []);
+  for (const choiceId of question.choices) {
+    const linked = isTeammateLink(choiceId, question.targets[0].id, question.targets[1].id);
+    assert.equal(gradeChainChoice(question, choiceId).correct, linked);
+    assert.equal(chainChoiceCorrect(question, choiceId), linked);
+  }
+  chainUsed.push(question.key);
+}
+
+const firstChain = selectChainQuestion({ random: () => 0 });
+const reversedChain = selectChainQuestion({
+  usedKeys: [chainPairKey(firstChain.targets[1].id, firstChain.targets[0].id)],
+  random: () => 0,
+});
+assert.notEqual(reversedChain.key, firstChain.key);
+assert.equal(selectChainQuestion({ usedKeys: chainPairKeys(), random: () => 0.4 }), null);
+
+const chainInvalids = chainPlayers.filter((player) => (
+  player.id !== curry.id
+  && player.id !== durant.id
+  && !isTeammateLink(player.id, curry.id, durant.id)
+)).slice(0, 4);
+const unanswered = {
+  key: chainPairKey(curry.id, durant.id),
+  targets: [
+    { id: curry.id, name: curry.name },
+    { id: durant.id, name: durant.name },
+  ],
+  choices: chainInvalids.map((player) => player.id),
+  names: chainInvalids.map((player) => player.name),
+};
+assert.ok(auditChainQuestion(unanswered).includes("no valid answer"));
+assert.equal(gradeChainChoice(unanswered, chainInvalids[0].id), null);
+
+const chainLinkers = chainPlayers.filter((player) => isTeammateLink(player.id, curry.id, durant.id));
+assert.ok(chainLinkers.some((player) => player.id === draymond.id));
+assert.ok(chainLinkers.length >= 2);
+const secondLinker = chainLinkers.find((player) => player.id !== draymond.id);
+const multiChain = {
+  key: chainPairKey(curry.id, durant.id),
+  targets: [
+    { id: curry.id, name: curry.name },
+    { id: durant.id, name: durant.name },
+  ],
+  choices: [draymond.id, secondLinker.id, chainInvalids[0].id, chainInvalids[1].id],
+  names: [draymond.name, secondLinker.name, chainInvalids[0].name, chainInvalids[1].name],
+};
+assert.deepEqual(auditChainQuestion(multiChain), []);
+assert.equal(gradeChainChoice(multiChain, draymond.id).correct, true);
+assert.equal(gradeChainChoice(multiChain, secondLinker.id).correct, true);
+assert.equal(gradeChainChoice(multiChain, chainInvalids[0].id).correct, false);
+assert.equal(gradeChainChoice(multiChain, chainInvalids[1].id).correct, false);
+const draymondGrade = gradeChainChoice(multiChain, draymond.id);
+const durantSide = draymondGrade.connections.find((row) => row.targetId === durant.id);
+const currySide = draymondGrade.connections.find((row) => row.targetId === curry.id);
+assert.ok(currySide.groups.some((group) => group.team === "Golden State Warriors" && group.seasons.includes("2016-17")));
+assert.ok(durantSide.groups.some((group) => group.team === "Golden State Warriors" && group.seasons.includes("2016-17")));
+assert.equal(durantSide.groups.some((group) => group.seasons.includes("2015-16")), false);
+assert.match(describeConnections(draymondGrade.connections), /Golden State Warriors \([^)]*2016-17/);
+const missedGrade = gradeChainChoice(multiChain, chainInvalids[0].id);
+assert.equal(missedGrade.correct, false);
+assert.equal(missedGrade.subjectId, draymond.id);
+assert.match(describeConnections(missedGrade.connections), /Golden State Warriors/);
+
+const chainDay = "2026-10-11";
+const chainDailyA = buildChainDaily(chainDay);
+const chainDailyB = buildChainDaily(chainDay);
+assert.deepEqual(chainDailyA, chainDailyB);
+assert.equal(chainDailyA.length, QUIZ_DAILY_LENGTH);
+assert.equal(new Set(chainDailyA.map((question) => question.key)).size, QUIZ_DAILY_LENGTH);
+assert.notDeepEqual(chainDailyA.map((question) => question.key), buildChainDaily("2026-01-02").map((question) => question.key));
+assert.equal(buildChainDaily("not-a-date"), null);
+for (let day = 1; day <= 8; day += 1) {
+  const questions = buildChainDaily(`2026-04-${String(day).padStart(2, "0")}`);
+  assert.equal(questions.length, QUIZ_DAILY_LENGTH);
+  assert.equal(new Set(questions.map((question) => question.key)).size, QUIZ_DAILY_LENGTH);
+  for (const question of questions) assert.deepEqual(auditChainQuestion(question), []);
+}
+
+let chainRecord = emptyQuizDailyRecord();
+const chainNoted = noteQuizAnswer(chainRecord, {
+  date: chainDay,
+  index: 0,
+  correct: 1,
+  total: QUIZ_DAILY_LENGTH,
+});
+assert.equal(chainNoted.accepted, true);
+assert.equal(writeQuizDailyRecord(CHAIN_DAILY_KEY, chainNoted.record), true);
+chainRecord = readQuizDailyRecord(CHAIN_DAILY_KEY);
+assert.equal(chainRecord.active.date, chainDay);
+assert.equal(chainRecord.active.index, 1);
+assert.equal(chainRecord.active.correct, 1);
+assert.equal(quizRunStatus(chainRecord, chainDay, true), "progress");
+
+store.clear();
+const chainSample = selectChainQuestion({ random: mulberry32(3) });
+const chainValidPick = chainSample.choices.find((id) => chainChoiceCorrect(chainSample, id));
+writeActiveRun({
+  game: "chain",
+  phase: "revealing",
+  streak: 4,
+  picked: chainValidPick,
+  result: "correct",
+  question: chainSample,
+  usedKeys: ["other-pair"],
+});
+assert.equal(openingScreen(players), "chain");
+const restoredChain = restoreChainRun();
+assert.equal(restoredChain.phase, "revealing");
+assert.equal(restoredChain.result, "correct");
+assert.equal(restoredChain.streak, 4);
+assert.equal(restoredChain.picked, chainValidPick);
+assert.ok(restoredChain.usedKeys.includes(chainSample.key));
+assert.ok(restoredChain.usedKeys.includes("other-pair"));
+const chainInvalidPick = chainSample.choices.find((id) => !chainChoiceCorrect(chainSample, id));
+writeActiveRun({
+  game: "chain",
+  phase: "revealing",
+  streak: 1,
+  picked: chainInvalidPick,
+  result: "correct",
+  question: chainSample,
+  usedKeys: [chainSample.key],
+});
+assert.equal(restoreChainRun(), null);
+assert.equal(openingScreen(players), "hub");
+
+const chainUnlock = applyChainStreak({ unlocked: [] }, 5);
+assert.ok(chainUnlock.state.unlocked.includes("in-the-rotation"));
+assert.equal(chainUnlock.state.unlocked.includes("glue-guy"), false);
+store.clear();
+writeStorage(CHAIN_BEST_KEY, "20");
+assert.ok(readChainBadges().unlocked.includes("locker-room"));
+assert.equal(readChainBadges().unlocked.includes("veteran-link"), false);
+
 store.clear();
 
+console.log(`Teammate overlap audit: ${datedStints} stints, ${coMemberships} same-team season pairings, ${removedFalseLinks} false links removed, ${overlappingLinks} overlapping links kept, ${auditedQuestions} questions, ${auditedAnswers} correct answers, ${auditedDistractors} distractors, ${auditedDailyQuestions} daily questions.`);
+for (const sample of removedSamples) console.log(`- removed ${sample}`);
 console.log("Gameplay checks passed.");
