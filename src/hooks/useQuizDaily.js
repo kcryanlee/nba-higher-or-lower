@@ -11,21 +11,21 @@ import {
   writeQuizDailyRecord,
 } from "../game/quizDaily.js";
 
-function questionReady(question) {
+function questionReady(question, choiceCount) {
   return Boolean(question)
     && Array.isArray(question.choices)
-    && question.choices.length === 4
-    && new Set(question.choices).size === 4
+    && question.choices.length === choiceCount
+    && new Set(question.choices).size === choiceCount
     && question.choices.includes(question.answer);
 }
 
-function setReady(questions) {
+function setReady(questions, choiceCount) {
   return Array.isArray(questions)
     && questions.length === QUIZ_DAILY_LENGTH
-    && questions.every(questionReady);
+    && questions.every((question) => questionReady(question, choiceCount));
 }
 
-export function useQuizDaily({ storageKey, questionsFor, onComplete } = {}) {
+export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount = 4 } = {}) {
   const today = todayKey();
   const [record, setRecord] = useState(() => readQuizDailyRecord(storageKey));
   const [phase, setPhase] = useState("idle");
@@ -53,11 +53,11 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete } = {}) {
   const questions = useMemo(() => {
     try {
       const built = questionsFor?.(date);
-      return setReady(built) ? built : null;
+      return setReady(built, choiceCount) ? built : null;
     } catch {
       return null;
     }
-  }, [date, questionsFor]);
+  }, [date, questionsFor, choiceCount]);
 
   const available = Array.isArray(questions) && questions.length === QUIZ_DAILY_LENGTH;
   const official = record.days[today] ?? null;
@@ -130,7 +130,7 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete } = {}) {
   function pick(nextChoice) {
     if (locked.current || phase !== "playing") return;
     const question = questions?.[index];
-    if (!questionReady(question) || !question.choices.includes(nextChoice)) return;
+    if (!questionReady(question, choiceCount) || !question.choices.includes(nextChoice)) return;
     locked.current = true;
 
     const correct = nextChoice === question.answer;

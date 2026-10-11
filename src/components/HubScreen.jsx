@@ -23,8 +23,8 @@ const GAMES = [
   {
     id: "scored",
     name: "Who Scored More?",
-    detail: "Two players from the same game. Who scored more?",
-    ready: false,
+    detail: "Three players from one game. Rank their points.",
+    ready: true,
   },
   {
     id: "chain",
@@ -39,8 +39,8 @@ function listedReady(game, modes) {
   return game.ready;
 }
 
-export default function HubScreen({ onHigher, onCareer, onDraftYear, onDraftPick }) {
-  const actions = { higher: onHigher, career: onCareer };
+export default function HubScreen({ onHigher, onCareer, onDraftYear, onDraftPick, onScored }) {
+  const actions = { higher: onHigher, career: onCareer, scored: onScored };
   const draftModes = {
     year: draftPool(players, "year").length > 0,
     pick: draftPool(players, "pick").length > 0,

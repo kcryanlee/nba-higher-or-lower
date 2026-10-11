@@ -23,7 +23,7 @@ import { readJsonStorage, readStoredNumber, writeStorage } from "../src/game/sto
 import { players, careerPlayers } from "../src/data/players.js";
 import { careerChoiceAllowed, eligibleCareers, selectCareerQuestion } from "../src/game/careerPath.js";
 import { collectPairs } from "../src/game/selectMatchup.js";
-import { openingScreen, readActiveRun, restoreCareerRun, restoreClassicRun, restoreDraftRun, writeActiveRun } from "../src/game/activeRun.js";
+import { openingScreen, readActiveRun, restoreCareerRun, restoreClassicRun, restoreDraftRun, restoreScoredRun, writeActiveRun } from "../src/game/activeRun.js";
 import { DRAFT_BEST_KEYS, draftPool, ordinal, parseDraftAnswer, selectDraftQuestion, usableDraftYear } from "../src/game/draft.js";
 import { DRAFT_BADGE_KEYS, DRAFT_BADGES, applyDraftStreak, readDraftBadges } from "../src/game/draftBadges.js";
 import { CAREER_BEST_KEY, readCareerBadges } from "../src/game/careerBadges.js";
@@ -56,6 +56,17 @@ import {
   writeQuizDailyRecord,
 } from "../src/game/quizDaily.js";
 import { useDaily } from "../src/hooks/useDaily.js";
+import { boxScoreErrors, scoredGames } from "../src/data/boxScores.js";
+import { questionFromSaved, positionCredit, scoredTrioKey, selectScoredQuestion } from "../src/game/scored.js";
+import { SCORED_DAILY_KEY, buildScoredDaily } from "../src/game/scoredDaily.js";
+import {
+  SCORED_DAILY_TOTAL,
+  emptyScoredDailyRecord,
+  noteScoredDailyAnswer,
+  readScoredDailyRecord,
+  writeScoredDailyRecord,
+} from "../src/game/scoredDailyRecord.js";
+import { SCORED_BEST_KEY, applyScoredStreak, readScoredBadges } from "../src/game/scoredBadges.js";
 
 const store = new Map();
 let failRead = false;
@@ -779,6 +790,202 @@ assert.equal(applyModeDailyBadges(reloaded, readQuizDailyRecord(DRAFT_DAILY_KEYS
 writeStorage(HIGHER_DAILY_BADGE_KEY, JSON.stringify(higherWeekBadges.state));
 assert.ok(readUnlockedModeDailyBadges(HIGHER_DAILY_BADGE_KEY).unlocked.includes("perfect-week"));
 assert.equal(readQuizDailyRecord(CAREER_DAILY_KEY).completedDates.length, 0);
+store.clear();
+
+assert.equal(boxScoreErrors.length, 0);
+assert.ok(scoredGames.length >= 1200);
+const openingNight = scoredGames.find((game) => (
+  game.date === "2025-10-22"
+  && game.home === "New York Knicks"
+  && game.away === "Cleveland Cavaliers"
+));
+assert.ok(openingNight);
+assert.equal(openingNight.awayScore, 111);
+assert.equal(openingNight.homeScore, 119);
+assert.equal(openingNight.players.find((player) => player.name === "Donovan Mitchell")?.pts, 31);
+assert.equal(openingNight.players.find((player) => player.name === "Jalen Brunson")?.pts, 23);
+assert.equal(openingNight.players.some((player) => player.name === "Luke Travers"), false);
+assert.equal(scoredGames.some((game) => game.home === "Team Stars" || game.away === "World"), false);
+for (const game of scoredGames) {
+  for (const player of game.players) {
+    assert.equal(Number.isInteger(player.pts), true);
+    assert.ok(player.pts >= 0);
+    assert.ok(player.name);
+    assert.ok(player.team === game.home || player.team === game.away);
+  }
+  const awayPoints = game.players.filter((player) => player.team === game.away).reduce((sum, player) => sum + player.pts, 0);
+  const homePoints = game.players.filter((player) => player.team === game.home).reduce((sum, player) => sum + player.pts, 0);
+  assert.equal(awayPoints, game.awayScore);
+  assert.equal(homePoints, game.homeScore);
+}
+
+const tiedGame = [{
+  id: "tie",
+  date: "2025-10-22",
+  home: "Boston Celtics",
+  away: "New York Knicks",
+  players: [
+    { id: 1, name: "A", team: "Boston Celtics", pts: 10 },
+    { id: 2, name: "B", team: "New York Knicks", pts: 10 },
+  ],
+}];
+assert.equal(selectScoredQuestion(0, { games: tiedGame }), null);
+const missingPoints = [{
+  id: "missing",
+  date: "2025-10-22",
+  home: "Boston Celtics",
+  away: "New York Knicks",
+  players: [
+    { id: 1, name: "A", team: "Boston Celtics", pts: 12 },
+    { id: 2, name: "B", team: "New York Knicks", pts: null },
+    { id: 3, name: "C", team: "Boston Celtics", pts: 4 },
+  ],
+}];
+assert.equal(selectScoredQuestion(0, { games: missingPoints }), null);
+const tiedTrio = [{
+  id: "tied-trio",
+  date: "2025-10-22",
+  home: "Boston Celtics",
+  away: "New York Knicks",
+  players: [
+    { id: 1, name: "A", team: "Boston Celtics", pts: 20 },
+    { id: 2, name: "B", team: "New York Knicks", pts: 10 },
+    { id: 3, name: "C", team: "Boston Celtics", pts: 10 },
+  ],
+}];
+assert.equal(selectScoredQuestion(0, { games: tiedTrio }), null);
+
+const usedScored = [];
+for (let round = 0; round < 24; round += 1) {
+  const question = selectScoredQuestion(round, { usedKeys: usedScored });
+  assert.ok(question, `scored ranking ${round}`);
+  assert.equal(question.players.length, 3);
+  assert.equal(usedScored.includes(question.key), false);
+  assert.equal(question.key, scoredTrioKey(question.gameId, question.players.map((player) => player.id)));
+  assert.equal(new Set(question.players.map((player) => player.pts)).size, 3);
+  const ranking = [...question.players].sort((left, right) => right.pts - left.pts || left.id - right.id);
+  assert.deepEqual(question.ranking, ranking.map((player) => player.id));
+  assert.equal(positionCredit(question.ranking, question.ranking), 3);
+  assert.equal(positionCredit(question.ranking, [question.ranking[1], question.ranking[2], question.ranking[0]]), 0);
+  assert.equal(positionCredit(question.ranking, [...question.ranking].reverse()), 1);
+  usedScored.push(question.key);
+}
+
+const scoredToday = buildScoredDaily("2026-10-11");
+const scoredTodayAgain = buildScoredDaily("2026-10-11");
+assert.equal(scoredToday.length, QUIZ_DAILY_LENGTH);
+assert.deepEqual(scoredToday.map((question) => question.key), scoredTodayAgain.map((question) => question.key));
+assert.equal(new Set(scoredToday.map((question) => question.key)).size, QUIZ_DAILY_LENGTH);
+assert.notDeepEqual(
+  scoredToday.map((question) => question.key),
+  buildScoredDaily("2026-10-12").map((question) => question.key),
+);
+for (const question of scoredToday) {
+  assert.equal(new Set(question.players.map((player) => player.pts)).size, 3);
+}
+
+const mitchell = openingNight.players.find((player) => player.name === "Donovan Mitchell");
+const brunson = openingNight.players.find((player) => player.name === "Jalen Brunson");
+const third = openingNight.players.find((player) => (
+  player.id !== mitchell.id && player.id !== brunson.id && player.pts !== mitchell.pts && player.pts !== brunson.pts
+));
+const trioIds = [brunson.id, mitchell.id, third.id];
+const savedQuestion = questionFromSaved(openingNight.id, trioIds, 4);
+assert.equal(savedQuestion.players[0].pts, 23);
+assert.equal(savedQuestion.players[1].pts, 31);
+assert.equal(savedQuestion.dateLabel, "Oct 22, 2025");
+assert.equal(savedQuestion.away, "Cleveland Cavaliers");
+assert.equal(savedQuestion.home, "New York Knicks");
+assert.equal(savedQuestion.key, scoredTrioKey(openingNight.id, [...trioIds].reverse()));
+assert.equal(questionFromSaved(openingNight.id, [mitchell.id, brunson.id, third.id].filter((id, index, ids) => ids.indexOf(id) === index && id === mitchell.id)), null);
+assert.equal(questionFromSaved(openingNight.id, [third.id, brunson.id, openingNight.players.find((player) => player.pts === third.pts && player.id !== third.id)?.id].filter(Boolean)), null);
+writeActiveRun({
+  game: "scored",
+  phase: "revealing",
+  streak: 6,
+  dealtStreak: 4,
+  picks: [...savedQuestion.ranking].reverse(),
+  credit: 1,
+  result: "placed",
+  gameId: openingNight.id,
+  playerIds: [...trioIds].reverse(),
+  key: savedQuestion.key,
+  usedKeys: ["other-game"],
+});
+assert.equal(openingScreen(players), "scored");
+const restoredScored = restoreScoredRun();
+assert.equal(restoredScored.phase, "revealing");
+assert.equal(restoredScored.result, "placed");
+assert.equal(restoredScored.credit, 1);
+assert.equal(restoredScored.streak, 5);
+assert.equal(restoredScored.question.players[0].id, trioIds[2]);
+assert.equal(restoredScored.question.key, savedQuestion.key);
+assert.ok(restoredScored.usedKeys.includes("other-game"));
+assert.ok(restoredScored.usedKeys.includes(savedQuestion.key));
+store.clear();
+writeActiveRun({
+  game: "scored",
+  phase: "playing",
+  streak: 1,
+  gameId: "missing-game",
+  playerIds: [1, 2, 3],
+});
+assert.equal(restoreScoredRun(), null);
+writeActiveRun({
+  game: "scored",
+  phase: "playing",
+  streak: 1,
+  gameId: openingNight.id,
+  leftId: mitchell.id,
+  rightId: brunson.id,
+});
+assert.equal(restoreScoredRun(), null);
+assert.equal(openingScreen(players), "hub");
+
+let scoredRecord = emptyScoredDailyRecord();
+let scoredNote = noteScoredDailyAnswer(scoredRecord, {
+  date: "2026-10-11",
+  index: 0,
+  correct: 3,
+  total: SCORED_DAILY_TOTAL,
+});
+assert.equal(scoredNote.accepted, true);
+assert.equal(scoredNote.record.active.correct, 3);
+scoredNote = noteScoredDailyAnswer(scoredNote.record, {
+  date: "2026-10-11",
+  index: 1,
+  correct: 7,
+  total: SCORED_DAILY_TOTAL,
+});
+assert.equal(scoredNote.accepted, false);
+scoredRecord = noteScoredDailyAnswer(scoredNote.record, {
+  date: "2026-10-11",
+  index: 1,
+  correct: 5,
+  total: SCORED_DAILY_TOTAL,
+}).record;
+for (let index = 2; index < QUIZ_DAILY_LENGTH; index += 1) {
+  scoredRecord = noteScoredDailyAnswer(scoredRecord, {
+    date: "2026-10-11",
+    index,
+    correct: scoredRecord.active.correct + 3,
+    total: SCORED_DAILY_TOTAL,
+  }).record;
+}
+assert.equal(scoredRecord.days["2026-10-11"].correct, 14);
+assert.equal(scoredRecord.days["2026-10-11"].total, 15);
+writeScoredDailyRecord(SCORED_DAILY_KEY, { version: 1, days: { "2026-10-11": { correct: 5, total: 5 } }, completedDates: ["2026-10-11"] });
+assert.equal(readScoredDailyRecord(SCORED_DAILY_KEY).completedDates.length, 0);
+store.clear();
+
+const scoredUnlock = applyScoredStreak({ unlocked: [] }, 5);
+assert.ok(scoredUnlock.state.unlocked.includes("heating-up"));
+assert.equal(scoredUnlock.state.unlocked.includes("scoring-eye"), false);
+store.clear();
+writeStorage(SCORED_BEST_KEY, "20");
+assert.ok(readScoredBadges().unlocked.includes("box-score"));
+assert.equal(readScoredBadges().unlocked.includes("sharp-shooter"), false);
+
 store.clear();
 
 console.log("Gameplay checks passed.");

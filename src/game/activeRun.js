@@ -2,6 +2,7 @@ import { careerPlayers } from "../data/players.js";
 import { categoryById, statGap } from "./categories.js";
 import { bandForStreak } from "./difficulty.js";
 import { draftChoices, draftPool, draftQuestion } from "./draft.js";
+import { positionCredit, questionFromSaved, SCORED_POSITIONS } from "./scored.js";
 import { pairKey } from "./selectMatchup.js";
 import { readJsonStorage, removeStorage, writeStorage } from "./storage.js";
 
@@ -10,7 +11,7 @@ export const ACTIVE_RUN_KEY = "nba-active-run";
 export function readActiveRun() {
   const saved = readJsonStorage(ACTIVE_RUN_KEY);
   if (!saved || (saved.phase !== "playing" && saved.phase !== "revealing")) return null;
-  if (saved.game !== "classic" && saved.game !== "career" && saved.game !== "draft") return null;
+  if (saved.game !== "classic" && saved.game !== "career" && saved.game !== "draft" && saved.game !== "scored") return null;
   if (!Number.isInteger(saved.streak) || saved.streak < 0) return null;
   return saved;
 }
@@ -139,9 +140,64 @@ export function restoreDraftRun(players) {
   };
 }
 
+function cleanPicks(picks, question) {
+  const ids = new Set(question.players.map((player) => player.id));
+  const clean = [];
+  if (!Array.isArray(picks)) return clean;
+  for (const id of picks) {
+    if (!Number.isInteger(id) || !ids.has(id) || clean.includes(id)) break;
+    clean.push(id);
+    if (clean.length === SCORED_POSITIONS) break;
+  }
+  return clean;
+}
+
+export function restoreScoredRun() {
+  const saved = readActiveRun();
+  if (!saved || saved.game !== "scored") return null;
+  if (typeof saved.gameId !== "string" || !Array.isArray(saved.playerIds) || saved.playerIds.length !== SCORED_POSITIONS) {
+    return null;
+  }
+  if (!saved.playerIds.every((id) => Number.isInteger(id))) return null;
+
+  const rawStreak = Number.isInteger(saved.streak) && saved.streak >= 0 ? saved.streak : 0;
+  const creditGuess = Number.isInteger(saved.credit) && saved.credit >= 0 && saved.credit <= SCORED_POSITIONS
+    ? saved.credit
+    : null;
+  const dealtGuess = Number.isInteger(saved.dealtStreak) && saved.dealtStreak >= 0
+    ? saved.dealtStreak
+    : (saved.phase === "revealing" && creditGuess != null ? Math.max(0, rawStreak - creditGuess) : rawStreak);
+  const question = questionFromSaved(saved.gameId, saved.playerIds, dealtGuess);
+  if (!question) return null;
+
+  const usedKeys = Array.isArray(saved.usedKeys)
+    ? saved.usedKeys.filter((key) => typeof key === "string" && key.length > 0)
+    : [];
+  if (!usedKeys.includes(question.key)) usedKeys.push(question.key);
+
+  const picks = cleanPicks(saved.picks, question);
+  const credit = picks.length === SCORED_POSITIONS ? positionCredit(question.ranking, picks) : null;
+  const revealing = saved.phase === "revealing"
+    && credit != null
+    && credit === creditGuess
+    && ((saved.result === "placed" && credit > 0) || (saved.result === "miss" && credit === 0));
+
+  return {
+    phase: revealing ? "revealing" : "playing",
+    streak: revealing ? dealtGuess + credit : rawStreak,
+    dealtStreak: dealtGuess,
+    picks: revealing ? picks : (saved.phase === "playing" ? picks : []),
+    credit: revealing ? credit : null,
+    result: revealing ? saved.result : null,
+    question,
+    usedKeys,
+  };
+}
+
 export function openingScreen(players) {
   if (restoreClassicRun(players)) return "classic";
   if (restoreCareerRun()) return "career";
   if (restoreDraftRun(players)) return "draft";
+  if (restoreScoredRun()) return "scored";
   return "hub";
 }

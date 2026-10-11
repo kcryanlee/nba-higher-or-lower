@@ -4,6 +4,7 @@ export default function QuizDailyScore({
   onPractice,
   onAwards,
   onMenu,
+  note = "Today's puzzle uses your local date. Everyone gets the same five questions. The official score locks after one play.",
 }) {
   return (
     <section className="panel daily-score">
@@ -43,9 +44,7 @@ export default function QuizDailyScore({
           </dd>
         </div>
       </dl>
-      <p className="score-note">
-        Today&apos;s puzzle uses your local date. Everyone gets the same five questions. The official score locks after one play.
-      </p>
+      <p className="score-note">{note}</p>
       <div className="actions">
         <button type="button" className="action" onClick={onPractice}>
           Practice

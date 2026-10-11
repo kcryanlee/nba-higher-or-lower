@@ -19,13 +19,17 @@ export default function PlayerCard({
   tied = false,
   disabled,
   onSelect,
+  rankLabel = "",
+  verdictLabel,
 }) {
   const [failedSrc, setFailedSrc] = useState("");
   const [failedLogo, setFailedLogo] = useState("");
   const statValue = player[category.id];
   const stat = revealed && Number.isFinite(statValue) ? category.format(statValue) : null;
   const tone = revealed ? (tied ? "equal" : higher ? "higher" : "lower") : "";
-  const verdict = revealed ? (tied ? "Equal" : higher ? "Higher" : "Lower") : "";
+  const verdict = revealed
+    ? (verdictLabel ?? (tied ? "Equal" : higher ? "Higher" : "Lower"))
+    : rankLabel;
   const photo = approvedPlayerImage(player.image) || playerImageUrl(player.id);
   const showPhoto = Boolean(photo) && failedSrc !== photo;
   const logo = player.teamLogo || teamLogoUrl(player.team);
@@ -34,7 +38,7 @@ export default function PlayerCard({
   return (
     <button
       type="button"
-      className={`player-card ${tone}`}
+      className={`player-card ${tone} ${picked && !revealed ? "is-ranked" : ""}`}
       onClick={() => onSelect(player.id)}
       disabled={disabled}
       aria-pressed={picked}

@@ -9,6 +9,8 @@ export default function GameLobby({
   dailyStreak,
   todayCorrect,
   resumeQuestion,
+  dailyQuestions = QUIZ_DAILY_LENGTH,
+  dailyTotal = QUIZ_DAILY_LENGTH,
   onPlay,
   onDaily,
   onAwards,
@@ -16,9 +18,9 @@ export default function GameLobby({
   onHub,
 }) {
   const dailyLine = dailyStatus === "complete"
-    ? `Today's challenge • ${todayCorrect}/${QUIZ_DAILY_LENGTH} completed`
+    ? `Today's challenge • ${todayCorrect}/${dailyTotal} completed`
     : dailyStatus === "progress"
-      ? `Today's challenge • question ${resumeQuestion} of ${QUIZ_DAILY_LENGTH}`
+      ? `Today's challenge • question ${resumeQuestion} of ${dailyQuestions}`
       : dailyStatus === "unavailable"
         ? "Today's challenge"
         : "Today's challenge • not started";

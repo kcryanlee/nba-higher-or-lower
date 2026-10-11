@@ -12,6 +12,7 @@ import { readJsonStorage, writeStorage } from "./storage.js";
 export const HIGHER_DAILY_BADGE_KEY = "nba-hol-daily-badges";
 export const CAREER_DAILY_BADGE_KEY = "nba-career-daily-badges";
 export const DRAFT_DAILY_BADGE_KEY = "nba-draft-daily-badges";
+export const SCORED_DAILY_BADGE_KEY = "nba-scored-daily-badges";
 export const DRAFT_DAILY_BADGE_KEYS = {
   year: "nba-draft-year-daily-badges",
   pick: "nba-draft-pick-daily-badges",

@@ -9,6 +9,7 @@ import GameLobby from "./components/GameLobby.jsx";
 import GameOver from "./components/GameOver.jsx";
 import HubScreen from "./components/HubScreen.jsx";
 import QuizDailyScore from "./components/QuizDailyScore.jsx";
+import ScoredGame from "./components/ScoredGame.jsx";
 import StartScreen from "./components/StartScreen.jsx";
 import { dataDisclaimer, dataSeasonLine } from "./data/dataConfig.js";
 import { players } from "./data/players.js";
@@ -18,12 +19,17 @@ import { CAREER_DAILY_KEY, buildCareerDaily } from "./game/careerDaily.js";
 import { DRAFT_BADGES, draftBadgeProgress } from "./game/draftBadges.js";
 import { DRAFT_DAILY_KEYS, buildDraftDaily, draftDailyTitle } from "./game/draftDaily.js";
 import { DRAFT_BEST_KEYS, draftModeLabel } from "./game/draft.js";
+import { SCORED_BADGES, scoredBadgeProgress } from "./game/scoredBadges.js";
+import { SCORED_DAILY_KEY, buildScoredDaily } from "./game/scoredDaily.js";
+import { SCORED_DAILY_TOTAL, readScoredDailyRecord } from "./game/scoredDailyRecord.js";
+import { SCORED_REVEAL_MS, scoredMilestoneBanner, scoredStreakCallout } from "./game/scored.js";
 import { BADGE_REVEAL_MS, MILESTONE_MS, REVEAL_MS, milestoneBanner, streakCallout } from "./game/feedback.js";
 import {
   CAREER_DAILY_BADGE_KEY,
   DRAFT_DAILY_BADGE_KEY,
   HIGHER_DAILY_BADGE_KEY,
   MODE_DAILY_BADGES,
+  SCORED_DAILY_BADGE_KEY,
   mergeModeDailyRecords,
   modeDailyBadgeProgress,
   modeDailyStats,
@@ -40,6 +46,9 @@ import { useDraftBadges } from "./hooks/useDraftBadges.js";
 import { useGame } from "./hooks/useGame.js";
 import { useModeDailyBadges } from "./hooks/useModeDailyBadges.js";
 import { useQuizDaily } from "./hooks/useQuizDaily.js";
+import { useScored } from "./hooks/useScored.js";
+import { useScoredBadges } from "./hooks/useScoredBadges.js";
+import { useScoredDaily } from "./hooks/useScoredDaily.js";
 
 const HIGHER_DAILY_BADGES = MODE_DAILY_BADGES.map((badge) => (
   badge.id === "perfect-day"
@@ -47,6 +56,16 @@ const HIGHER_DAILY_BADGES = MODE_DAILY_BADGES.map((badge) => (
         ...badge,
         detail: `Get ${DAILY_LENGTH}/${DAILY_LENGTH} in a daily challenge`,
         mark: `${DAILY_LENGTH}/${DAILY_LENGTH}`,
+      }
+    : badge
+));
+
+const SCORED_DAILY_BADGES = MODE_DAILY_BADGES.map((badge) => (
+  badge.id === "perfect-day"
+    ? {
+        ...badge,
+        detail: `Get ${SCORED_DAILY_TOTAL}/${SCORED_DAILY_TOTAL} ranking positions in a daily challenge`,
+        mark: `${SCORED_DAILY_TOTAL}/${SCORED_DAILY_TOTAL}`,
       }
     : badge
 ));
@@ -98,6 +117,14 @@ export default function App() {
     onComplete: draftDailyBadges.record,
   });
   const draftDaily = draftLobbyMode === "pick" ? draftPickDaily : draftYearDaily;
+  const scoredBadges = useScoredBadges();
+  const scored = useScored({ onCorrect: scoredBadges.recordStreak });
+  const scoredDailyBadges = useModeDailyBadges(SCORED_DAILY_BADGE_KEY, SCORED_DAILY_KEY, readScoredDailyRecord);
+  const scoredDaily = useScoredDaily({
+    storageKey: SCORED_DAILY_KEY,
+    questionsFor: buildScoredDaily,
+    onComplete: scoredDailyBadges.record,
+  });
   const draftSharedStats = modeDailyStats(mergeModeDailyRecords([
     draftYearDaily.record,
     draftPickDaily.record,
@@ -173,6 +200,52 @@ export default function App() {
   function openDraftDailyAwards(from) {
     setAwardsReturn(from);
     setScreen("draft-daily-awards");
+  }
+
+  function playScored() {
+    scoredBadges.dismiss();
+    if (!scored.start()) return;
+    setScreen("scored");
+  }
+
+  function openScoredDaily() {
+    scored.discard();
+    scoredDailyBadges.dismiss();
+    if (scoredDaily.available) scoredDaily.start();
+    setScreen("scored-daily");
+  }
+
+  function openScoredAwards(from) {
+    setAwardsReturn(from);
+    setScreen("scored-awards");
+  }
+
+  function openScoredDailyAwards(from) {
+    setAwardsReturn(from);
+    setScreen("scored-daily-awards");
+  }
+
+  function practiceScoredDaily() {
+    if (!scoredDaily.available) return;
+    scoredDailyBadges.dismiss();
+    scoredDaily.start(true);
+    setScreen("scored-daily");
+  }
+
+  function leaveScored() {
+    scored.discard();
+    setScreen("hub");
+  }
+
+  function leaveScoredDaily() {
+    scoredDaily.leave();
+    scoredDailyBadges.dismiss();
+    setScreen("scored-menu");
+  }
+
+  function advanceScored() {
+    scoredBadges.dismiss();
+    scored.advance();
   }
 
   function advanceDraft() {
@@ -275,14 +348,21 @@ export default function App() {
   const draftSurface = screen === "draft" || screen === "draft-awards";
   const draftLive = draftSurface && (draft.phase === "playing" || draft.phase === "revealing");
   const draftDailyLive = screen === "draft-daily" && (draftDaily.phase === "playing" || draftDaily.phase === "revealing");
+  const scoredLive = screen === "scored" && (scored.phase === "playing" || scored.phase === "revealing");
+  const scoredDailyLive = screen === "scored-daily" && (scoredDaily.phase === "playing" || scoredDaily.phase === "revealing");
   const draftWrong = screen === "draft" && draftLive && draft.result === "wrong";
   const dailyLive = screen === "daily" && (daily.phase === "playing" || daily.phase === "revealing");
   const wrongFlash = (classicLive && game.result === "wrong")
     || (dailyLive && daily.result === "wrong")
     || draftWrong
-    || (draftDailyLive && draftDaily.result === "wrong");
-  const milestone =
-    classicLive && game.result === "correct" ? milestoneBanner(game.streak) : "";
+    || (draftDailyLive && draftDaily.result === "wrong")
+    || (scoredLive && scored.result === "miss")
+    || (scoredDailyLive && scoredDaily.result === "miss");
+  const scoredBefore = scored.streak - (scored.credit ?? 0);
+  const scoredMilestone = scoredLive && scored.result === "placed"
+    ? scoredMilestoneBanner(scoredBefore, scored.streak)
+    : "";
+  const milestone = (classicLive && game.result === "correct" ? milestoneBanner(game.streak) : "") || scoredMilestone;
 
   return (
     <div className="court">
@@ -347,6 +427,54 @@ export default function App() {
           <p className="scoreboard">
             <span>
               Best <strong>{career.best}</strong>
+            </span>
+          </p>
+        ) : scoredDailyLive ? (
+          <p className="scoreboard">
+            {scoredDaily.practice ? <span>Practice</span> : null}
+            {scoredDaily.practice ? (
+              <span className="score-dot" aria-hidden="true">
+                •
+              </span>
+            ) : null}
+            <span>
+              Question <strong>{Math.min(scoredDaily.index + 1, scoredDaily.total)}</strong>
+              {" / "}
+              {scoredDaily.total}
+            </span>
+            <span className="score-dot" aria-hidden="true">
+              •
+            </span>
+            <span>
+              Score <strong>{scoredDaily.correctCount}</strong>
+            </span>
+          </p>
+        ) : screen === "scored-daily" || screen === "scored-daily-awards" ? (
+          <p className="scoreboard">
+            <span>Today&apos;s Challenge</span>
+          </p>
+        ) : screen === "scored-menu" ? (
+          <p className="scoreboard">
+            <span>
+              Best <strong>{scored.best}</strong>
+            </span>
+          </p>
+        ) : scoredLive ? (
+          <p className="scoreboard">
+            <span>
+              Streak <strong>{scored.streak}</strong>
+            </span>
+            <span className="score-dot" aria-hidden="true">
+              •
+            </span>
+            <span>
+              Best <strong>{scored.best}</strong>
+            </span>
+          </p>
+        ) : screen === "scored" || screen === "scored-awards" ? (
+          <p className="scoreboard">
+            <span>
+              Best <strong>{scored.best}</strong>
             </span>
           </p>
         ) : screen === "draft-menu" ? (
@@ -440,13 +568,14 @@ export default function App() {
         )}
       </header>
 
-      <main className={`frame ${classicLive || dailyLive ? "is-open" : ""}`}>
+      <main className={`frame ${classicLive || dailyLive || scoredLive || scoredDailyLive ? "is-open" : ""}`}>
         {screen === "hub" ? (
           <HubScreen
             onHigher={() => setScreen("menu")}
             onCareer={() => setScreen("career-menu")}
             onDraftYear={() => openDraftLobby("year")}
             onDraftPick={() => openDraftLobby("pick")}
+            onScored={() => setScreen("scored-menu")}
           />
         ) : null}
 
@@ -480,6 +609,128 @@ export default function App() {
             onAwards={() => openCareerAwards("career-menu")}
             onDailyAwards={() => openCareerDailyAwards("career-menu")}
             onHub={() => setScreen("hub")}
+          />
+        ) : null}
+
+        {screen === "scored-menu" ? (
+          <GameLobby
+            eyebrow="Who Scored More?"
+            title="Who Scored More?"
+            lede="Three players from one game. Rank them from most points to fewest."
+            best={scored.best}
+            dailyStatus={scoredDaily.status}
+            dailyStreak={scoredDaily.streak}
+            todayCorrect={scoredDaily.official?.correct ?? 0}
+            resumeQuestion={(scoredDaily.active?.index ?? 0) + 1}
+            dailyTotal={SCORED_DAILY_TOTAL}
+            onPlay={playScored}
+            onDaily={openScoredDaily}
+            onAwards={() => openScoredAwards("scored-menu")}
+            onDailyAwards={() => openScoredDailyAwards("scored-menu")}
+            onHub={() => setScreen("hub")}
+          />
+        ) : null}
+
+        {screen === "scored" ? (
+          <ScoredGame
+            phase={scored.phase}
+            streak={scored.streak}
+            best={scored.best}
+            question={scored.question}
+            picks={scored.picks}
+            credit={scored.credit}
+            result={scored.result}
+            onPick={scored.pick}
+            onLock={scored.lock}
+            onAdvance={advanceScored}
+            onAgain={playScored}
+            onMenu={leaveScored}
+            onAwards={() => openScoredAwards("scored")}
+            onDaily={openScoredDaily}
+            unlockedBadges={scoredBadges.fresh}
+            callout={scored.result === "placed" ? scoredStreakCallout(scoredBefore, scored.streak) : ""}
+            holdMs={scoredBadges.fresh.length ? BADGE_REVEAL_MS : scoredMilestone ? MILESTONE_MS : SCORED_REVEAL_MS}
+          />
+        ) : null}
+
+        {screen === "scored-awards" ? (
+          <Achievements
+            badges={scoredBadges.snapshot}
+            best={scored.best}
+            celebrate={scoredBadges.celebrate}
+            catalog={SCORED_BADGES}
+            progressFor={(badge) => scoredBadgeProgress(badge, scoredBadges.snapshot, scored.best)}
+            eyebrow="Who Scored More?"
+            onBack={() => {
+              scoredBadges.acknowledge();
+              setScreen(awardsReturn === "scored-menu" ? "scored-menu" : "scored");
+            }}
+          />
+        ) : null}
+
+        {scoredDailyLive && scoredDaily.question ? (
+          <ScoredGame
+            phase={scoredDaily.phase}
+            streak={scoredDaily.correctCount}
+            best={scored.best}
+            question={scoredDaily.question}
+            picks={scoredDaily.picks}
+            credit={scoredDaily.credit}
+            result={scoredDaily.result}
+            onPick={scoredDaily.pick}
+            onLock={scoredDaily.lock}
+            onAdvance={scoredDaily.advance}
+            onAgain={playScored}
+            onMenu={leaveScoredDaily}
+            onAwards={() => openScoredDailyAwards("scored-daily")}
+            kicker="Today's Challenge"
+            menuLabel="Back"
+            unlockedBadges={scoredDailyBadges.fresh}
+            holdMs={scoredDailyBadges.fresh.length ? BADGE_REVEAL_MS : SCORED_REVEAL_MS}
+          />
+        ) : null}
+
+        {screen === "scored-daily" && scoredDaily.phase === "results" && scoredDaily.attempt ? (
+          <QuizDailyScore
+            attempt={scoredDaily.attempt}
+            unlockedBadges={scoredDailyBadges.fresh}
+            onPractice={practiceScoredDaily}
+            onAwards={() => openScoredDailyAwards("scored-daily")}
+            onMenu={() => {
+              scoredDaily.leave();
+              scoredDailyBadges.dismiss();
+              setScreen("hub");
+            }}
+            note="Today's puzzle uses your local date. Everyone ranks the same five games. The official score is out of 15 and locks after one play."
+          />
+        ) : null}
+
+        {screen === "scored-daily" && scoredDaily.phase === "idle" && !scoredDaily.available ? (
+          <section className="panel daily-score">
+            <p className="eyebrow">Who Scored More? Daily</p>
+            <h1 className="section-title">Unavailable</h1>
+            <p className="lede">Today&apos;s challenge could not be built.</p>
+            <button type="button" className="action secondary" onClick={leaveScoredDaily}>
+              Who Scored More?
+            </button>
+          </section>
+        ) : null}
+
+        {screen === "scored-daily-awards" ? (
+          <Achievements
+            badges={scoredDailyBadges.snapshot}
+            celebrate={scoredDailyBadges.celebrate}
+            catalog={SCORED_DAILY_BADGES}
+            lede={null}
+            progressFor={(badge) => modeDailyBadgeProgress(badge, scoredDailyBadges.snapshot, {
+              ...modeDailyStats(scoredDaily.record),
+              total: SCORED_DAILY_TOTAL,
+            })}
+            eyebrow="Who Scored More? Daily"
+            onBack={() => {
+              scoredDailyBadges.acknowledge();
+              setScreen(awardsReturn === "scored-menu" ? "scored-menu" : "scored-daily");
+            }}
           />
         ) : null}
 
@@ -792,10 +1043,12 @@ export default function App() {
           />
         ) : null}
 
-        <p className="snapshot">
-          {dataDisclaimer()}
-          <span className="snapshot-seasons">{dataSeasonLine()}</span>
-        </p>
+        {screen === "scored" || screen === "scored-menu" || screen === "scored-awards" || screen === "scored-daily" || screen === "scored-daily-awards" ? null : (
+          <p className="snapshot">
+            {dataDisclaimer()}
+            <span className="snapshot-seasons">{dataSeasonLine()}</span>
+          </p>
+        )}
       </main>
     </div>
   );
