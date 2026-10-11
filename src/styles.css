@@ -988,9 +988,14 @@ h1.section-title {
   }
 }
 
+.rank-rule,
 .rank-help {
   margin: 8px 0 0;
   color: #d7c8b2;
+}
+
+.rank-rule {
+  margin-bottom: 0;
 }
 
 .rank-lock {

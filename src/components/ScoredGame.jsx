@@ -14,9 +14,14 @@ const POINTS = {
 
 const RANK_LABELS = ["1st", "2nd", "3rd"];
 
-function rankHelp(revealing, picks, credit) {
+function placesRight(ranking, picks) {
+  if (!Array.isArray(ranking) || picks.length !== ranking.length) return null;
+  return ranking.reduce((sum, id, index) => sum + (picks[index] === id ? 1 : 0), 0);
+}
+
+function rankHelp(revealing, picks, places) {
   if (revealing) {
-    return Number.isInteger(credit) ? `${credit} of 3 in the right place` : "";
+    return Number.isInteger(places) ? `${places} of 3 in the right place` : "";
   }
   if (picks.length === 0) return "Tap the most points, then the next, then the fewest.";
   if (picks.length === 1) return "Now the next highest.";
@@ -30,7 +35,6 @@ export default function ScoredGame({
   best,
   question,
   picks = [],
-  credit = null,
   result,
   onPick,
   onLock,
@@ -103,7 +107,12 @@ export default function ScoredGame({
             {question.home}
           </span>
         </p>
-        <p className="rank-help">{rankHelp(revealing, picks, credit)}</p>
+        <p className="rank-rule">
+          {kicker
+            ? "A perfect order adds 2, one right place adds 1, and missing every place adds nothing."
+            : "A perfect order adds 2, one right place adds 1, and missing every place ends the streak."}
+        </p>
+        <p className="rank-help">{rankHelp(revealing, picks, revealing ? placesRight(question.ranking, picks) : null)}</p>
       </div>
       <div className="cards is-rank" role="group" aria-label="Rank from most points to fewest">
         {shown.map((player, index) => {

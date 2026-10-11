@@ -1,10 +1,10 @@
 import { previousDateKey, todayKey } from "./daily.js";
 import { activeQuizStreak, quizBestCorrect, streakEndingOn } from "./quizDaily.js";
 import { readJsonStorage, writeStorage } from "./storage.js";
-import { SCORED_POSITIONS } from "./scored.js";
+import { SCORED_PERFECT_CREDIT } from "./scored.js";
 
 export const SCORED_DAILY_QUESTIONS = 5;
-export const SCORED_DAILY_TOTAL = SCORED_DAILY_QUESTIONS * SCORED_POSITIONS;
+export const SCORED_DAILY_TOTAL = SCORED_DAILY_QUESTIONS * SCORED_PERFECT_CREDIT;
 const RECORD_VERSION = 2;
 
 export function emptyScoredDailyRecord() {
@@ -39,7 +39,7 @@ function readActive(value, days) {
   const index = Math.floor(Number(value.index));
   if (!Number.isInteger(index) || index <= 0 || index >= SCORED_DAILY_QUESTIONS) return null;
   if (Math.floor(Number(value.credited)) !== index) return null;
-  const correct = wholeCount(value.correct, index * SCORED_POSITIONS);
+  const correct = wholeCount(value.correct, index * SCORED_PERFECT_CREDIT);
   if (correct == null) return null;
   return {
     date: value.date,
@@ -144,7 +144,7 @@ export function noteScoredDailyAnswer(record, attempt) {
     return { record, accepted: false, finished: false };
   }
   const gained = correct - active.correct;
-  if (gained < 0 || gained > SCORED_POSITIONS || correct > SCORED_DAILY_TOTAL) {
+  if (gained < 0 || gained > SCORED_PERFECT_CREDIT || correct > SCORED_DAILY_TOTAL) {
     return { record, accepted: false, finished: false };
   }
 

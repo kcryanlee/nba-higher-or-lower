@@ -865,7 +865,7 @@ for (let round = 0; round < 24; round += 1) {
   assert.equal(new Set(question.players.map((player) => player.pts)).size, 3);
   const ranking = [...question.players].sort((left, right) => right.pts - left.pts || left.id - right.id);
   assert.deepEqual(question.ranking, ranking.map((player) => player.id));
-  assert.equal(positionCredit(question.ranking, question.ranking), 3);
+  assert.equal(positionCredit(question.ranking, question.ranking), 2);
   assert.equal(positionCredit(question.ranking, [question.ranking[1], question.ranking[2], question.ranking[0]]), 0);
   assert.equal(positionCredit(question.ranking, [...question.ranking].reverse()), 1);
   usedScored.push(question.key);
@@ -946,34 +946,34 @@ let scoredRecord = emptyScoredDailyRecord();
 let scoredNote = noteScoredDailyAnswer(scoredRecord, {
   date: "2026-10-11",
   index: 0,
-  correct: 3,
+  correct: 2,
   total: SCORED_DAILY_TOTAL,
 });
 assert.equal(scoredNote.accepted, true);
-assert.equal(scoredNote.record.active.correct, 3);
+assert.equal(scoredNote.record.active.correct, 2);
 scoredNote = noteScoredDailyAnswer(scoredNote.record, {
   date: "2026-10-11",
   index: 1,
-  correct: 7,
+  correct: 5,
   total: SCORED_DAILY_TOTAL,
 });
 assert.equal(scoredNote.accepted, false);
 scoredRecord = noteScoredDailyAnswer(scoredNote.record, {
   date: "2026-10-11",
   index: 1,
-  correct: 5,
+  correct: 4,
   total: SCORED_DAILY_TOTAL,
 }).record;
 for (let index = 2; index < QUIZ_DAILY_LENGTH; index += 1) {
   scoredRecord = noteScoredDailyAnswer(scoredRecord, {
     date: "2026-10-11",
     index,
-    correct: scoredRecord.active.correct + 3,
+    correct: scoredRecord.active.correct + 2,
     total: SCORED_DAILY_TOTAL,
   }).record;
 }
-assert.equal(scoredRecord.days["2026-10-11"].correct, 14);
-assert.equal(scoredRecord.days["2026-10-11"].total, 15);
+assert.equal(scoredRecord.days["2026-10-11"].correct, 10);
+assert.equal(scoredRecord.days["2026-10-11"].total, 10);
 writeScoredDailyRecord(SCORED_DAILY_KEY, { version: 1, days: { "2026-10-11": { correct: 5, total: 5 } }, completedDates: ["2026-10-11"] });
 assert.equal(readScoredDailyRecord(SCORED_DAILY_KEY).completedDates.length, 0);
 store.clear();

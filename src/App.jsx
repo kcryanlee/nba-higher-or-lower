@@ -638,7 +638,6 @@ export default function App() {
             best={scored.best}
             question={scored.question}
             picks={scored.picks}
-            credit={scored.credit}
             result={scored.result}
             onPick={scored.pick}
             onLock={scored.lock}
@@ -675,7 +674,6 @@ export default function App() {
             best={scored.best}
             question={scoredDaily.question}
             picks={scoredDaily.picks}
-            credit={scoredDaily.credit}
             result={scoredDaily.result}
             onPick={scoredDaily.pick}
             onLock={scoredDaily.lock}
@@ -701,7 +699,7 @@ export default function App() {
               scoredDailyBadges.dismiss();
               setScreen("hub");
             }}
-            note="Today's puzzle uses your local date. Everyone ranks the same five games. The official score is out of 15 and locks after one play."
+            note={`Today's puzzle uses your local date. Everyone ranks the same five games. The official score is out of ${SCORED_DAILY_TOTAL} and locks after one play.`}
           />
         ) : null}
 

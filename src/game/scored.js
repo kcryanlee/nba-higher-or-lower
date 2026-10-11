@@ -5,6 +5,7 @@ import { milestoneBanner, streakCallout } from "./feedback.js";
 const BAND_ORDER = ["easy", "medium", "hard", "expert"];
 
 export const SCORED_POSITIONS = 3;
+export const SCORED_PERFECT_CREDIT = 2;
 export const SCORED_REVEAL_MS = 1500;
 
 export function scoredPlayerImage(id) {
@@ -28,7 +29,8 @@ export function scoredTrioKey(gameId, ids) {
 
 export function positionCredit(ranking, picks) {
   if (!Array.isArray(ranking) || !Array.isArray(picks) || picks.length !== ranking.length) return 0;
-  return ranking.reduce((sum, id, index) => sum + (picks[index] === id ? 1 : 0), 0);
+  const matches = ranking.reduce((sum, id, index) => sum + (picks[index] === id ? 1 : 0), 0);
+  return matches === ranking.length ? SCORED_PERFECT_CREDIT : matches;
 }
 
 export function scoredMilestoneBanner(before, after) {

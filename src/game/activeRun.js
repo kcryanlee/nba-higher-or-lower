@@ -2,7 +2,7 @@ import { careerPlayers } from "../data/players.js";
 import { categoryById, statGap } from "./categories.js";
 import { bandForStreak } from "./difficulty.js";
 import { draftChoices, draftPool, draftQuestion } from "./draft.js";
-import { positionCredit, questionFromSaved, SCORED_POSITIONS } from "./scored.js";
+import { positionCredit, questionFromSaved, SCORED_PERFECT_CREDIT, SCORED_POSITIONS } from "./scored.js";
 import { pairKey } from "./selectMatchup.js";
 import { readJsonStorage, removeStorage, writeStorage } from "./storage.js";
 
@@ -161,7 +161,7 @@ export function restoreScoredRun() {
   if (!saved.playerIds.every((id) => Number.isInteger(id))) return null;
 
   const rawStreak = Number.isInteger(saved.streak) && saved.streak >= 0 ? saved.streak : 0;
-  const creditGuess = Number.isInteger(saved.credit) && saved.credit >= 0 && saved.credit <= SCORED_POSITIONS
+  const creditGuess = Number.isInteger(saved.credit) && saved.credit >= 0 && saved.credit <= SCORED_PERFECT_CREDIT
     ? saved.credit
     : null;
   const dealtGuess = Number.isInteger(saved.dealtStreak) && saved.dealtStreak >= 0
