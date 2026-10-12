@@ -11,7 +11,7 @@ const GAMES = [
   {
     id: "career",
     name: "Career Path",
-    detail: "See the teams a player joined. Name who it is.",
+    detail: "See the career. Name the player.",
     ready: true,
   },
   {

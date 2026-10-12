@@ -11,7 +11,8 @@ import {
   writeQuizDailyRecord,
 } from "../game/quizDaily.js";
 
-function questionReady(question, choiceCount, accepts) {
+function questionReady(question, choiceCount, accepts, openAnswer) {
+  if (openAnswer) return Boolean(question) && typeof question.answer === "string" && question.answer.length > 0;
   const listed = Boolean(question)
     && Array.isArray(question.choices)
     && question.choices.length === choiceCount
@@ -21,13 +22,13 @@ function questionReady(question, choiceCount, accepts) {
   return question.choices.includes(question.answer);
 }
 
-function setReady(questions, choiceCount, accepts) {
+function setReady(questions, choiceCount, accepts, openAnswer) {
   return Array.isArray(questions)
     && questions.length === QUIZ_DAILY_LENGTH
-    && questions.every((question) => questionReady(question, choiceCount, accepts));
+    && questions.every((question) => questionReady(question, choiceCount, accepts, openAnswer));
 }
 
-export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount = 4, accepts } = {}) {
+export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount = 4, accepts, openAnswer = false } = {}) {
   const today = todayKey();
   const [record, setRecord] = useState(() => readQuizDailyRecord(storageKey));
   const [phase, setPhase] = useState("idle");
@@ -41,6 +42,7 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount
   const date = phase === "playing" || phase === "revealing" ? puzzleDate : today;
   const onCompleteRef = useRef(onComplete);
   const acceptsRef = useRef(accepts);
+  const openAnswerRef = useRef(openAnswer);
   const recordRef = useRef(record);
   const locked = useRef(false);
   const practiceRef = useRef(false);
@@ -48,6 +50,7 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount
   useEffect(() => {
     onCompleteRef.current = onComplete;
     acceptsRef.current = accepts;
+    openAnswerRef.current = openAnswer;
   });
 
   useEffect(() => {
@@ -57,11 +60,11 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount
   const questions = useMemo(() => {
     try {
       const built = questionsFor?.(date);
-      return setReady(built, choiceCount, accepts) ? built : null;
+      return setReady(built, choiceCount, accepts, openAnswer) ? built : null;
     } catch {
       return null;
     }
-  }, [date, questionsFor, choiceCount, accepts]);
+  }, [date, questionsFor, choiceCount, accepts, openAnswer]);
 
   const available = Array.isArray(questions) && questions.length === QUIZ_DAILY_LENGTH;
   const official = record.days[today] ?? null;
@@ -134,7 +137,10 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount
   function pick(nextChoice) {
     if (locked.current || phase !== "playing") return;
     const question = questions?.[index];
-    if (!questionReady(question, choiceCount, acceptsRef.current) || !question.choices.includes(nextChoice)) return;
+    if (!questionReady(question, choiceCount, acceptsRef.current, openAnswerRef.current)) return;
+    if (openAnswerRef.current) {
+      if (typeof nextChoice !== "string" || !nextChoice.trim()) return;
+    } else if (!question.choices.includes(nextChoice)) return;
     locked.current = true;
 
     const correct = typeof acceptsRef.current === "function"

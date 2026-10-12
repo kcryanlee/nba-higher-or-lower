@@ -84,14 +84,12 @@ export default function DraftGame({
   }, [revealing, onAdvance]);
 
   if ((phase === "gameover" || phase === "cleared") && question) {
-    const cleared = phase === "cleared";
     return (
       <section className="panel game-over">
         <ScoreCard
           title="Draft Pick"
           streak={streak}
           best={best}
-          detail={cleared ? `That's every player available for ${label}.` : null}
         />
         <EndActions
           title="Draft Pick"

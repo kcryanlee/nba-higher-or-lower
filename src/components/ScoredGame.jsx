@@ -64,7 +64,6 @@ export default function ScoredGame({
           title="Who Scored More?"
           streak={streak}
           best={best}
-          detail={`${question.dateLabel} · ${question.away} at ${question.home}`}
           fileName="nba-who-scored-more.png"
           onAgain={onAgain}
           onAwards={onAwards}

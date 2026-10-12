@@ -4,7 +4,6 @@ import ScoreCard from "./ScoreCard.jsx";
 export default function GameOver({
   streak,
   best,
-  difficulty,
   onAgain,
   onAwards,
   onMenu,
@@ -15,13 +14,11 @@ export default function GameOver({
         title="NBA Higher or Lower"
         streak={streak}
         best={best}
-        detail={`Difficulty: ${difficulty}`}
       />
       <EndActions
         title="NBA Higher or Lower"
         streak={streak}
         best={best}
-        detail={`Difficulty: ${difficulty}`}
         onAgain={onAgain}
         onAwards={onAwards}
         onMenu={onMenu}

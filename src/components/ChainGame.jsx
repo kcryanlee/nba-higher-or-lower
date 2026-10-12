@@ -47,7 +47,6 @@ export default function ChainGame({
   question,
   picked,
   result,
-  ended = null,
   onPick,
   onAdvance,
   onAgain,
@@ -59,23 +58,17 @@ export default function ChainGame({
   unlockedBadges = [],
 }) {
   if (phase === "gameover") {
-    const missed = ended !== "cleared";
-    const detail = missed
-      ? "That player did not play with both."
-      : "No questions left.";
     return (
       <section className="panel game-over">
         <ScoreCard
           title="Teammate Chain"
           streak={streak}
           best={best}
-          detail={detail}
         />
         <EndActions
           title="Teammate Chain"
           streak={streak}
           best={best}
-          detail={detail}
           fileName="nba-teammate-chain.png"
           onAgain={onAgain}
           onAwards={onAwards}

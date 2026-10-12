@@ -49,7 +49,7 @@ export default function StartScreen({
           ) : (
             <strong>Same questions for everyone today</strong>
           )}
-          <span>Uses your local date</span>
+          <span>One attempt · uses your local date</span>
         </button>
       )}
       <button type="button" className="lobby-link" onClick={onAwards}>

@@ -20,6 +20,7 @@ import { CHAIN_BADGES, chainBadgeProgress } from "./game/chainBadges.js";
 import { chainChoiceCorrect } from "./game/chain.js";
 import { CHAIN_DAILY_KEY, buildChainDaily } from "./game/chainDaily.js";
 import { CAREER_DAILY_KEY, buildCareerDaily } from "./game/careerDaily.js";
+import { careerPlayerAccepted } from "./game/careerPath.js";
 import { DRAFT_BADGES, draftBadgeProgress } from "./game/draftBadges.js";
 import { DRAFT_DAILY_KEYS, buildDraftDaily, draftDailyTitle } from "./game/draftDaily.js";
 import { DRAFT_BEST_KEYS, draftModeLabel } from "./game/draft.js";
@@ -103,6 +104,8 @@ export default function App() {
     storageKey: CAREER_DAILY_KEY,
     questionsFor: buildCareerDaily,
     onComplete: careerDailyBadges.record,
+    openAnswer: true,
+    accepts: careerPlayerAccepted,
   });
   const draftBadges = useDraftBadges();
   const draft = useDraft(players, { onCorrect: draftBadges.recordStreak });
@@ -440,7 +443,10 @@ export default function App() {
         </div>
       ) : null}
       <header className="topbar">
-        <p className="brand">NBA Mini Games</p>
+        <p className="brand">
+          <img className="brand-mark" src="/basketball.png" alt="" width="22" height="22" />
+          NBA Mini Games
+        </p>
         {careerDailyLive ? (
           <p className="scoreboard">
             {careerDaily.practice ? <span>Practice</span> : null}
@@ -846,7 +852,7 @@ export default function App() {
           <GameLobby
             eyebrow="Career Path"
             title="Career Path"
-            lede="See the teams a player joined. Name who it is."
+            lede="The career is on the board. Name the player."
             best={career.best}
             dailyStatus={careerDaily.status}
             dailyStreak={careerDaily.streak}
@@ -1230,7 +1236,6 @@ export default function App() {
           <GameOver
             streak={game.streak}
             best={game.best}
-            difficulty={game.difficulty}
             onAgain={playClassic}
             onAwards={() => openAwards("classic")}
             onMenu={leaveClassic}

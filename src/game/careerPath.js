@@ -1,4 +1,5 @@
 import { careerPlayers as CAREERS } from "../data/players.js";
+import { playerNamesMatch } from "./playerSearch.js";
 
 const LABELS = {
   easy: "Easy",
@@ -82,18 +83,12 @@ function tierOf(career) {
   return TIER[career.name] || "known";
 }
 
-function pathKey(career) {
-  return career.stops.map((stop) => stop.team).join("|");
+export function careerQuestionKey(answerId, stopIndex) {
+  return `${answerId}:${stopIndex}`;
 }
 
-function timelineKey(career) {
-  return career.stops.map((stop) => `${stop.team}:${stop.start}:${stop.end}`).join("|");
-}
-
-export function careerChoiceAllowed(answer, candidate, bandId) {
-  if (!answer || !candidate || candidate.name === answer.name) return false;
-  if (bandId === "hard") return pathKey(candidate) !== pathKey(answer);
-  return timelineKey(candidate) !== timelineKey(answer);
+export function careerPlayerAccepted(question, choice) {
+  return playerNamesMatch(question?.player, choice) || playerNamesMatch(question?.answer, choice);
 }
 
 export function eligibleCareers(bandId) {
@@ -139,77 +134,54 @@ function weightFor(bandId, career) {
   return 1;
 }
 
-function sharedTeamCount(answer, candidate) {
-  const teams = new Set(answer.stops.map((stop) => stop.team));
-  return new Set(candidate.stops.filter((stop) => teams.has(stop.team)).map((stop) => stop.team)).size;
-}
-
-function eraOverlap(answer, candidate) {
-  const start = Math.max(answer.stops[0].start, candidate.stops[0].start);
-  const end = Math.min(answer.stops.at(-1).end, candidate.stops.at(-1).end);
-  return end - start;
-}
-
-function distractorScore(answer, candidate) {
-  const shared = sharedTeamCount(answer, candidate);
-  const samePosition = candidate.position === answer.position;
-  const overlap = eraOverlap(answer, candidate);
-  let score = shared * 4;
-  if (samePosition) score += 3;
-  if (overlap >= 6) score += Math.min(4, Math.floor(overlap / 4));
-  score -= Math.abs(candidate.stops.length - answer.stops.length);
-  if (shared === 0 && !(samePosition && overlap >= 6)) score -= 6;
-  return score;
-}
-
-function selectDistractors(answer, bandId, random) {
-  const ranked = CAREERS.filter((career) => careerChoiceAllowed(answer, career, bandId))
-    .map((career) => ({ career, score: distractorScore(answer, career) }))
-    .sort((left, right) => right.score - left.score);
-  const plausible = ranked.filter((item) => item.score >= 3);
-  const shortlist = (plausible.length >= 3 ? plausible : ranked).slice(0, 6);
-  return shuffle(shortlist, random)
-    .slice(0, 3)
-    .map((item) => item.career);
-}
-
-function uniqueChoices(answer, distractors, random) {
-  const names = [];
-  const seenIds = new Set([answer.id]);
-  const seenNames = new Set([answer.name]);
-  for (const career of distractors) {
-    if (seenIds.has(career.id) || seenNames.has(career.name)) continue;
-    seenIds.add(career.id);
-    seenNames.add(career.name);
-    names.push(career.name);
+function openStopIndexes(career, blocked) {
+  const indexes = [];
+  for (let index = 0; index < career.stops.length; index += 1) {
+    if (!blocked.has(careerQuestionKey(career.id, index))) indexes.push(index);
   }
-  if (names.length < 3) return null;
-  return shuffle([answer.name, ...names.slice(0, 3)], random);
+  return indexes;
 }
 
-export function selectCareerQuestionForBand(bandId, { usedIds = [], random = Math.random } = {}) {
+function assembleQuestion(answer, band, stopIndex) {
+  return {
+    band,
+    answer: answer.name,
+    answerId: answer.id,
+    player: answer.name,
+    position: answer.position,
+    stops: answer.stops,
+    hiddenIndex: stopIndex,
+    key: careerQuestionKey(answer.id, stopIndex),
+  };
+}
+
+function blockedKeySet(usedKeys) {
+  return new Set(Array.isArray(usedKeys) ? usedKeys.filter((key) => typeof key === "string" && key) : []);
+}
+
+function searchPool(pool, bandId, band, random, blocked) {
+  let remaining = [...pool];
+  while (remaining.length) {
+    const answer = pickWeighted(remaining, (career) => weightFor(bandId, career), random);
+    const indexes = openStopIndexes(answer, blocked);
+    if (indexes.length) {
+      const stopIndex = indexes[Math.floor(random() * indexes.length)];
+      return assembleQuestion(answer, band, stopIndex);
+    }
+    remaining = remaining.filter((career) => career.id !== answer.id);
+  }
+  return null;
+}
+
+export function selectCareerQuestionForBand(bandId, { usedIds = [], usedKeys = [], random = Math.random } = {}) {
   if (!LABELS[bandId]) return null;
   const band = { id: bandId, label: LABELS[bandId] };
   const used = new Set(Array.isArray(usedIds) ? usedIds.filter((id) => Number.isInteger(id)) : []);
-  let pool = poolFor(bandId).filter((career) => !used.has(career.id));
-
-  while (pool.length) {
-    const answer = pickWeighted(pool, (career) => weightFor(bandId, career), random);
-    const choices = uniqueChoices(answer, selectDistractors(answer, bandId, random), random);
-    if (choices) {
-      return {
-        band,
-        answer: answer.name,
-        answerId: answer.id,
-        position: answer.position,
-        stops: answer.stops,
-        choices,
-      };
-    }
-    pool = pool.filter((career) => career.id !== answer.id);
-  }
-
-  return null;
+  const blocked = blockedKeySet(usedKeys);
+  const pool = poolFor(bandId);
+  const fresh = pool.filter((career) => !used.has(career.id));
+  return searchPool(fresh, bandId, band, random, blocked)
+    || searchPool(pool, bandId, band, random, blocked);
 }
 
 export function selectCareerQuestion(streak, options = {}) {

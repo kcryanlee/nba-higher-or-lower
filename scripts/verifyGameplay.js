@@ -21,7 +21,9 @@ import { pairKey, selectMatchup } from "../src/game/selectMatchup.js";
 import { BADGES, applyAnswer, emptyBadgeState } from "../src/game/badges.js";
 import { readJsonStorage, readStoredNumber, writeStorage } from "../src/game/storage.js";
 import { players, careerPlayers } from "../src/data/players.js";
-import { careerChoiceAllowed, eligibleCareers, selectCareerQuestion } from "../src/game/careerPath.js";
+import { careerPlayerAccepted, eligibleCareers, selectCareerQuestion } from "../src/game/careerPath.js";
+import { playerNamesMatch, searchPlayers } from "../src/game/playerSearch.js";
+import { officialTeamName, searchTeams, teamMatches } from "../src/game/teams.js";
 import { collectPairs } from "../src/game/selectMatchup.js";
 import { openingScreen, readActiveRun, restoreCareerRun, restoreChainRun, restoreClassicRun, restoreDraftRun, restoreScoredRun, writeActiveRun } from "../src/game/activeRun.js";
 import { DRAFT_BEST_KEYS, draftPool, ordinal, parseDraftAnswer, selectDraftQuestion, usableDraftYear } from "../src/game/draft.js";
@@ -316,12 +318,40 @@ for (const career of eligibleCareers("hard")) assert.ok(career.stops.length >= 4
 assert.ok(eligibleCareers("easy").some((career) => career.name === "Amen Thompson"));
 assert.equal(eligibleCareers("easy").some((career) => career.name === "LeBron James"), false);
 
-const herro = careerPlayers.find((career) => career.name === "Tyler Herro");
-const jaquez = careerPlayers.find((career) => career.name === "Jaime Jaquez Jr.");
-assert.equal(careerChoiceAllowed(herro, jaquez, "easy"), true);
-assert.equal(careerChoiceAllowed(herro, jaquez, "medium"), true);
-assert.equal(careerChoiceAllowed(herro, jaquez, "hard"), false);
-assert.equal(careerChoiceAllowed(herro, { ...herro, name: "Clone" }, "easy"), false);
+assert.deepEqual(searchTeams(""), []);
+assert.deepEqual(searchTeams("   "), []);
+assert.ok(searchTeams("a").length < 30);
+assert.deepEqual(searchTeams("lac"), ["Los Angeles Clippers"]);
+assert.deepEqual(searchTeams("Clippers"), ["Los Angeles Clippers"]);
+assert.deepEqual(searchTeams("LA Clippers"), ["Los Angeles Clippers"]);
+assert.deepEqual(searchTeams("L.A. Clippers"), ["Los Angeles Clippers"]);
+assert.equal(officialTeamName("LAC"), "Los Angeles Clippers");
+assert.equal(officialTeamName("la"), null);
+assert.ok(searchTeams("la").includes("Los Angeles Clippers"));
+assert.ok(searchTeams("la").includes("Los Angeles Lakers"));
+assert.equal(searchTeams("la").length < 8, true);
+assert.equal(teamMatches("Los Angeles Clippers", "Clippers"), true);
+assert.equal(teamMatches("Los Angeles Clippers", "Lakers"), false);
+assert.equal(teamMatches("Golden State Warriors", "GSW"), true);
+assert.equal(teamMatches("Philadelphia 76ers", "Sixers"), true);
+
+assert.deepEqual(searchPlayers(""), []);
+assert.deepEqual(searchPlayers("   "), []);
+assert.equal(playerNamesMatch("Kristaps Porziņģis", "Kristaps Porzingis"), true);
+assert.equal(playerNamesMatch("Kristaps Porzingis", "  kristaps   porziņģis "), true);
+assert.equal(playerNamesMatch("Nikola Jokić", "nikola jokic"), true);
+assert.equal(playerNamesMatch("Stephen Curry", "LeBron James"), false);
+assert.equal(searchPlayers("stephen")[0]?.name, "Stephen Curry");
+assert.equal(searchPlayers("Porziņģis").some((player) => player.name === "Kristaps Porzingis"), true);
+assert.equal(searchPlayers("zzzqqqnope").length, 0);
+assert.ok(searchPlayers("a").length > 0);
+assert.ok(searchPlayers("a").length <= 8);
+const sampleCareer = selectCareerQuestion(0, { usedIds: [] });
+assert.equal(sampleCareer.answer, sampleCareer.player);
+assert.equal(careerPlayerAccepted(sampleCareer, sampleCareer.player.toLowerCase()), true);
+assert.equal(careerPlayerAccepted(sampleCareer, `  ${sampleCareer.player.replace(/i/gi, "í")}  `), true);
+assert.equal(careerPlayerAccepted(sampleCareer, "Not A Real Player"), false);
+assert.equal(careerPlayerAccepted({ player: "Kristaps Porziņģis", answer: "Kristaps Porziņģis" }, "Kristaps Porzingis"), true);
 
 const threes = CATEGORIES.find((category) => category.id === "threes");
 const threesPairs = collectPairs(players, threes, { min: 0, max: Infinity });
@@ -429,26 +459,44 @@ assert.equal(activeRun.streak, 4);
 store.clear();
 
 const seenAnswers = [];
+const seenCareerKeys = [];
 let careerStreak = 0;
-while (careerStreak < 500) {
-  const question = selectCareerQuestion(careerStreak, { usedIds: seenAnswers });
-  if (!question) break;
-  assert.equal(seenAnswers.includes(question.answerId), false);
-  assert.equal(new Set(question.choices).size, question.choices.length);
-  assert.equal(question.choices.length, 4);
-  assert.ok(question.choices.includes(question.answer));
-  seenAnswers.push(question.answerId);
+while (careerStreak < 80) {
+  const question = selectCareerQuestion(careerStreak, { usedIds: seenAnswers, usedKeys: seenCareerKeys });
+  assert.ok(question, `career question at streak ${careerStreak}`);
+  assert.equal(seenCareerKeys.includes(question.key), false);
+  assert.equal(question.answer, question.player);
+  assert.equal(typeof question.stops[question.hiddenIndex].team, "string");
+  assert.ok(question.stops[question.hiddenIndex].team.length > 0);
+  if (question.band.id === "easy") assert.equal(question.stops.length, 1);
+  if (question.band.id === "medium") assert.ok(question.stops.length === 2 || question.stops.length === 3);
+  if (question.band.id === "hard") assert.ok(question.stops.length >= 4);
+  if (careerStreak < 46) assert.equal(seenAnswers.includes(question.answerId), false);
+  if (!seenAnswers.includes(question.answerId)) seenAnswers.push(question.answerId);
+  seenCareerKeys.push(question.key);
   careerStreak += 1;
 }
+assert.equal(careerStreak, 80);
 assert.ok(seenAnswers.length > 6);
 assert.equal(new Set(seenAnswers).size, seenAnswers.length);
-assert.equal(selectCareerQuestion(careerStreak, { usedIds: seenAnswers }), null);
+assert.equal(new Set(seenCareerKeys).size, seenCareerKeys.length);
+const recycledCareer = selectCareerQuestion(careerStreak, { usedIds: seenAnswers, usedKeys: seenCareerKeys });
+assert.ok(recycledCareer);
+assert.equal(seenCareerKeys.includes(recycledCareer.key), false);
+assert.ok(seenAnswers.includes(recycledCareer.answerId));
 
 const easyIds = eligibleCareers("easy").map((career) => career.id);
-assert.equal(selectCareerQuestion(0, { usedIds: easyIds }), null);
+const recycledEasy = selectCareerQuestion(0, { usedIds: easyIds });
+assert.ok(recycledEasy);
+assert.ok(easyIds.includes(recycledEasy.answerId));
+assert.equal(recycledEasy.answer, recycledEasy.player);
+assert.equal(typeof recycledEasy.stops[recycledEasy.hiddenIndex].team, "string");
 const repeated = selectCareerQuestion(0, { usedIds: [easyIds[0]] });
 assert.ok(repeated);
 assert.notEqual(repeated.answerId, easyIds[0]);
+const sameEasy = selectCareerQuestion(0, { usedIds: easyIds, usedKeys: [recycledEasy.key] });
+assert.ok(sameEasy);
+assert.notEqual(sameEasy.key, recycledEasy.key);
 
 const firstCareer = selectCareerQuestion(0, { usedIds: [] });
 const secondCareer = selectCareerQuestion(1, { usedIds: [firstCareer.answerId] });
@@ -463,7 +511,8 @@ writeActiveRun({
 });
 const restoredCareer = restoreCareerRun();
 assert.deepEqual(restoredCareer.usedIds, [firstCareer.answerId, secondCareer.answerId]);
-const continued = selectCareerQuestion(2, { usedIds: restoredCareer.usedIds });
+assert.ok(restoredCareer.usedKeys.includes(secondCareer.key));
+const continued = selectCareerQuestion(2, { usedIds: restoredCareer.usedIds, usedKeys: restoredCareer.usedKeys });
 assert.ok(continued);
 assert.equal(restoredCareer.usedIds.includes(continued.answerId), false);
 store.clear();
@@ -482,6 +531,24 @@ assert.ok(refreshed.usedIds.includes(firstCareer.answerId));
 assert.ok(refreshed.usedIds.includes(secondCareer.answerId));
 const afterRefresh = selectCareerQuestion(refreshed.streak, { usedIds: refreshed.usedIds });
 assert.equal(refreshed.usedIds.includes(afterRefresh.answerId), false);
+store.clear();
+
+const legacyCareer = {
+  ...secondCareer,
+  answer: secondCareer.stops[secondCareer.hiddenIndex].team,
+};
+writeActiveRun({
+  game: "career",
+  phase: "playing",
+  streak: 2,
+  picked: null,
+  result: null,
+  question: legacyCareer,
+  usedIds: [legacyCareer.answerId],
+});
+const migratedCareer = restoreCareerRun();
+assert.equal(migratedCareer.question.answer, legacyCareer.player);
+assert.equal(migratedCareer.streak, 2);
 store.clear();
 
 const firstDraft = selectDraftQuestion(players, "year", [], () => 0);
@@ -545,9 +612,9 @@ assert.deepEqual(careerDailyQuestions, buildCareerDaily(careerDailyDate));
 assert.deepEqual(careerDailyQuestions.map((question) => question.band.id), ["easy", "medium", "medium", "hard", "hard"]);
 assert.equal(new Set(careerDailyQuestions.map((question) => question.answerId)).size, QUIZ_DAILY_LENGTH);
 for (const question of careerDailyQuestions) {
-  assert.equal(question.choices.length, 4);
-  assert.equal(new Set(question.choices).size, 4);
-  assert.ok(question.choices.includes(question.answer));
+  assert.equal(question.answer, question.player);
+  assert.equal(typeof question.stops[question.hiddenIndex].team, "string");
+  assert.equal(careerPlayerAccepted(question, question.player), true);
 }
 assert.notDeepEqual(
   careerDailyQuestions.map((question) => question.answerId),

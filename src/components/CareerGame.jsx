@@ -3,20 +3,22 @@ import { formatYears } from "../game/careerPath.js";
 import { BADGE_REVEAL_MS, REVEAL_MS } from "../game/feedback.js";
 import { teamLogoUrl } from "../game/teams.js";
 import EndActions from "./EndActions.jsx";
+import PlayerSearch from "./PlayerSearch.jsx";
 import ScoreCard from "./ScoreCard.jsx";
 
-function CareerStop({ stop, bandId }) {
+function CareerStop({ stop }) {
   const [failed, setFailed] = useState(false);
   const logo = teamLogoUrl(stop.team);
-  const showYears = bandId !== "hard";
 
   return (
     <span className="career-stop">
       {logo && !failed ? (
-        <img src={logo} alt={stop.team} onError={() => setFailed(true)} />
-      ) : null}
+        <img src={logo} alt="" onError={() => setFailed(true)} />
+      ) : (
+        <span className="career-blank" aria-hidden="true">{stop.team.slice(0, 1)}</span>
+      )}
       <span className="career-team">{stop.team}</span>
-      {showYears ? <span className="career-years">{formatYears(stop)}</span> : null}
+      <span className="career-years">{formatYears(stop)}</span>
     </span>
   );
 }
@@ -26,7 +28,6 @@ export default function CareerGame({
   streak,
   best,
   question,
-  picked,
   result,
   onPick,
   onAdvance,
@@ -58,7 +59,6 @@ export default function CareerGame({
           title="Career Path"
           streak={streak}
           best={best}
-          detail={`The player was ${question.answer}.`}
         />
         <EndActions
           title="Career Path"
@@ -85,7 +85,7 @@ export default function CareerGame({
         </span>
         {question.band.label}
       </p>
-      <h1 className="section-title">Who does this career belong to?</h1>
+      <h1 className="section-title" id="career-prompt">Who is this player?</h1>
       {question.band.id === "easy" ? <p className="career-position">Position · {question.position}</p> : null}
       <div className="career-path">
         {question.stops.map((stop, index) => (
@@ -95,33 +95,21 @@ export default function CareerGame({
                 →
               </span>
             ) : null}
-            <CareerStop stop={stop} bandId={question.band.id} />
+            <CareerStop stop={stop} />
           </span>
         ))}
       </div>
-      <div className="career-choices">
-        {question.choices.map((name) => {
-          const chosen = picked === name;
-          const correct = revealing && name === question.answer;
-          const missed = revealing && chosen && result === "wrong";
-          return (
-            <button
-              key={name}
-              type="button"
-              className={`action secondary career-choice ${correct ? "is-correct" : ""} ${missed ? "is-wrong" : ""}`}
-              onClick={() => onPick(name)}
-              disabled={revealing}
-            >
-              {name}
-            </button>
-          );
-        })}
-      </div>
+      <PlayerSearch
+        resetKey={question.key}
+        disabled={revealing}
+        onSubmit={onPick}
+      />
       {revealing ? (
         <p className={`reveal-title ${result === "correct" ? "is-right" : "is-miss"}`}>
-          {result === "correct" ? "Correct" : `Wrong · ${question.answer}`}
+          {result === "correct" ? "Correct" : "Wrong"}
         </p>
       ) : null}
+      {revealing ? <p className="career-player">{question.player}</p> : null}
       {revealing
         ? unlockedBadges.map((badge) => (
             <p key={badge.id} className="unlock">

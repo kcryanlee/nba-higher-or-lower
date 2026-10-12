@@ -7,15 +7,19 @@ export const CAREER_DAILY_KEY = "nba-career-daily";
 const SLOT_BANDS = ["easy", "medium", "medium", "hard", "hard"];
 
 function readyQuestion(question) {
+  const stop = question?.stops?.[question?.hiddenIndex];
   return Boolean(question)
     && typeof question.answer === "string"
+    && question.answer.length > 0
+    && typeof question.player === "string"
+    && question.player.length > 0
+    && question.answer === question.player
     && Number.isInteger(question.answerId)
+    && Number.isInteger(question.hiddenIndex)
     && Array.isArray(question.stops)
     && question.stops.length > 0
-    && Array.isArray(question.choices)
-    && question.choices.length === 4
-    && new Set(question.choices).size === 4
-    && question.choices.includes(question.answer);
+    && typeof stop?.team === "string"
+    && stop.team.length > 0;
 }
 
 export function buildCareerDaily(dateKey) {
