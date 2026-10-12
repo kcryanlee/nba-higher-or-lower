@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { clearActiveRun, restoreDraftRun, writeActiveRun } from "../game/activeRun.js";
+import { clearActiveRun, restoreDraftRun, restoreParkedDraftRun, writeActiveRun } from "../game/activeRun.js";
 import { DRAFT_BEST_KEYS, selectDraftQuestion } from "../game/draft.js";
 import { playBuzzer } from "../game/feedback.js";
 import { readStoredNumber, writeStorage } from "../game/storage.js";
@@ -20,6 +20,7 @@ export function useDraft(players, { onCorrect } = {}) {
   const [guess, setGuess] = useState(restored?.guess ?? null);
   const [result, setResult] = useState(restored?.result ?? null);
   const locked = useRef(restored?.phase === "revealing");
+  const owned = useRef(Boolean(restored));
   const onCorrectRef = useRef(onCorrect);
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export function useDraft(players, { onCorrect } = {}) {
 
   useEffect(() => {
     if ((phase === "playing" || phase === "revealing") && question && (mode === "year" || mode === "pick")) {
+      owned.current = true;
       writeActiveRun({
         game: "draft",
         mode,
@@ -41,7 +43,10 @@ export function useDraft(players, { onCorrect } = {}) {
       });
       return;
     }
-    if (phase === "idle" || phase === "gameover" || phase === "cleared") clearActiveRun("draft");
+    if (owned.current && (phase === "idle" || phase === "gameover" || phase === "cleared")) {
+      clearActiveRun("draft", mode);
+      owned.current = false;
+    }
   }, [phase, mode, streak, question, guess, result, usedIds]);
 
   function deal(nextMode, ids) {
@@ -76,6 +81,24 @@ export function useDraft(players, { onCorrect } = {}) {
     setUsedIds([next.id]);
     setQuestion(next);
     setPhase("playing");
+    return true;
+  }
+
+  function resume(nextMode) {
+    if (nextMode !== "year" && nextMode !== "pick") return false;
+    if ((phase === "playing" || phase === "revealing") && mode === nextMode) return true;
+    const parked = restoreParkedDraftRun(players, nextMode);
+    if (!parked) return start(nextMode);
+    locked.current = parked.phase === "revealing";
+    owned.current = true;
+    setMode(parked.mode);
+    setBest(bestFor(parked.mode));
+    setPhase(parked.phase);
+    setStreak(parked.streak);
+    setQuestion(parked.question);
+    setUsedIds(parked.usedIds);
+    setGuess(parked.guess);
+    setResult(parked.result);
     return true;
   }
 
@@ -126,5 +149,5 @@ export function useDraft(players, { onCorrect } = {}) {
     setPhase("gameover");
   }
 
-  return { phase, mode, streak, best, question, guess, result, start, submit, advance, discard };
+  return { phase, mode, streak, best, question, guess, result, start, resume, submit, advance, discard };
 }

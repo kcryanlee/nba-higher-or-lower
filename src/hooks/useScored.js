@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { clearActiveRun, restoreScoredRun, writeActiveRun } from "../game/activeRun.js";
+import { clearActiveRun, restoreParkedScoredRun, restoreScoredRun, writeActiveRun } from "../game/activeRun.js";
 import { playBuzzer } from "../game/feedback.js";
 import { SCORED_BEST_KEY } from "../game/scoredBadges.js";
 import { positionCredit, selectScoredQuestion } from "../game/scored.js";
@@ -28,6 +28,7 @@ export function useScored({ onCorrect } = {}) {
   const [credit, setCredit] = useState(restored?.credit ?? null);
   const [result, setResult] = useState(restored?.result ?? null);
   const locked = useRef(restored?.phase === "revealing");
+  const owned = useRef(Boolean(restored));
   const onCorrectRef = useRef(onCorrect);
 
   useEffect(() => {
@@ -36,6 +37,7 @@ export function useScored({ onCorrect } = {}) {
 
   useEffect(() => {
     if ((phase === "playing" || phase === "revealing") && question) {
+      owned.current = true;
       writeActiveRun({
         game: "scored",
         phase,
@@ -51,7 +53,10 @@ export function useScored({ onCorrect } = {}) {
       });
       return;
     }
-    if (phase === "idle" || phase === "gameover") clearActiveRun("scored");
+    if (owned.current && (phase === "idle" || phase === "gameover")) {
+      clearActiveRun("scored");
+      owned.current = false;
+    }
   }, [phase, streak, dealtStreak, question, picks, credit, result, usedKeys]);
 
   function deal(nextStreak, keys) {
@@ -87,6 +92,23 @@ export function useScored({ onCorrect } = {}) {
     setUsedKeys([next.key]);
     setQuestion(next);
     setPhase("playing");
+    return true;
+  }
+
+  function resume() {
+    if (phase === "playing" || phase === "revealing") return true;
+    const parked = restoreParkedScoredRun();
+    if (!parked) return start();
+    locked.current = parked.phase === "revealing";
+    owned.current = true;
+    setPhase(parked.phase);
+    setStreak(parked.streak);
+    setDealtStreak(parked.dealtStreak);
+    setQuestion(parked.question);
+    setUsedKeys(parked.usedKeys);
+    setPicks(parked.picks);
+    setCredit(parked.credit);
+    setResult(parked.result);
     return true;
   }
 
@@ -154,6 +176,7 @@ export function useScored({ onCorrect } = {}) {
     credit,
     result,
     start,
+    resume,
     pick,
     lock,
     advance,

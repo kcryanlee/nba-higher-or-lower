@@ -3,7 +3,9 @@ export default function QuizDailyScore({
   unlockedBadges = [],
   onPractice,
   onAwards,
+  onDailyAwards,
   onMenu,
+  menuLabel = "All Games",
   note = "Today's puzzle uses your local date. Everyone gets the same five questions. The official score locks after one play.",
 }) {
   return (
@@ -52,8 +54,13 @@ export default function QuizDailyScore({
         <button type="button" className="action secondary" onClick={onAwards}>
           Achievements
         </button>
+        {onDailyAwards ? (
+          <button type="button" className="action secondary" onClick={onDailyAwards}>
+            Daily achievements
+          </button>
+        ) : null}
         <button type="button" className="action secondary" onClick={onMenu}>
-          All Games
+          {menuLabel}
         </button>
       </div>
     </section>

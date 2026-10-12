@@ -25,7 +25,7 @@ import { careerPlayerAccepted, eligibleCareers, selectCareerQuestion } from "../
 import { playerNamesMatch, searchPlayers } from "../src/game/playerSearch.js";
 import { officialTeamName, searchTeams, teamMatches } from "../src/game/teams.js";
 import { collectPairs } from "../src/game/selectMatchup.js";
-import { openingScreen, readActiveRun, restoreCareerRun, restoreChainRun, restoreClassicRun, restoreDraftRun, restoreScoredRun, writeActiveRun } from "../src/game/activeRun.js";
+import { clearActiveRun, focusRun, openingScreen, readActiveRun, readRunSlot, resetRunFocus, restoreCareerRun, restoreChainRun, restoreClassicRun, restoreDraftRun, restoreParkedDraftRun, restoreScoredRun, writeActiveRun } from "../src/game/activeRun.js";
 import { DRAFT_BEST_KEYS, draftPool, ordinal, parseDraftAnswer, selectDraftQuestion, usableDraftYear } from "../src/game/draft.js";
 import { DRAFT_BADGE_KEYS, DRAFT_BADGES, applyDraftStreak, readDraftBadges } from "../src/game/draftBadges.js";
 import { CAREER_BEST_KEY, readCareerBadges } from "../src/game/careerBadges.js";
@@ -310,13 +310,19 @@ for (const career of careerPlayers) {
 }
 
 assert.ok(careerPlayers.some((career) => career.name === "Anthony Davis" && career.stops.length === 4));
-for (const career of eligibleCareers("easy")) assert.equal(career.stops.length, 1);
-for (const career of eligibleCareers("medium")) {
-  assert.ok(career.stops.length === 2 || career.stops.length === 3);
-}
-for (const career of eligibleCareers("hard")) assert.ok(career.stops.length >= 4);
-assert.ok(eligibleCareers("easy").some((career) => career.name === "Amen Thompson"));
-assert.equal(eligibleCareers("easy").some((career) => career.name === "LeBron James"), false);
+assert.equal(
+  eligibleCareers("easy").length + eligibleCareers("medium").length + eligibleCareers("hard").length,
+  careerPlayers.length,
+);
+assert.ok(eligibleCareers("easy").length >= 6);
+assert.ok(eligibleCareers("medium").length >= 10);
+assert.ok(eligibleCareers("easy").some((career) => career.name === "LeBron James" && career.stops.length > 1));
+assert.ok(eligibleCareers("easy").some((career) => career.name === "Stephen Curry"));
+assert.equal(eligibleCareers("easy").some((career) => career.name === "Amen Thompson"), false);
+assert.ok(eligibleCareers("medium").some((career) => career.name === "Amen Thompson"));
+assert.ok(eligibleCareers("hard").some((career) => career.name === "Kon Knueppel" && career.stops.length === 1));
+assert.ok(eligibleCareers("hard").some((career) => career.name === "Dennis Schroder" && career.stops.length > 1));
+assert.equal(eligibleCareers("easy").some((career) => career.name === "Dennis Schroder"), false);
 
 assert.deepEqual(searchTeams(""), []);
 assert.deepEqual(searchTeams("   "), []);
@@ -461,42 +467,34 @@ store.clear();
 const seenAnswers = [];
 const seenCareerKeys = [];
 let careerStreak = 0;
-while (careerStreak < 80) {
+const careerRunLength = 6 + 10 + eligibleCareers("hard").length;
+while (careerStreak < careerRunLength) {
   const question = selectCareerQuestion(careerStreak, { usedIds: seenAnswers, usedKeys: seenCareerKeys });
   assert.ok(question, `career question at streak ${careerStreak}`);
   assert.equal(seenCareerKeys.includes(question.key), false);
+  assert.equal(seenAnswers.includes(question.answerId), false);
   assert.equal(question.answer, question.player);
   assert.equal(typeof question.stops[question.hiddenIndex].team, "string");
   assert.ok(question.stops[question.hiddenIndex].team.length > 0);
-  if (question.band.id === "easy") assert.equal(question.stops.length, 1);
-  if (question.band.id === "medium") assert.ok(question.stops.length === 2 || question.stops.length === 3);
-  if (question.band.id === "hard") assert.ok(question.stops.length >= 4);
-  if (careerStreak < 46) assert.equal(seenAnswers.includes(question.answerId), false);
-  if (!seenAnswers.includes(question.answerId)) seenAnswers.push(question.answerId);
+  if (careerStreak <= 5) assert.equal(question.band.id, "easy");
+  else if (careerStreak <= 15) assert.equal(question.band.id, "medium");
+  else assert.equal(question.band.id, "hard");
+  assert.ok(eligibleCareers(question.band.id).some((career) => career.id === question.answerId));
+  seenAnswers.push(question.answerId);
   seenCareerKeys.push(question.key);
   careerStreak += 1;
 }
-assert.equal(careerStreak, 80);
-assert.ok(seenAnswers.length > 6);
+assert.equal(careerStreak, careerRunLength);
 assert.equal(new Set(seenAnswers).size, seenAnswers.length);
 assert.equal(new Set(seenCareerKeys).size, seenCareerKeys.length);
-const recycledCareer = selectCareerQuestion(careerStreak, { usedIds: seenAnswers, usedKeys: seenCareerKeys });
-assert.ok(recycledCareer);
-assert.equal(seenCareerKeys.includes(recycledCareer.key), false);
-assert.ok(seenAnswers.includes(recycledCareer.answerId));
+assert.equal(selectCareerQuestion(careerStreak, { usedIds: seenAnswers, usedKeys: seenCareerKeys }), null);
 
 const easyIds = eligibleCareers("easy").map((career) => career.id);
-const recycledEasy = selectCareerQuestion(0, { usedIds: easyIds });
-assert.ok(recycledEasy);
-assert.ok(easyIds.includes(recycledEasy.answerId));
-assert.equal(recycledEasy.answer, recycledEasy.player);
-assert.equal(typeof recycledEasy.stops[recycledEasy.hiddenIndex].team, "string");
+assert.equal(selectCareerQuestion(0, { usedIds: easyIds }), null);
 const repeated = selectCareerQuestion(0, { usedIds: [easyIds[0]] });
 assert.ok(repeated);
 assert.notEqual(repeated.answerId, easyIds[0]);
-const sameEasy = selectCareerQuestion(0, { usedIds: easyIds, usedKeys: [recycledEasy.key] });
-assert.ok(sameEasy);
-assert.notEqual(sameEasy.key, recycledEasy.key);
+assert.equal(repeated.band.id, "easy");
 
 const firstCareer = selectCareerQuestion(0, { usedIds: [] });
 const secondCareer = selectCareerQuestion(1, { usedIds: [firstCareer.answerId] });
@@ -1401,6 +1399,58 @@ writeStorage(CHAIN_BEST_KEY, "20");
 assert.ok(readChainBadges().unlocked.includes("locker-room"));
 assert.equal(readChainBadges().unlocked.includes("veteran-link"), false);
 
+store.clear();
+resetRunFocus();
+const parkedYear = selectDraftQuestion(players, "year", [], () => 0);
+const parkedPick = selectDraftQuestion(players, "pick", [], () => 0);
+writeActiveRun({
+  game: "draft",
+  mode: "year",
+  phase: "playing",
+  streak: 4,
+  guess: null,
+  result: null,
+  playerId: parkedYear.id,
+  choices: parkedYear.choices,
+  usedIds: [parkedYear.id],
+});
+focusRun("draft", "year");
+writeActiveRun({
+  game: "career",
+  phase: "playing",
+  streak: 6,
+  picked: null,
+  result: null,
+  question: parkedYear,
+  usedIds: [],
+  usedKeys: [],
+});
+writeActiveRun({
+  game: "draft",
+  mode: "pick",
+  phase: "playing",
+  streak: 2,
+  guess: null,
+  result: null,
+  playerId: parkedPick.id,
+  choices: parkedPick.choices,
+  usedIds: [parkedPick.id],
+});
+assert.equal(readActiveRun().game, "draft");
+assert.equal(readActiveRun().mode, "year");
+assert.equal(readActiveRun().streak, 4);
+assert.equal(readRunSlot("draft", "year").streak, 4);
+assert.equal(readRunSlot("draft", "pick").streak, 2);
+assert.equal(readRunSlot("career").streak, 6);
+assert.equal(restoreParkedDraftRun(players, "pick").streak, 2);
+assert.equal(restoreParkedDraftRun(players, "pick").mode, "pick");
+assert.equal(openingScreen(players), "draft");
+clearActiveRun("draft", "pick");
+assert.equal(readRunSlot("draft", "pick"), null);
+assert.equal(readRunSlot("draft", "year").streak, 4);
+assert.equal(readRunSlot("career").streak, 6);
+assert.equal(readActiveRun().streak, 4);
+resetRunFocus();
 store.clear();
 
 console.log(`Teammate overlap audit: ${datedStints} stints, ${coMemberships} same-team season pairings, ${removedFalseLinks} false links removed, ${overlappingLinks} overlapping links kept, ${auditedQuestions} questions, ${auditedAnswers} correct answers, ${auditedDistractors} distractors, ${auditedDailyQuestions} daily questions.`);

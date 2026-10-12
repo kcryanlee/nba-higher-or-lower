@@ -20,6 +20,9 @@ export default function Board({
   onAdvance,
   onMenu,
   onAwards,
+  onDailyAwards,
+  onDaily,
+  menuLabel = "All Games",
 }) {
   const leaderId = higherId(matchup);
   const tied = matchup.left[matchup.category.id] === matchup.right[matchup.category.id];
@@ -72,11 +75,21 @@ export default function Board({
         />
       ) : null}
       <div className="career-links">
+        {onDaily ? (
+          <button type="button" className="lobby-link" onClick={onDaily}>
+            Today&apos;s Challenge
+          </button>
+        ) : null}
         <button type="button" className="lobby-link" onClick={onAwards}>
           Achievements
         </button>
+        {onDailyAwards ? (
+          <button type="button" className="lobby-link" onClick={onDailyAwards}>
+            Daily achievements
+          </button>
+        ) : null}
         <button type="button" className="lobby-link" onClick={onMenu}>
-          All Games
+          {menuLabel}
         </button>
       </div>
     </section>

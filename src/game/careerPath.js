@@ -7,80 +7,147 @@ const LABELS = {
   hard: "Hard",
 };
 
-const TIER = {
-  "Stephen Curry": "star",
-  "LeBron James": "star",
-  "Kevin Durant": "star",
-  "James Harden": "star",
-  "Nikola Jokic": "star",
-  "Luka Doncic": "star",
-  "Anthony Edwards": "star",
-  "Jayson Tatum": "star",
-  "Jaylen Brown": "star",
-  "Devin Booker": "star",
-  "Donovan Mitchell": "star",
-  "Kawhi Leonard": "star",
-  "Tyrese Maxey": "star",
-  "Jalen Brunson": "star",
-  "Jamal Murray": "star",
-  "Karl-Anthony Towns": "star",
-  "Trae Young": "star",
-  "De'Aaron Fox": "star",
-  "Paul George": "star",
-  "Klay Thompson": "star",
-  "Draymond Green": "star",
-  "Russell Westbrook": "star",
-  "Carmelo Anthony": "star",
-  "DeMar DeRozan": "star",
-  "Lauri Markkanen": "known",
-  "Zach LaVine": "known",
-  "Brandon Ingram": "known",
-  "Julius Randle": "known",
-  "Desmond Bane": "known",
-  "Darius Garland": "known",
-  "CJ McCollum": "known",
-  "Jrue Holiday": "known",
-  "Derrick White": "known",
-  "OG Anunoby": "known",
-  "Kristaps Porzingis": "known",
-  "Aaron Gordon": "known",
-  "Andrew Wiggins": "known",
-  "Mikal Bridges": "known",
-  "Nikola Vucevic": "known",
-  "Myles Turner": "known",
-  "Al Horford": "known",
-  "Brook Lopez": "known",
-  "Jordan Poole": "known",
-  "Tobias Harris": "known",
-  "Malik Monk": "known",
-  "Harrison Barnes": "known",
-  "Tyler Herro": "known",
-  "JJ Redick": "known",
-  "Andre Iguodala": "known",
-  "Kyle Lowry": "known",
-  "Norman Powell": "role",
-  "Dillon Brooks": "role",
-  "Buddy Hield": "role",
-  "Mike Conley": "role",
-  "Dwight Howard": "role",
-  "Lou Williams": "role",
-  "Rajon Rondo": "role",
-  "Thaddeus Young": "role",
-  "Eric Gordon": "role",
-  "Dennis Schroder": "role",
-  "Kyle Korver": "role",
-  "Danny Green": "role",
-  "Patrick Beverley": "role",
+const POPULARITY = {
+  easy: [
+    "Anthony Davis",
+    "Anthony Edwards",
+    "Bam Adebayo",
+    "Cade Cunningham",
+    "Carmelo Anthony",
+    "Chet Holmgren",
+    "Cooper Flagg",
+    "De'Aaron Fox",
+    "DeMar DeRozan",
+    "Devin Booker",
+    "Donovan Mitchell",
+    "Draymond Green",
+    "Dwight Howard",
+    "Giannis Antetokounmpo",
+    "Ja Morant",
+    "Jalen Brunson",
+    "Jamal Murray",
+    "James Harden",
+    "Jaylen Brown",
+    "Jayson Tatum",
+    "Joel Embiid",
+    "Karl-Anthony Towns",
+    "Kawhi Leonard",
+    "Kevin Durant",
+    "Klay Thompson",
+    "LaMelo Ball",
+    "LeBron James",
+    "Luka Doncic",
+    "Nikola Jokic",
+    "Paolo Banchero",
+    "Paul George",
+    "Russell Westbrook",
+    "Scottie Barnes",
+    "Shai Gilgeous-Alexander",
+    "Stephen Curry",
+    "Trae Young",
+    "Tyrese Maxey",
+    "Victor Wembanyama",
+    "Zion Williamson",
+  ],
+  medium: [
+    "Aaron Gordon",
+    "Al Horford",
+    "Alperen Sengun",
+    "Amen Thompson",
+    "Andre Iguodala",
+    "Andrew Wiggins",
+    "Austin Reaves",
+    "Brandon Ingram",
+    "Brandon Miller",
+    "Brook Lopez",
+    "Buddy Hield",
+    "CJ McCollum",
+    "Coby White",
+    "Collin Sexton",
+    "Danny Green",
+    "Darius Garland",
+    "Deni Avdija",
+    "Derrick White",
+    "Desmond Bane",
+    "Dillon Brooks",
+    "Eric Gordon",
+    "Evan Mobley",
+    "Franz Wagner",
+    "Harrison Barnes",
+    "Immanuel Quickley",
+    "JJ Redick",
+    "Jabari Smith Jr.",
+    "Jalen Duren",
+    "Jalen Green",
+    "Jalen Johnson",
+    "Jalen Williams",
+    "Jaren Jackson Jr.",
+    "Jarrett Allen",
+    "Jerami Grant",
+    "Jordan Poole",
+    "Josh Giddey",
+    "Jrue Holiday",
+    "Julius Randle",
+    "Kristaps Porzingis",
+    "Kyle Korver",
+    "Kyle Lowry",
+    "Lauri Markkanen",
+    "Lou Williams",
+    "Malik Monk",
+    "Michael Porter Jr.",
+    "Mikal Bridges",
+    "Mike Conley",
+    "Miles Bridges",
+    "Myles Turner",
+    "Nikola Vucevic",
+    "OG Anunoby",
+    "Pascal Siakam",
+    "Patrick Beverley",
+    "Payton Pritchard",
+    "RJ Barrett",
+    "Rajon Rondo",
+    "Tobias Harris",
+    "Tyler Herro",
+    "Zach LaVine",
+  ],
+  hard: [
+    "Alex Sarr",
+    "Andrew Nembhard",
+    "Anthony Black",
+    "Bennedict Mathurin",
+    "Dennis Schroder",
+    "Grayson Allen",
+    "Jaime Jaquez Jr.",
+    "Kevin Porter Jr.",
+    "Keyonte George",
+    "Kon Knueppel",
+    "Matas Buzelis",
+    "Naji Marshall",
+    "Nickeil Alexander-Walker",
+    "Norman Powell",
+    "Onyeka Okongwu",
+    "Ryan Rollins",
+    "Saddiq Bey",
+    "Shaedon Sharpe",
+    "Stephon Castle",
+    "Thaddeus Young",
+    "Trey Murphy III",
+    "VJ Edgecombe",
+  ],
 };
 
+const BAND_OF = Object.fromEntries(
+  Object.entries(POPULARITY).flatMap(([bandId, names]) => names.map((name) => [name, bandId])),
+);
+
 export function careerBand(streak) {
-  if (streak >= 6) return { id: "hard", label: LABELS.hard };
-  if (streak >= 3) return { id: "medium", label: LABELS.medium };
+  if (streak >= 16) return { id: "hard", label: LABELS.hard };
+  if (streak >= 6) return { id: "medium", label: LABELS.medium };
   return { id: "easy", label: LABELS.easy };
 }
 
-function tierOf(career) {
-  return TIER[career.name] || "known";
+function popularityBand(career) {
+  return BAND_OF[career.name] || "medium";
 }
 
 export function careerQuestionKey(answerId, stopIndex) {
@@ -92,46 +159,12 @@ export function careerPlayerAccepted(question, choice) {
 }
 
 export function eligibleCareers(bandId) {
-  if (bandId === "hard") return CAREERS.filter((career) => career.stops.length >= 4);
-  if (bandId === "medium") return CAREERS.filter((career) => career.stops.length === 2 || career.stops.length === 3);
-  return CAREERS.filter((career) => career.stops.length === 1);
-}
-
-function shuffle(items, random = Math.random) {
-  const copy = [...items];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swap = Math.floor(random() * (index + 1));
-    [copy[index], copy[swap]] = [copy[swap], copy[index]];
-  }
-  return copy;
-}
-
-function pickWeighted(careers, weightOf, random) {
-  const bag = [];
-  for (const career of careers) {
-    const weight = Math.max(1, weightOf(career));
-    for (let count = 0; count < weight; count += 1) bag.push(career);
-  }
-  return shuffle(bag, random)[0];
+  if (!LABELS[bandId]) return [];
+  return CAREERS.filter((career) => popularityBand(career) === bandId);
 }
 
 function poolFor(bandId) {
   return eligibleCareers(bandId);
-}
-
-function weightFor(bandId, career) {
-  const tier = tierOf(career);
-  if (bandId === "hard") {
-    if (tier === "role") return 5;
-    if (tier === "known") return 3;
-    return 1;
-  }
-  if (bandId === "medium") {
-    let weight = tier === "role" ? 3 : tier === "known" ? 2 : 1;
-    if (career.stops.length >= 3) weight += 1;
-    return weight;
-  }
-  return 1;
 }
 
 function openStopIndexes(career, blocked) {
@@ -159,10 +192,10 @@ function blockedKeySet(usedKeys) {
   return new Set(Array.isArray(usedKeys) ? usedKeys.filter((key) => typeof key === "string" && key) : []);
 }
 
-function searchPool(pool, bandId, band, random, blocked) {
+function searchPool(pool, band, random, blocked) {
   let remaining = [...pool];
   while (remaining.length) {
-    const answer = pickWeighted(remaining, (career) => weightFor(bandId, career), random);
+    const answer = remaining[Math.floor(random() * remaining.length)];
     const indexes = openStopIndexes(answer, blocked);
     if (indexes.length) {
       const stopIndex = indexes[Math.floor(random() * indexes.length)];
@@ -178,10 +211,8 @@ export function selectCareerQuestionForBand(bandId, { usedIds = [], usedKeys = [
   const band = { id: bandId, label: LABELS[bandId] };
   const used = new Set(Array.isArray(usedIds) ? usedIds.filter((id) => Number.isInteger(id)) : []);
   const blocked = blockedKeySet(usedKeys);
-  const pool = poolFor(bandId);
-  const fresh = pool.filter((career) => !used.has(career.id));
-  return searchPool(fresh, bandId, band, random, blocked)
-    || searchPool(pool, bandId, band, random, blocked);
+  const fresh = poolFor(bandId).filter((career) => !used.has(career.id));
+  return searchPool(fresh, band, random, blocked);
 }
 
 export function selectCareerQuestion(streak, options = {}) {

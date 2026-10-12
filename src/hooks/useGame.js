@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { clearActiveRun, restoreClassicRun, writeActiveRun } from "../game/activeRun.js";
+import { clearActiveRun, restoreClassicRun, restoreParkedClassicRun, writeActiveRun } from "../game/activeRun.js";
 import { bandForStreak } from "../game/difficulty.js";
 import { playBuzzer } from "../game/feedback.js";
 import { outcomeFor } from "../game/outcome.js";
@@ -22,6 +22,7 @@ export function useGame(players, { onAnswer } = {}) {
   const [result, setResult] = useState(restored?.result ?? null);
   const [usedKeys, setUsedKeys] = useState(restored?.usedKeys ?? []);
   const locked = useRef(restored?.phase === "revealing");
+  const owned = useRef(Boolean(restored));
   const onAnswerRef = useRef(onAnswer);
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export function useGame(players, { onAnswer } = {}) {
 
   useEffect(() => {
     if ((phase === "playing" || phase === "revealing") && matchup) {
+      owned.current = true;
       writeActiveRun({
         game: "classic",
         phase,
@@ -44,7 +46,10 @@ export function useGame(players, { onAnswer } = {}) {
       });
       return;
     }
-    if (phase === "start" || phase === "gameover") clearActiveRun("classic");
+    if (owned.current && (phase === "start" || phase === "gameover")) {
+      clearActiveRun("classic");
+      owned.current = false;
+    }
   }, [phase, streak, matchup, pickedId, result, usedKeys]);
 
   function deal(nextStreak, blocked) {
@@ -60,6 +65,24 @@ export function useGame(players, { onAnswer } = {}) {
   function start() {
     setStreak(0);
     deal(0, []);
+  }
+
+  function resume() {
+    if (phase === "playing" || phase === "revealing") return true;
+    const parked = restoreParkedClassicRun(players);
+    if (!parked) {
+      start();
+      return true;
+    }
+    locked.current = parked.phase === "revealing";
+    owned.current = true;
+    setPhase(parked.phase);
+    setStreak(parked.streak);
+    setMatchup(parked.matchup);
+    setPickedId(parked.pickedId);
+    setResult(parked.result);
+    setUsedKeys(parked.usedKeys);
+    return true;
   }
 
   function discard() {
@@ -126,6 +149,7 @@ export function useGame(players, { onAnswer } = {}) {
     pickedId,
     result,
     start,
+    resume,
     pick,
     advance,
     discard,

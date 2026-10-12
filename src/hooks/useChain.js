@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { clearActiveRun, restoreChainRun, writeActiveRun } from "../game/activeRun.js";
+import { clearActiveRun, restoreChainRun, restoreParkedChainRun, writeActiveRun } from "../game/activeRun.js";
 import { CHAIN_BEST_KEY } from "../game/chainBadges.js";
 import { gradeChainChoice, selectChainQuestion } from "../game/chain.js";
 import { playBuzzer } from "../game/feedback.js";
@@ -20,6 +20,7 @@ export function useChain({ onCorrect } = {}) {
   const [result, setResult] = useState(restored?.result ?? null);
   const [ended, setEnded] = useState(null);
   const locked = useRef(restored?.phase === "revealing");
+  const owned = useRef(Boolean(restored));
   const onCorrectRef = useRef(onCorrect);
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export function useChain({ onCorrect } = {}) {
 
   useEffect(() => {
     if ((phase === "playing" || phase === "revealing") && question) {
+      owned.current = true;
       writeActiveRun({
         game: "chain",
         phase,
@@ -39,7 +41,10 @@ export function useChain({ onCorrect } = {}) {
       });
       return;
     }
-    if (phase === "idle" || phase === "gameover") clearActiveRun("chain");
+    if (owned.current && (phase === "idle" || phase === "gameover")) {
+      clearActiveRun("chain");
+      owned.current = false;
+    }
   }, [phase, streak, question, picked, result, usedKeys]);
 
   function deal(keys) {
@@ -75,6 +80,22 @@ export function useChain({ onCorrect } = {}) {
     setUsedKeys([next.key]);
     setQuestion(next);
     setPhase("playing");
+    return true;
+  }
+
+  function resume() {
+    if (phase === "playing" || phase === "revealing") return true;
+    const parked = restoreParkedChainRun();
+    if (!parked) return start();
+    locked.current = parked.phase === "revealing";
+    owned.current = true;
+    setPhase(parked.phase);
+    setStreak(parked.streak);
+    setQuestion(parked.question);
+    setUsedKeys(parked.usedKeys);
+    setPicked(parked.picked);
+    setResult(parked.result);
+    setEnded(null);
     return true;
   }
 
@@ -127,5 +148,5 @@ export function useChain({ onCorrect } = {}) {
     setPhase("gameover");
   }
 
-  return { phase, streak, best, question, picked, result, ended, start, pick, advance, discard };
+  return { phase, streak, best, question, picked, result, ended, start, resume, pick, advance, discard };
 }

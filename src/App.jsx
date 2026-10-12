@@ -14,7 +14,7 @@ import ScoredGame from "./components/ScoredGame.jsx";
 import StartScreen from "./components/StartScreen.jsx";
 import { dataDisclaimer, dataSeasonLine } from "./data/dataConfig.js";
 import { players } from "./data/players.js";
-import { openingScreen } from "./game/activeRun.js";
+import { focusRun, openingScreen } from "./game/activeRun.js";
 import { CAREER_BADGES, careerBadgeProgress } from "./game/careerBadges.js";
 import { CHAIN_BADGES, chainBadgeProgress } from "./game/chainBadges.js";
 import { chainChoiceCorrect } from "./game/chain.js";
@@ -164,22 +164,43 @@ export default function App() {
     return readStoredNumber(DRAFT_BEST_KEYS[mode]);
   }
 
+  function livePhase(phase) {
+    return phase === "playing" || phase === "revealing";
+  }
+
   function playCareer() {
     careerBadges.dismiss();
+    focusRun("career");
     career.start();
     setScreen("career");
   }
 
+  function openCareer() {
+    careerBadges.dismiss();
+    focusRun("career");
+    career.resume();
+    setScreen("career");
+  }
+
   function openCareerDaily() {
-    career.discard();
     careerDailyBadges.dismiss();
+    if (livePhase(career.phase)) focusRun("career");
     if (careerDaily.available) careerDaily.start();
     setScreen("career-daily");
   }
 
   function playDraft(mode) {
     draftBadges.dismiss();
+    focusRun("draft", mode);
     if (!draft.start(mode)) return;
+    setDraftLobbyMode(mode);
+    setScreen("draft");
+  }
+
+  function openDraft(mode) {
+    draftBadges.dismiss();
+    focusRun("draft", mode);
+    if (!draft.resume(mode)) return;
     setDraftLobbyMode(mode);
     setScreen("draft");
   }
@@ -192,9 +213,9 @@ export default function App() {
   function openDraftDaily(mode) {
     const nextMode = mode === "pick" ? "pick" : "year";
     const dailyHook = nextMode === "pick" ? draftPickDaily : draftYearDaily;
-    draft.discard();
     setDraftLobbyMode(nextMode);
     draftDailyBadges.dismiss();
+    if (livePhase(draft.phase) && draft.mode === nextMode) focusRun("draft", nextMode);
     if (dailyHook.available) dailyHook.start();
     setScreen("draft-daily");
   }
@@ -223,13 +244,21 @@ export default function App() {
 
   function playChain() {
     chainBadges.dismiss();
+    focusRun("chain");
     if (!chain.start()) return;
     setScreen("chain");
   }
 
+  function openChain() {
+    chainBadges.dismiss();
+    focusRun("chain");
+    if (!chain.resume()) return;
+    setScreen("chain");
+  }
+
   function openChainDaily() {
-    chain.discard();
     chainDailyBadges.dismiss();
+    if (livePhase(chain.phase)) focusRun("chain");
     if (chainDaily.available) chainDaily.start();
     setScreen("chain-daily");
   }
@@ -252,13 +281,18 @@ export default function App() {
   }
 
   function leaveChain() {
-    chain.discard();
+    if (!livePhase(chain.phase)) chain.discard();
     setScreen("hub");
   }
 
   function leaveChainDaily() {
     chainDaily.leave();
     chainDailyBadges.dismiss();
+    if (livePhase(chain.phase)) {
+      focusRun("chain");
+      setScreen("chain");
+      return;
+    }
     setScreen("chain-menu");
   }
 
@@ -269,13 +303,21 @@ export default function App() {
 
   function playScored() {
     scoredBadges.dismiss();
+    focusRun("scored");
     if (!scored.start()) return;
     setScreen("scored");
   }
 
+  function openScored() {
+    scoredBadges.dismiss();
+    focusRun("scored");
+    if (!scored.resume()) return;
+    setScreen("scored");
+  }
+
   function openScoredDaily() {
-    scored.discard();
     scoredDailyBadges.dismiss();
+    if (livePhase(scored.phase)) focusRun("scored");
     if (scoredDaily.available) scoredDaily.start();
     setScreen("scored-daily");
   }
@@ -298,13 +340,18 @@ export default function App() {
   }
 
   function leaveScored() {
-    scored.discard();
+    if (!livePhase(scored.phase)) scored.discard();
     setScreen("hub");
   }
 
   function leaveScoredDaily() {
     scoredDaily.leave();
     scoredDailyBadges.dismiss();
+    if (livePhase(scored.phase)) {
+      focusRun("scored");
+      setScreen("scored");
+      return;
+    }
     setScreen("scored-menu");
   }
 
@@ -325,12 +372,21 @@ export default function App() {
 
   function playClassic() {
     badges.dismiss();
+    focusRun("classic");
     game.start();
+    setScreen("classic");
+  }
+
+  function openClassic() {
+    badges.dismiss();
+    focusRun("classic");
+    game.resume();
     setScreen("classic");
   }
 
   function openDaily() {
     badges.dismiss();
+    if (livePhase(game.phase)) focusRun("classic");
     if (!daily.available) {
       setScreen("daily");
       return;
@@ -365,35 +421,47 @@ export default function App() {
   }
 
   function leaveClassic() {
-    game.discard();
+    if (!livePhase(game.phase)) game.discard();
     setScreen("hub");
   }
 
   function leaveCareer() {
-    career.discard();
+    if (!livePhase(career.phase)) career.discard();
     setScreen("hub");
   }
 
   function leaveDraft() {
-    draft.discard();
+    if (!livePhase(draft.phase)) draft.discard();
     setScreen("hub");
   }
 
   function leaveDaily() {
     daily.leave();
     higherDailyBadges.dismiss();
-    setScreen("hub");
+    if (livePhase(game.phase)) {
+      focusRun("classic");
+      setScreen("classic");
+      return;
+    }
+    setScreen("menu");
   }
 
   function leaveCareerDaily() {
     careerDaily.leave();
     careerDailyBadges.dismiss();
+    if (livePhase(career.phase)) focusRun("career");
     setScreen("career-menu");
   }
 
   function leaveDraftDaily() {
+    const mode = draftLobbyMode;
     draftDaily.leave();
     draftDailyBadges.dismiss();
+    if (livePhase(draft.phase) && draft.mode === mode) {
+      focusRun("draft", mode);
+      setScreen("draft");
+      return;
+    }
     setScreen("draft-menu");
   }
 
@@ -710,7 +778,7 @@ export default function App() {
             dailyStreak={chainDaily.streak}
             todayCorrect={chainDaily.official?.correct ?? 0}
             resumeQuestion={(chainDaily.active?.index ?? 0) + 1}
-            onPlay={playChain}
+            onPlay={openChain}
             onDaily={openChainDaily}
             onAwards={() => openChainAwards("chain-menu")}
             onDailyAwards={() => openChainDailyAwards("chain-menu")}
@@ -765,7 +833,7 @@ export default function App() {
             eyebrow="Teammate Chain"
             onBack={() => {
               chainBadges.acknowledge();
-              setScreen(awardsReturn === "chain-menu" ? "chain-menu" : "chain");
+              setScreen(awardsReturn === "chain-menu" || awardsReturn === "chain-daily" ? awardsReturn : "chain");
             }}
           />
         ) : null}
@@ -782,7 +850,8 @@ export default function App() {
             onAdvance={chainDaily.advance}
             onAgain={playChain}
             onMenu={leaveChainDaily}
-            onAwards={() => openChainDailyAwards("chain-daily")}
+            onAwards={() => openChainAwards("chain-daily")}
+            onDailyAwards={() => openChainDailyAwards("chain-daily")}
             kicker="Today's Challenge"
             menuLabel="Back"
             unlockedBadges={chainDailyBadges.fresh}
@@ -794,12 +863,10 @@ export default function App() {
             attempt={chainDaily.attempt}
             unlockedBadges={chainDailyBadges.fresh}
             onPractice={practiceChainDaily}
-            onAwards={() => openChainDailyAwards("chain-daily")}
-            onMenu={() => {
-              chainDaily.leave();
-              chainDailyBadges.dismiss();
-              setScreen("hub");
-            }}
+            onAwards={() => openChainAwards("chain-daily")}
+            onDailyAwards={() => openChainDailyAwards("chain-daily")}
+            onMenu={leaveChainDaily}
+            menuLabel="Back"
             note="Today's puzzle uses your local date. Everyone gets the same five teammate links. The official score locks after one play."
           />
         ) : null}
@@ -840,7 +907,7 @@ export default function App() {
             dailyStatus={daily.status}
             todayCorrect={daily.official?.correct ?? 0}
             resumeQuestion={(daily.active?.index ?? 0) + 1}
-            onPlay={playClassic}
+            onPlay={openClassic}
             onDaily={openDaily}
             onAwards={() => openAwards("menu")}
             onDailyAwards={() => openHigherDailyAwards("menu")}
@@ -858,7 +925,7 @@ export default function App() {
             dailyStreak={careerDaily.streak}
             todayCorrect={careerDaily.official?.correct ?? 0}
             resumeQuestion={(careerDaily.active?.index ?? 0) + 1}
-            onPlay={playCareer}
+            onPlay={openCareer}
             onDaily={openCareerDaily}
             onAwards={() => openCareerAwards("career-menu")}
             onDailyAwards={() => openCareerDailyAwards("career-menu")}
@@ -877,7 +944,7 @@ export default function App() {
             todayCorrect={scoredDaily.official?.correct ?? 0}
             resumeQuestion={(scoredDaily.active?.index ?? 0) + 1}
             dailyTotal={SCORED_DAILY_TOTAL}
-            onPlay={playScored}
+            onPlay={openScored}
             onDaily={openScoredDaily}
             onAwards={() => openScoredAwards("scored-menu")}
             onDailyAwards={() => openScoredDailyAwards("scored-menu")}
@@ -916,7 +983,7 @@ export default function App() {
             eyebrow="Who Scored More?"
             onBack={() => {
               scoredBadges.acknowledge();
-              setScreen(awardsReturn === "scored-menu" ? "scored-menu" : "scored");
+              setScreen(awardsReturn === "scored-menu" || awardsReturn === "scored-daily" ? awardsReturn : "scored");
             }}
           />
         ) : null}
@@ -934,7 +1001,8 @@ export default function App() {
             onAdvance={scoredDaily.advance}
             onAgain={playScored}
             onMenu={leaveScoredDaily}
-            onAwards={() => openScoredDailyAwards("scored-daily")}
+            onAwards={() => openScoredAwards("scored-daily")}
+            onDailyAwards={() => openScoredDailyAwards("scored-daily")}
             kicker="Today's Challenge"
             menuLabel="Back"
             unlockedBadges={scoredDailyBadges.fresh}
@@ -947,12 +1015,10 @@ export default function App() {
             attempt={scoredDaily.attempt}
             unlockedBadges={scoredDailyBadges.fresh}
             onPractice={practiceScoredDaily}
-            onAwards={() => openScoredDailyAwards("scored-daily")}
-            onMenu={() => {
-              scoredDaily.leave();
-              scoredDailyBadges.dismiss();
-              setScreen("hub");
-            }}
+            onAwards={() => openScoredAwards("scored-daily")}
+            onDailyAwards={() => openScoredDailyAwards("scored-daily")}
+            onMenu={leaveScoredDaily}
+            menuLabel="Back"
             note={`Today's puzzle uses your local date. Everyone ranks the same five games. The official score is out of ${SCORED_DAILY_TOTAL} and locks after one play.`}
           />
         ) : null}
@@ -996,7 +1062,7 @@ export default function App() {
             dailyStreak={draftDaily.streak}
             todayCorrect={draftDaily.official?.correct ?? 0}
             resumeQuestion={(draftDaily.active?.index ?? 0) + 1}
-            onPlay={() => playDraft(draftLobbyMode)}
+            onPlay={() => openDraft(draftLobbyMode)}
             onDaily={() => openDraftDaily(draftLobbyMode)}
             onAwards={() => openDraftAwards(draftLobbyMode, "draft-menu")}
             onDailyAwards={() => openDraftDailyAwards("draft-menu")}
@@ -1037,7 +1103,7 @@ export default function App() {
             eyebrow={draftModeLabel(draftAwardsMode)}
             onBack={() => {
               draftBadges.acknowledge(draftAwardsMode);
-              setScreen(awardsReturn === "draft-menu" ? "draft-menu" : "draft");
+              setScreen(awardsReturn === "draft-menu" || awardsReturn === "draft-daily" ? awardsReturn : "draft");
             }}
           />
         ) : null}
@@ -1070,7 +1136,7 @@ export default function App() {
             eyebrow="Career Path"
             onBack={() => {
               careerBadges.acknowledge();
-              setScreen(awardsReturn === "career-menu" ? "career-menu" : "career");
+              setScreen(awardsReturn === "career-menu" || awardsReturn === "career-daily" ? awardsReturn : "career");
             }}
           />
         ) : null}
@@ -1087,7 +1153,8 @@ export default function App() {
             onAdvance={careerDaily.advance}
             onAgain={playCareer}
             onMenu={leaveCareerDaily}
-            onAwards={() => openCareerDailyAwards("career-daily")}
+            onAwards={() => openCareerAwards("career-daily")}
+            onDailyAwards={() => openCareerDailyAwards("career-daily")}
             kicker="Today's Challenge"
             menuLabel="Back"
             unlockedBadges={careerDailyBadges.fresh}
@@ -1099,12 +1166,10 @@ export default function App() {
             attempt={careerDaily.attempt}
             unlockedBadges={careerDailyBadges.fresh}
             onPractice={practiceCareerDaily}
-            onAwards={() => openCareerDailyAwards("career-daily")}
-            onMenu={() => {
-              careerDaily.leave();
-              careerDailyBadges.dismiss();
-              setScreen("hub");
-            }}
+            onAwards={() => openCareerAwards("career-daily")}
+            onDailyAwards={() => openCareerDailyAwards("career-daily")}
+            onMenu={leaveCareerDaily}
+            menuLabel="Back"
           />
         ) : null}
 
@@ -1149,7 +1214,8 @@ export default function App() {
             onSubmit={draftDaily.pick}
             onAdvance={draftDaily.advance}
             onAgain={() => playDraft(draftLobbyMode)}
-            onAwards={() => openDraftDailyAwards("draft-daily")}
+            onAwards={() => openDraftAwards(draftLobbyMode, "draft-daily")}
+            onDailyAwards={() => openDraftDailyAwards("draft-daily")}
             onMenu={leaveDraftDaily}
             kicker="Today's Challenge"
             menuLabel="Back"
@@ -1162,12 +1228,10 @@ export default function App() {
             attempt={draftDaily.attempt}
             unlockedBadges={draftDailyBadges.fresh}
             onPractice={practiceDraftDaily}
-            onAwards={() => openDraftDailyAwards("draft-daily")}
-            onMenu={() => {
-              draftDaily.leave();
-              draftDailyBadges.dismiss();
-              setScreen("hub");
-            }}
+            onAwards={() => openDraftAwards(draftLobbyMode, "draft-daily")}
+            onDailyAwards={() => openDraftDailyAwards("draft-daily")}
+            onMenu={leaveDraftDaily}
+            menuLabel="Back"
           />
         ) : null}
 
@@ -1248,7 +1312,9 @@ export default function App() {
             unlockedBadges={[...badges.fresh, ...higherDailyBadges.fresh]}
             onPractice={practiceDaily}
             onAwards={() => openAwards("daily")}
-            onMenu={() => setScreen("hub")}
+            onDailyAwards={() => openHigherDailyAwards("daily")}
+            onMenu={leaveDaily}
+            menuLabel="Back"
           />
         ) : null}
 
@@ -1265,6 +1331,7 @@ export default function App() {
             onAdvance={advanceClassic}
             onMenu={leaveClassic}
             onAwards={() => openAwards("classic")}
+            onDaily={openDaily}
           />
         ) : null}
 
@@ -1273,8 +1340,8 @@ export default function App() {
             <p className="eyebrow">Daily challenge</p>
             <h1 className="section-title">Unavailable</h1>
             <p className="lede">Today&apos;s challenge could not be built.</p>
-            <button type="button" className="action secondary" onClick={() => setScreen("hub")}>
-              All Games
+            <button type="button" className="action secondary" onClick={leaveDaily}>
+              {game.phase === "start" ? "All Games" : "Back"}
             </button>
           </section>
         ) : null}
@@ -1291,6 +1358,8 @@ export default function App() {
             onAdvance={advanceDaily}
             onMenu={leaveDaily}
             onAwards={() => openAwards("daily")}
+            onDailyAwards={() => openHigherDailyAwards("daily")}
+            menuLabel="Back"
           />
         ) : null}
 

@@ -10,25 +10,71 @@ import { readJsonStorage, removeStorage, writeStorage } from "./storage.js";
 
 export const ACTIVE_RUN_KEY = "nba-active-run";
 
-export function readActiveRun() {
-  const saved = readJsonStorage(ACTIVE_RUN_KEY);
+const SLOT_KEYS = {
+  classic: "nba-run-classic",
+  career: "nba-run-career",
+  "draft-year": "nba-run-draft-year",
+  "draft-pick": "nba-run-draft-pick",
+  scored: "nba-run-scored",
+  chain: "nba-run-chain",
+};
+
+let foregroundSlot = null;
+
+function slotFor(game, mode) {
+  if (game === "draft" && (mode === "year" || mode === "pick")) return `draft-${mode}`;
+  if (SLOT_KEYS[game]) return game;
+  return null;
+}
+
+function validRun(saved) {
   if (!saved || (saved.phase !== "playing" && saved.phase !== "revealing")) return null;
   if (saved.game !== "classic" && saved.game !== "career" && saved.game !== "draft" && saved.game !== "scored" && saved.game !== "chain") return null;
   if (!Number.isInteger(saved.streak) || saved.streak < 0) return null;
   return saved;
 }
 
+export function readActiveRun() {
+  return validRun(readJsonStorage(ACTIVE_RUN_KEY));
+}
+
+export function readRunSlot(game, mode) {
+  const slot = slotFor(game, mode);
+  const saved = validRun(slot ? readJsonStorage(SLOT_KEYS[slot]) : null);
+  if (!saved || saved.game !== game) return null;
+  if (game === "draft" && saved.mode !== mode) return null;
+  return saved;
+}
+
+export function resetRunFocus() {
+  foregroundSlot = null;
+}
+
+export function focusRun(game, mode) {
+  const slot = slotFor(game, mode);
+  if (!slot) return;
+  foregroundSlot = slot;
+  const saved = readRunSlot(game, mode);
+  if (saved) writeStorage(ACTIVE_RUN_KEY, JSON.stringify(saved));
+}
+
 export function writeActiveRun(run) {
-  writeStorage(ACTIVE_RUN_KEY, JSON.stringify(run));
+  const payload = JSON.stringify(run);
+  const slot = slotFor(run?.game, run?.mode);
+  if (slot) writeStorage(SLOT_KEYS[slot], payload);
+  if (foregroundSlot == null || foregroundSlot === slot) writeStorage(ACTIVE_RUN_KEY, payload);
 }
 
-export function clearActiveRun(game) {
+export function clearActiveRun(game, mode) {
+  const slot = slotFor(game, mode);
+  if (slot) removeStorage(SLOT_KEYS[slot]);
   const saved = readJsonStorage(ACTIVE_RUN_KEY);
-  if (!saved || saved.game === game) removeStorage(ACTIVE_RUN_KEY);
+  if (!saved) return;
+  const savedSlot = slotFor(saved.game, saved.mode);
+  if ((slot && savedSlot === slot) || (!slot && saved.game === game)) removeStorage(ACTIVE_RUN_KEY);
 }
 
-export function restoreClassicRun(players) {
-  const saved = readActiveRun();
+function restoreClassicSaved(saved, players) {
   if (!saved || saved.game !== "classic" || !Array.isArray(players)) return null;
   const category = categoryById(saved.categoryId);
   const left = players.find((player) => player.id === saved.leftId);
@@ -61,6 +107,14 @@ export function restoreClassicRun(players) {
       band: bandForStreak(saved.streak),
     },
   };
+}
+
+export function restoreClassicRun(players) {
+  return restoreClassicSaved(readActiveRun(), players);
+}
+
+export function restoreParkedClassicRun(players) {
+  return restoreClassicSaved(readRunSlot("classic"), players);
 }
 
 function careerAnswerId(question) {
@@ -102,8 +156,7 @@ function careerUsedKeys(saved, question) {
   return keys;
 }
 
-export function restoreCareerRun() {
-  const saved = readActiveRun();
+function restoreCareerSaved(saved) {
   const question = saved?.question;
   if (!saved || saved.game !== "career" || !careerQuestionPlayable(question)) return null;
 
@@ -126,8 +179,15 @@ export function restoreCareerRun() {
   };
 }
 
-export function restoreDraftRun(players) {
-  const saved = readActiveRun();
+export function restoreCareerRun() {
+  return restoreCareerSaved(readActiveRun());
+}
+
+export function restoreParkedCareerRun() {
+  return restoreCareerSaved(readRunSlot("career"));
+}
+
+function restoreDraftSaved(saved, players) {
   if (!saved || saved.game !== "draft" || !Array.isArray(players)) return null;
   if (saved.mode !== "year" && saved.mode !== "pick") return null;
   if (!Number.isInteger(saved.playerId)) return null;
@@ -167,6 +227,15 @@ export function restoreDraftRun(players) {
   };
 }
 
+export function restoreDraftRun(players) {
+  return restoreDraftSaved(readActiveRun(), players);
+}
+
+export function restoreParkedDraftRun(players, mode) {
+  if (mode !== "year" && mode !== "pick") return null;
+  return restoreDraftSaved(readRunSlot("draft", mode), players);
+}
+
 function cleanPicks(picks, question) {
   const ids = new Set(question.players.map((player) => player.id));
   const clean = [];
@@ -179,8 +248,7 @@ function cleanPicks(picks, question) {
   return clean;
 }
 
-export function restoreScoredRun() {
-  const saved = readActiveRun();
+function restoreScoredSaved(saved) {
   if (!saved || saved.game !== "scored") return null;
   if (typeof saved.gameId !== "string" || !Array.isArray(saved.playerIds) || saved.playerIds.length !== SCORED_POSITIONS) {
     return null;
@@ -221,8 +289,15 @@ export function restoreScoredRun() {
   };
 }
 
-export function restoreChainRun() {
-  const saved = readActiveRun();
+export function restoreScoredRun() {
+  return restoreScoredSaved(readActiveRun());
+}
+
+export function restoreParkedScoredRun() {
+  return restoreScoredSaved(readRunSlot("scored"));
+}
+
+function restoreChainSaved(saved) {
   const question = saved?.question;
   if (!saved || saved.game !== "chain" || auditChainQuestion(question).length) return null;
 
@@ -254,6 +329,14 @@ export function restoreChainRun() {
     question,
     usedKeys,
   };
+}
+
+export function restoreChainRun() {
+  return restoreChainSaved(readActiveRun());
+}
+
+export function restoreParkedChainRun() {
+  return restoreChainSaved(readRunSlot("chain"));
 }
 
 export function openingScreen(players) {

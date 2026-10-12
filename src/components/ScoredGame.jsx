@@ -42,6 +42,7 @@ export default function ScoredGame({
   onAgain,
   onMenu,
   onAwards,
+  onDailyAwards,
   onDaily,
   kicker,
   menuLabel = "All Games",
@@ -155,6 +156,11 @@ export default function ScoredGame({
         <button type="button" className="lobby-link" onClick={onAwards}>
           Achievements
         </button>
+        {onDailyAwards ? (
+          <button type="button" className="lobby-link" onClick={onDailyAwards}>
+            Daily achievements
+          </button>
+        ) : null}
         <button type="button" className="lobby-link" onClick={onMenu}>
           {menuLabel}
         </button>

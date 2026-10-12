@@ -3,7 +3,9 @@ export default function DailyScore({
   unlockedBadges = [],
   onPractice,
   onAwards,
+  onDailyAwards,
   onMenu,
+  menuLabel = "All Games",
 }) {
   return (
     <section className="panel daily-score">
@@ -61,8 +63,13 @@ export default function DailyScore({
         <button type="button" className="action secondary" onClick={onAwards}>
           Achievements
         </button>
+        {onDailyAwards ? (
+          <button type="button" className="action secondary" onClick={onDailyAwards}>
+            Daily achievements
+          </button>
+        ) : null}
         <button type="button" className="action secondary" onClick={onMenu}>
-          All Games
+          {menuLabel}
         </button>
       </div>
     </section>
