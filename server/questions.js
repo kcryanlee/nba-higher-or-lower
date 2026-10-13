@@ -202,3 +202,68 @@ export function buildQuestion(room) {
   if (room.mode === "chain") return chainQuestion(room);
   return higherQuestion(room);
 }
+
+export function bindQuestion(packed) {
+  if (!packed?.public || !packed.reveal) return null;
+  const kind = packed.public.kind;
+  let normalize = () => null;
+  let grade = () => false;
+  if (kind === "higher") {
+    const leftId = packed.public.left?.id;
+    const rightId = packed.public.right?.id;
+    const higherId = packed.reveal.higherId;
+    normalize = (value) => {
+      const id = Number(value);
+      if (id !== leftId && id !== rightId) return null;
+      return id;
+    };
+    grade = (value) => value === higherId;
+  } else if (kind === "career") {
+    const official = packed.reveal.player;
+    normalize = (value) => {
+      if (typeof value !== "string") return null;
+      const name = value.trim().slice(0, 80);
+      return name || null;
+    };
+    grade = (value) => playerNamesMatch(official, value);
+  } else if (kind === "draft") {
+    const choices = Array.isArray(packed.public.choices) ? packed.public.choices : [];
+    const answer = packed.reveal.answer;
+    normalize = (value) => {
+      const choice = Number(value);
+      if (!Number.isInteger(choice) || !choices.includes(choice)) return null;
+      return choice;
+    };
+    grade = (value) => value === answer;
+  } else if (kind === "scored") {
+    const ids = Array.isArray(packed.public.players) ? packed.public.players.map((player) => player.id) : [];
+    const ranking = Array.isArray(packed.reveal.ranking) ? packed.reveal.ranking : [];
+    normalize = (value) => {
+      if (!Array.isArray(value) || value.length !== ids.length) return null;
+      const picks = value.map((item) => Number(item));
+      if (picks.some((id) => !ids.includes(id))) return null;
+      if (new Set(picks).size !== ids.length) return null;
+      return picks;
+    };
+    grade = (value) => ranking.every((id, index) => value[index] === id);
+  } else if (kind === "chain") {
+    const choiceIds = Array.isArray(packed.public.choices) ? packed.public.choices : [];
+    const validIds = Array.isArray(packed.reveal.validIds) ? packed.reveal.validIds : [];
+    normalize = (value) => {
+      const id = Number(value);
+      if (!choiceIds.includes(id)) return null;
+      return id;
+    };
+    grade = (value) => validIds.includes(value);
+  } else {
+    return null;
+  }
+  return {
+    usedKey: packed.usedKey,
+    usedId: packed.usedId,
+    public: packed.public,
+    reveal: packed.reveal,
+    normalize,
+    grade,
+  };
+}

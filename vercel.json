@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/pk.js": {
+      "maxDuration": 300,
+      "includeFiles": "src/data/**"
+    }
+  }
+}

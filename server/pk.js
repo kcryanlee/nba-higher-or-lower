@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from "node:crypto";
-import { buildQuestion } from "./questions.js";
+import { bindQuestion, buildQuestion } from "./questions.js";
 import {
   PK_COUNTDOWN_FROM,
   PK_COUNTDOWN_MS,
@@ -55,15 +55,18 @@ export function createPkLobby(options = {}) {
   const rooms = new Map();
   const membership = new Map();
   const listeners = new Map();
+  let quiet = false;
 
   function emit(playerId, message) {
-    listeners.get(playerId)?.(message);
+    if (options.onEmit) options.onEmit(playerId, message);
+    else listeners.get(playerId)?.(message);
   }
 
   function sendState(room) {
     for (const player of roster(room)) {
       emit(player.id, { type: "state", ...viewFor(room, player.id) });
     }
+    if (!quiet) options.onChange?.();
   }
 
   function locate(playerId) {
@@ -79,10 +82,11 @@ export function createPkLobby(options = {}) {
     return players.length === 2 && players.every((player) => player.connected);
   }
 
-  function arm(room, ms, fn) {
+  function arm(room, ms, fn, kind = room.timerKind) {
     if (room.timerId != null) cancel(room.timerId);
     room.timerFn = fn;
     room.timerLeft = ms;
+    room.timerKind = kind ?? null;
     room.timerKey += 1;
     room.paused = false;
     room.timerDue = now() + ms;
@@ -100,6 +104,7 @@ export function createPkLobby(options = {}) {
     room.timerId = null;
     room.timerFn = null;
     room.timerLeft = 0;
+    room.timerKind = null;
     room.paused = false;
   }
 
@@ -164,17 +169,19 @@ export function createPkLobby(options = {}) {
     sendState(room);
   }
 
+  function countdownTick(room) {
+    if (room.phase !== "countdown") return;
+    if (room.countdown <= 1) {
+      openQuestion(room);
+      return;
+    }
+    room.countdown -= 1;
+    sendState(room);
+    scheduleStep(room);
+  }
+
   function scheduleStep(room) {
-    arm(room, countdownMs, () => {
-      if (room.phase !== "countdown") return;
-      if (room.countdown <= 1) {
-        openQuestion(room);
-        return;
-      }
-      room.countdown -= 1;
-      sendState(room);
-      scheduleStep(room);
-    });
+    arm(room, countdownMs, () => countdownTick(room), "countdown");
   }
 
   function openQuestion(room) {
@@ -196,7 +203,7 @@ export function createPkLobby(options = {}) {
     room.round = round;
     room.phase = "question";
     room.countdown = null;
-    arm(room, questionMs, () => expireQuestion(room, round.id));
+    arm(room, questionMs, () => expireQuestion(room, round.id), "question");
     sendState(room);
   }
 
@@ -208,26 +215,28 @@ export function createPkLobby(options = {}) {
     enterReveal(room);
   }
 
+  function finishReveal(room) {
+    const winnerId = room.round?.winnerId ?? null;
+    const matchOver = Boolean(winnerId && room.players[winnerId]?.score >= target);
+    room.round = null;
+    if (matchOver) {
+      room.phase = "results";
+      room.matchWinnerId = winnerId;
+      room.pending = null;
+      for (const player of roster(room)) player.rematch = false;
+      clearClock(room);
+      sendState(room);
+      return;
+    }
+    beginCountdown(room);
+  }
+
   function enterReveal(room) {
     if (room.phase === "reveal" || room.phase === "results") return;
     const round = room.round;
     if (!round) return;
     room.phase = "reveal";
-    const winnerId = round.winnerId;
-    const matchOver = Boolean(winnerId && room.players[winnerId]?.score >= target);
-    arm(room, revealMs, () => {
-      room.round = null;
-      if (matchOver) {
-        room.phase = "results";
-        room.matchWinnerId = winnerId;
-        room.pending = null;
-        for (const player of roster(room)) player.rematch = false;
-        clearClock(room);
-        sendState(room);
-        return;
-      }
-      beginCountdown(room);
-    });
+    arm(room, revealMs, () => finishReveal(room), "reveal");
     sendState(room);
   }
 
@@ -292,6 +301,7 @@ export function createPkLobby(options = {}) {
     if (remaining.length === 0) {
       clearClock(room);
       rooms.delete(room.code);
+      if (!quiet) options.onChange?.();
       return;
     }
     if (player.host) remaining[0].host = true;
@@ -309,8 +319,10 @@ export function createPkLobby(options = {}) {
   function scheduleAbandon(room, player) {
     if (player.abandonId != null) cancel(player.abandonId);
     const wait = room.phase === "lobby" ? lobbyGraceMs : disconnectMs;
+    player.abandonDue = now() + wait;
     player.abandonId = schedule(() => {
       player.abandonId = null;
+      player.abandonDue = 0;
       if (player.connected) return;
       removePlayer(room, player.id, `${player.name} left`);
     }, wait);
@@ -387,6 +399,7 @@ export function createPkLobby(options = {}) {
       score: 0,
       joined: now(),
       abandonId: null,
+      abandonDue: 0,
     };
     room.players[id] = player;
     membership.set(id, room.code);
@@ -415,6 +428,7 @@ export function createPkLobby(options = {}) {
       timerLeft: 0,
       timerFn: null,
       timerKey: 0,
+      timerKind: null,
       notice: "",
       receipt: 1,
     };
@@ -450,6 +464,7 @@ export function createPkLobby(options = {}) {
       cancel(player.abandonId);
       player.abandonId = null;
     }
+    player.abandonDue = 0;
     const live = room.phase === "countdown" || room.phase === "question" || room.phase === "reveal";
     if (live && room.paused && bothOnline(room)) resumeClock(room);
     if (room.phase === "results" && bothOnline(room) && roster(room).every((item) => item.rematch)) {
@@ -523,6 +538,171 @@ export function createPkLobby(options = {}) {
     }
   }
 
+  function packBuilt(built) {
+    if (!built) return null;
+    return {
+      usedKey: built.usedKey ?? null,
+      usedId: built.usedId ?? null,
+      public: built.public,
+      reveal: built.reveal,
+    };
+  }
+
+  function callbackFor(room) {
+    if (room.timerKind === "countdown") return () => countdownTick(room);
+    if (room.timerKind === "question") {
+      const roundId = room.round?.id;
+      return () => expireQuestion(room, roundId);
+    }
+    if (room.timerKind === "reveal") return () => finishReveal(room);
+    return null;
+  }
+
+  function rearm(room) {
+    const fn = callbackFor(room);
+    if (!fn) return;
+    room.timerFn = fn;
+    if (room.paused) return;
+    arm(room, Math.max(0, room.timerDue - now()), fn, room.timerKind);
+  }
+
+  function snapshot() {
+    return {
+      rooms: [...rooms.values()].map((room) => ({
+        code: room.code,
+        mode: room.mode,
+        phase: room.phase,
+        countdown: room.countdown,
+        used: room.used,
+        usedIds: room.usedIds,
+        roundIndex: room.roundIndex,
+        pending: packBuilt(room.pending),
+        round: room.round ? {
+          id: room.round.id,
+          public: room.round.public,
+          reveal: room.round.reveal,
+          answers: room.round.answers,
+          winnerId: room.round.winnerId,
+          reason: room.round.reason,
+          resolved: room.round.resolved,
+        } : null,
+        matchWinnerId: room.matchWinnerId,
+        paused: room.paused,
+        timerDue: room.timerDue,
+        timerLeft: room.timerLeft,
+        timerKey: room.timerKey,
+        timerKind: room.timerKind,
+        notice: room.notice,
+        receipt: room.receipt,
+        players: Object.values(room.players).map((player) => ({
+          id: player.id,
+          token: player.token,
+          name: player.name,
+          host: player.host,
+          connected: player.connected,
+          ready: player.ready,
+          rematch: player.rematch,
+          score: player.score,
+          joined: player.joined,
+          abandonDue: player.abandonDue || 0,
+        })),
+      })),
+    };
+  }
+
+  function restore(data) {
+    quiet = true;
+    try {
+      freeze();
+      rooms.clear();
+      membership.clear();
+      listeners.clear();
+      for (const saved of data?.rooms ?? []) {
+        if (!saved?.code || !saved.players) continue;
+        const room = {
+          code: saved.code,
+          mode: isPkMode(saved.mode) ? saved.mode : "higher",
+          phase: saved.phase || "lobby",
+          countdown: saved.countdown ?? null,
+          players: {},
+          used: Array.isArray(saved.used) ? saved.used : [],
+          usedIds: Array.isArray(saved.usedIds) ? saved.usedIds : [],
+          roundIndex: saved.roundIndex || 0,
+          round: null,
+          pending: bindQuestion(saved.pending),
+          matchWinnerId: saved.matchWinnerId ?? null,
+          paused: Boolean(saved.paused),
+          timerId: null,
+          timerDue: saved.timerDue || 0,
+          timerLeft: saved.timerLeft || 0,
+          timerFn: null,
+          timerKey: saved.timerKey || 0,
+          timerKind: saved.timerKind || null,
+          notice: typeof saved.notice === "string" ? saved.notice : "",
+          receipt: saved.receipt || 1,
+        };
+        if (saved.round?.id && saved.round.public && saved.round.reveal) {
+          const built = bindQuestion({ public: saved.round.public, reveal: saved.round.reveal });
+          if (built) {
+            room.round = {
+              id: saved.round.id,
+              public: saved.round.public,
+              reveal: saved.round.reveal,
+              normalize: built.normalize,
+              grade: built.grade,
+              answers: saved.round.answers && typeof saved.round.answers === "object" ? saved.round.answers : {},
+              winnerId: saved.round.winnerId ?? null,
+              reason: saved.round.reason ?? null,
+              resolved: Boolean(saved.round.resolved),
+            };
+          }
+        }
+        for (const player of saved.players) {
+          if (!player?.id || !player.token) continue;
+          room.players[player.id] = {
+            id: player.id,
+            token: player.token,
+            name: player.name || "Player",
+            host: Boolean(player.host),
+            connected: Boolean(player.connected),
+            ready: Boolean(player.ready),
+            rematch: Boolean(player.rematch),
+            score: Number.isFinite(player.score) ? player.score : 0,
+            joined: player.joined || 0,
+            abandonId: null,
+            abandonDue: player.abandonDue || 0,
+          };
+          membership.set(player.id, room.code);
+        }
+        rooms.set(room.code, room);
+        rearm(room);
+        for (const player of Object.values(room.players)) {
+          if (player.connected || !player.abandonDue) continue;
+          const wait = Math.max(0, player.abandonDue - now());
+          player.abandonId = schedule(() => {
+            player.abandonId = null;
+            player.abandonDue = 0;
+            if (player.connected) return;
+            removePlayer(room, player.id, `${player.name} left`);
+          }, wait);
+        }
+      }
+    } finally {
+      quiet = false;
+    }
+  }
+
+  function freeze() {
+    for (const room of rooms.values()) {
+      if (room.timerId != null) cancel(room.timerId);
+      room.timerId = null;
+      for (const player of Object.values(room.players)) {
+        if (player.abandonId != null) cancel(player.abandonId);
+        player.abandonId = null;
+      }
+    }
+  }
+
   return {
     create,
     join,
@@ -531,6 +711,12 @@ export function createPkLobby(options = {}) {
     disconnect,
     leave,
     markConnected,
+    snapshot,
+    restore,
+    freeze,
+    known(playerId) {
+      return Boolean(locate(playerId));
+    },
     subscribe(playerId, listener) {
       listeners.set(playerId, listener);
     },

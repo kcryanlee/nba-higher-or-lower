@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
+    "ioredis": "^5.11.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "ws": "^8.22.0"

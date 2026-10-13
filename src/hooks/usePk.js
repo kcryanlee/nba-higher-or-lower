@@ -50,8 +50,15 @@ function rememberName(name) {
 }
 
 function socketUrl() {
+  const configured = import.meta.env.VITE_PK_URL;
+  if (typeof configured === "string" && configured.trim()) return configured.trim();
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}/pk`;
+  return `${protocol}//${window.location.host}/api/pk`;
+}
+
+function failureText(purpose) {
+  if (purpose === "join") return "Could not join the room. The live race server did not respond.";
+  return "Could not create a room. The live race server did not respond.";
 }
 
 export function usePk() {
@@ -64,6 +71,7 @@ export function usePk() {
   const stopRef = useRef(false);
   const retriesRef = useRef(0);
   const reconnectRef = useRef(0);
+  const waitRef = useRef(0);
 
   function send(message) {
     const socket = socketRef.current;
@@ -72,20 +80,43 @@ export function usePk() {
     return true;
   }
 
-  function open(onOpen) {
+  function open(onOpen, purpose) {
     const previous = socketRef.current;
     if (previous) {
       previous.onclose = null;
       previous.close();
     }
-    const socket = new WebSocket(socketUrl());
+    window.clearTimeout(waitRef.current);
+    let socket;
+    try {
+      socket = new WebSocket(socketUrl());
+    } catch {
+      setLink("offline");
+      if (purpose) setError(failureText(purpose));
+      return;
+    }
     socketRef.current = socket;
     setLink((current) => (current === "live" ? "reconnecting" : "connecting"));
+    if (purpose) {
+      waitRef.current = window.setTimeout(() => {
+        if (stopRef.current || seatRef.current || socketRef.current !== socket) return;
+        setError((current) => current || failureText(purpose));
+        setLink("offline");
+        socket.onclose = null;
+        socketRef.current = null;
+        socket.close();
+      }, 8000);
+    }
     socket.onopen = () => {
       if (socketRef.current !== socket) return;
       retriesRef.current = 0;
       setLink("live");
       onOpen(socket);
+    };
+    socket.onerror = () => {
+      if (socketRef.current !== socket || !purpose) return;
+      setError((current) => current || failureText(purpose));
+      if (!seatRef.current) setLink("offline");
     };
     socket.onmessage = (event) => {
       if (socketRef.current !== socket) return;
@@ -96,6 +127,7 @@ export function usePk() {
         return;
       }
       if (message?.type === "state") {
+        window.clearTimeout(waitRef.current);
         setError("");
         setView(message);
         if (message.code && message.you && message.token) {
@@ -106,7 +138,9 @@ export function usePk() {
         return;
       }
       if (message?.type === "error") {
+        window.clearTimeout(waitRef.current);
         setError(message.message || "Something went wrong");
+        if (!seatRef.current) setLink("offline");
         if (message.message === "Room not found") {
           seatRef.current = null;
           clearSeat();
@@ -122,8 +156,10 @@ export function usePk() {
     socket.onclose = () => {
       if (socketRef.current !== socket) return;
       socketRef.current = null;
+      window.clearTimeout(waitRef.current);
       if (stopRef.current || !seatRef.current) {
         setLink("offline");
+        if (purpose && !stopRef.current) setError((current) => current || failureText(purpose));
         return;
       }
       setLink("reconnecting");
@@ -161,6 +197,7 @@ export function usePk() {
     return () => {
       stopRef.current = true;
       window.clearTimeout(reconnectRef.current);
+      window.clearTimeout(waitRef.current);
       const socket = socketRef.current;
       socketRef.current = null;
       if (!socket) return;
@@ -187,7 +224,7 @@ export function usePk() {
       setError("");
       open((socket) => {
         socket.send(JSON.stringify({ type: "create", name: clean, mode }));
-      });
+      }, "create");
     },
     join(name, code) {
       const clean = String(name || "").trim().slice(0, 16);
@@ -202,7 +239,7 @@ export function usePk() {
       setError("");
       open((socket) => {
         socket.send(JSON.stringify({ type: "join", name: clean, code }));
-      });
+      }, "join");
     },
     setMode(mode) {
       send({ type: "mode", mode });
@@ -220,6 +257,7 @@ export function usePk() {
     leave() {
       stopRef.current = true;
       window.clearTimeout(reconnectRef.current);
+      window.clearTimeout(waitRef.current);
       seatRef.current = null;
       clearSeat();
       const socket = socketRef.current;

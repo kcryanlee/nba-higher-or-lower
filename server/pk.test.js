@@ -4,7 +4,7 @@ import { describe, test } from "node:test";
 import { WebSocket } from "ws";
 import { attachPkServer } from "./attach.js";
 import { createPkLobby } from "./pk.js";
-import { buildQuestion } from "./questions.js";
+import { bindQuestion, buildQuestion } from "./questions.js";
 
 function createClock() {
   let time = 0;
@@ -396,6 +396,24 @@ describe("live race rules", () => {
   });
 });
 
+function correctValue(built) {
+  if (built.public.kind === "higher") return built.reveal.higherId;
+  if (built.public.kind === "career") return built.reveal.player;
+  if (built.public.kind === "draft") return built.reveal.answer;
+  if (built.public.kind === "scored") return built.reveal.ranking;
+  return built.reveal.validIds[0];
+}
+
+function wrongValue(built) {
+  if (built.public.kind === "higher") {
+    return built.reveal.higherId === built.public.left.id ? built.public.right.id : built.public.left.id;
+  }
+  if (built.public.kind === "career") return "Not A Player";
+  if (built.public.kind === "draft") return built.public.choices.find((choice) => choice !== built.reveal.answer);
+  if (built.public.kind === "scored") return [built.reveal.ranking[1], built.reveal.ranking[0], built.reveal.ranking[2]];
+  return built.public.choices.find((id) => !built.reveal.validIds.includes(id));
+}
+
 describe("question payloads", () => {
   test("higher or lower hides both stat lines until reveal data is separate", () => {
     const built = buildQuestion({ mode: "higher", roundIndex: 0, used: [], usedIds: [] });
@@ -471,6 +489,88 @@ describe("question payloads", () => {
     assert.equal(typeof wrong, "number");
     assert.equal(built.grade(wrong), false);
     assert.equal(built.normalize(999999), null);
+  });
+
+  test("saved questions keep the same grade after a reload", () => {
+    for (const mode of ["higher", "career", "draft-year", "draft-pick", "scored", "chain"]) {
+      const built = buildQuestion({ mode, roundIndex: 1, used: [], usedIds: [] });
+      assert.ok(built, mode);
+      const bound = bindQuestion({
+        usedKey: built.usedKey,
+        usedId: built.usedId,
+        public: structuredClone(built.public),
+        reveal: structuredClone(built.reveal),
+      });
+      assert.ok(bound, mode);
+      const right = correctValue(built);
+      const wrong = wrongValue(built);
+      assert.equal(bound.grade(right), true, mode);
+      assert.equal(built.grade(right), true, mode);
+      assert.equal(bound.grade(wrong), false, mode);
+      assert.deepEqual(bound.normalize(right), built.normalize(right), mode);
+      assert.deepEqual(bound.normalize(wrong), built.normalize(wrong), mode);
+    }
+  });
+});
+
+describe("room restore", () => {
+  function revived(session) {
+    session.lobby.freeze();
+    const saved = JSON.parse(JSON.stringify(session.lobby.snapshot()));
+    const next = createPkLobby({
+      now: session.clock.now,
+      schedule: session.clock.schedule,
+      cancel: session.clock.cancel,
+      countdownFrom: 3,
+      countdownMs: 1000,
+      questionMs: 15000,
+      revealMs: 2000,
+      disconnectMs: 45000,
+      lobbyGraceMs: 20000,
+      target: 5,
+      nextQuestion: () => fixture(),
+    });
+    next.restore(saved);
+    const hostBox = [];
+    const guestBox = [];
+    next.subscribe(session.hostId, (message) => hostBox.push(message));
+    next.subscribe(session.guestId, (message) => guestBox.push(message));
+    next.markConnected(session.hostId);
+    next.markConnected(session.guestId);
+    return { next, hostBox, guestBox };
+  }
+
+  test("a restored room keeps the question, the clock, and the score", () => {
+    const session = setup();
+    readyUp(session);
+    const roundId = latest(session.hostBox).round.id;
+    session.clock.advance(4000);
+    const revivedRoom = revived(session);
+    const host = latest(revivedRoom.hostBox);
+    assert.equal(host.phase, "question");
+    assert.equal(host.round.id, roundId);
+    assert.equal(host.round.timer.remainingMs, 11000);
+    assert.equal(host.round.reveal, null);
+    revivedRoom.next.command(session.guestId, { type: "answer", roundId, value: 1 });
+    const revealed = latest(revivedRoom.guestBox);
+    assert.equal(revealed.phase, "reveal");
+    assert.equal(revealed.round.winnerId, session.guestId);
+    assert.equal(scores(revivedRoom.guestBox)[session.guestId], 1);
+    assert.equal(scores(revivedRoom.hostBox)[session.hostId], 0);
+  });
+
+  test("a restored clock still expires the question", () => {
+    const session = setup();
+    readyUp(session);
+    session.clock.advance(4000);
+    const revivedRoom = revived(session);
+    session.clock.advance(10999);
+    assert.equal(latest(revivedRoom.hostBox).phase, "question");
+    session.clock.advance(1);
+    const state = latest(revivedRoom.hostBox);
+    assert.equal(state.phase, "reveal");
+    assert.equal(state.round.reason, "timeout");
+    assert.equal(scores(revivedRoom.hostBox)[session.hostId], 0);
   });
 });
 
@@ -564,6 +664,43 @@ describe("two sockets", () => {
     } finally {
       host.ws.close();
       guest.ws.close();
+      attached.wss.close();
+      await new Promise((resolve) => server.close(resolve));
+    }
+  });
+
+  test("the production socket path creates a room", async () => {
+    const server = createServer();
+    const attached = attachPkServer(server);
+    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+    const { port } = server.address();
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/api/pk`);
+    const messages = [];
+    ws.on("message", (data) => messages.push(JSON.parse(String(data))));
+    try {
+      await new Promise((resolve, reject) => {
+        ws.on("open", resolve);
+        ws.on("error", reject);
+      });
+      ws.send(JSON.stringify({ type: "create", name: "Ada", mode: "higher" }));
+      const created = await new Promise((resolve, reject) => {
+        const started = Date.now();
+        const timer = setInterval(() => {
+          const found = messages.find((message) => message.type === "state" && message.code);
+          if (found) {
+            clearInterval(timer);
+            resolve(found);
+          } else if (Date.now() - started > 2000) {
+            clearInterval(timer);
+            reject(new Error(`timed out. last=${JSON.stringify(messages.at(-1))}`));
+          }
+        }, 10);
+      });
+      assert.equal(created.phase, "lobby");
+      assert.equal(created.players[0].name, "Ada");
+      assert.equal(created.players[0].host, true);
+    } finally {
+      ws.close();
       attached.wss.close();
       await new Promise((resolve) => server.close(resolve));
     }
