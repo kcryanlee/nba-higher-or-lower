@@ -61,6 +61,7 @@ function careerQuestion({ roundIndex, used, usedIds }) {
   const question = selectCareerQuestion(roundIndex, { usedIds, usedKeys: used });
   if (!question?.player || !Array.isArray(question.stops)) return null;
   const official = question.player;
+  const hiddenIndex = Number.isInteger(question.hiddenIndex) ? question.hiddenIndex : null;
   return {
     usedKey: question.key,
     usedId: question.answerId,
@@ -70,14 +71,16 @@ function careerQuestion({ roundIndex, used, usedIds }) {
       band: question.band?.label || "",
       bandId: question.band?.id || "",
       position: question.band?.id === "easy" ? question.position : "",
-      stops: question.stops.map((stop) => ({
-        team: stop.team,
+      hiddenIndex,
+      stops: question.stops.map((stop, index) => ({
+        team: index === hiddenIndex ? null : stop.team,
         start: stop.start,
         end: stop.end,
       })),
     },
     reveal: {
       player: official,
+      hiddenTeam: hiddenIndex == null ? null : question.stops[hiddenIndex].team,
     },
     normalize(value) {
       if (typeof value !== "string") return null;

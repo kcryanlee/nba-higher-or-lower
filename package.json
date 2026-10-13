@@ -12,7 +12,8 @@
     "test": "node --test server/pk.test.js",
     "update-nba-data": "node scripts/updateNBAData.js",
     "build-box-scores": "node scripts/buildBoxScores.js",
-    "build-teammates": "node scripts/buildTeammates.js"
+    "build-teammates": "node scripts/buildTeammates.js",
+    "audit-careers": "node scripts/auditCareerHistory.js"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

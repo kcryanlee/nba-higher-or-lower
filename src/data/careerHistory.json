@@ -54,7 +54,7 @@
       },
       {
         "team": "Brooklyn Nets",
-        "start": 2019,
+        "start": 2020,
         "end": 2023
       },
       {
@@ -590,11 +590,11 @@
       {
         "team": "Toronto Raptors",
         "start": 2017,
-        "end": 2023
+        "end": 2024
       },
       {
         "team": "New York Knicks",
-        "start": 2023,
+        "start": 2024,
         "end": 2027
       }
     ]
@@ -605,7 +605,7 @@
       {
         "team": "New York Knicks",
         "start": 2015,
-        "end": 2019
+        "end": 2018
       },
       {
         "team": "Dallas Mavericks",
@@ -1260,11 +1260,11 @@
       {
         "team": "Boston Celtics",
         "start": 2006,
-        "end": 2014
+        "end": 2015
       },
       {
         "team": "Dallas Mavericks",
-        "start": 2014,
+        "start": 2015,
         "end": 2015
       },
       {
@@ -1329,7 +1329,7 @@
       },
       {
         "team": "Miami Heat",
-        "start": 2020,
+        "start": 2019,
         "end": 2021
       },
       {
@@ -1495,11 +1495,11 @@
       {
         "team": "Philadelphia 76ers",
         "start": 2003,
-        "end": 2007
+        "end": 2008
       },
       {
         "team": "Utah Jazz",
-        "start": 2007,
+        "start": 2008,
         "end": 2010
       },
       {
@@ -1515,11 +1515,11 @@
       {
         "team": "Cleveland Cavaliers",
         "start": 2017,
-        "end": 2017
+        "end": 2019
       },
       {
         "team": "Utah Jazz",
-        "start": 2018,
+        "start": 2019,
         "end": 2019
       },
       {
@@ -1875,11 +1875,11 @@
       {
         "team": "New York Knicks",
         "start": 2020,
-        "end": 2022
+        "end": 2024
       },
       {
         "team": "Toronto Raptors",
-        "start": 2023,
+        "start": 2024,
         "end": 2027
       }
     ]
@@ -1990,11 +1990,11 @@
       {
         "team": "Brooklyn Nets",
         "start": 2017,
-        "end": 2019
+        "end": 2021
       },
       {
         "team": "Cleveland Cavaliers",
-        "start": 2020,
+        "start": 2021,
         "end": 2027
       }
     ]
@@ -2005,11 +2005,11 @@
       {
         "team": "Philadelphia 76ers",
         "start": 2014,
-        "end": 2015
+        "end": 2017
       },
       {
         "team": "Oklahoma City Thunder",
-        "start": 2016,
+        "start": 2017,
         "end": 2019
       },
       {
@@ -2075,7 +2075,7 @@
       {
         "team": "Los Angeles Clippers",
         "start": 2024,
-        "end": 2024
+        "end": 2025
       },
       {
         "team": "Milwaukee Bucks",
@@ -2180,12 +2180,12 @@
       {
         "team": "New Orleans Pelicans",
         "start": 2019,
-        "end": 2021
+        "end": 2022
       },
       {
         "team": "Utah Jazz",
         "start": 2022,
-        "end": 2022
+        "end": 2023
       },
       {
         "team": "Minnesota Timberwolves",
@@ -2225,11 +2225,11 @@
       {
         "team": "Toronto Raptors",
         "start": 2016,
-        "end": 2022
+        "end": 2024
       },
       {
         "team": "Indiana Pacers",
-        "start": 2023,
+        "start": 2024,
         "end": 2027
       }
     ]
@@ -2250,11 +2250,11 @@
       {
         "team": "New York Knicks",
         "start": 2019,
-        "end": 2022
+        "end": 2024
       },
       {
         "team": "Toronto Raptors",
-        "start": 2023,
+        "start": 2024,
         "end": 2027
       }
     ]
@@ -2270,7 +2270,7 @@
       {
         "team": "Washington Wizards",
         "start": 2023,
-        "end": 2023
+        "end": 2024
       },
       {
         "team": "Milwaukee Bucks",
@@ -2285,17 +2285,12 @@
       {
         "team": "Detroit Pistons",
         "start": 2020,
-        "end": 2021
+        "end": 2023
       },
       {
         "team": "Atlanta Hawks",
-        "start": 2022,
+        "start": 2023,
         "end": 2024
-      },
-      {
-        "team": "Washington Wizards",
-        "start": 2024,
-        "end": 2025
       },
       {
         "team": "New Orleans Pelicans",
@@ -2400,6 +2395,3051 @@
       {
         "team": "Los Angeles Lakers",
         "start": 2019,
+        "end": 2025
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642875,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642363,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630173,
+    "stops": [
+      {
+        "team": "Miami Heat",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 2021,
+        "end": 2024
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Sacramento Kings",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629631,
+    "stops": [
+      {
+        "team": "Atlanta Hawks",
+        "start": 2019,
+        "end": 2025
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Sacramento Kings",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642928,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631342,
+    "stops": [
+      {
+        "team": "Atlanta Hawks",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Sacramento Kings",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631099,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 2022,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642367,
+    "stops": [
+      {
+        "team": "Toronto Raptors",
+        "start": 2024,
+        "end": 2026
+      },
+      {
+        "team": "Sacramento Kings",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642263,
+    "stops": [
+      {
+        "team": "Houston Rockets",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203935,
+    "stops": [
+      {
+        "team": "Boston Celtics",
+        "start": 2014,
+        "end": 2023
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2025,
+        "end": 2025
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631106,
+    "stops": [
+      {
+        "team": "Houston Rockets",
+        "start": 2022,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203991,
+    "stops": [
+      {
+        "team": "Houston Rockets",
+        "start": 2014,
+        "end": 2020
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2020,
+        "end": 2025
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203500,
+    "stops": [
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2013,
+        "end": 2020
+      },
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2021,
+        "end": 2023
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203992,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 2017,
+        "end": 2020
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2020,
+        "end": 2025
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203501,
+    "stops": [
+      {
+        "team": "New York Knicks",
+        "start": 2013,
+        "end": 2015
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2015,
+        "end": 2017
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2017,
+        "end": 2019
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2019,
+        "end": 2024
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630558,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 2021,
+        "end": 2024
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641796,
+    "stops": [
+      {
+        "team": "Miami Heat",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1626171,
+    "stops": [
+      {
+        "team": "Chicago Bulls",
+        "start": 2015,
+        "end": 2019
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2019,
+        "end": 2019
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2019,
+        "end": 2020
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2020,
+        "end": 2026
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631323,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630696,
+    "stops": [
+      {
+        "team": "Miami Heat",
+        "start": 2022,
+        "end": 2023
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2023,
+        "end": 2023
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628971,
+    "stops": [
+      {
+        "team": "Detroit Pistons",
+        "start": 2018,
+        "end": 2020
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2020,
+        "end": 2022
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2022,
+        "end": 2023
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2023,
+        "end": 2024
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2025,
+        "end": 2025
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628404,
+    "stops": [
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2017,
+        "end": 2019
+      },
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2019,
+        "end": 2022
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2022,
+        "end": 2023
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630631,
+    "stops": [
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2021,
+        "end": 2026
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203903,
+    "stops": [
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2014,
+        "end": 2018
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2018,
+        "end": 2020
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2020,
+        "end": 2025
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203083,
+    "stops": [
+      {
+        "team": "Detroit Pistons",
+        "start": 2012,
+        "end": 2020
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2021,
+        "end": 2021
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2022,
+        "end": 2022
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2024,
+        "end": 2026
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629013,
+    "stops": [
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2018,
+        "end": 2019
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2019,
+        "end": 2020
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2021,
+        "end": 2023
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2023,
+        "end": 2024
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642281,
+    "stops": [
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631212,
+    "stops": [
+      {
+        "team": "Denver Nuggets",
+        "start": 2022,
+        "end": 2026
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630241,
+    "stops": [
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2022,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641854,
+    "stops": [
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641772,
+    "stops": [
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628418,
+    "stops": [
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2017,
+        "end": 2018
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2018,
+        "end": 2022
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2022,
+        "end": 2023
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2023,
+        "end": 2023
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2025,
+        "end": 2025
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642846,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642271,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641729,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642268,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629006,
+    "stops": [
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2018,
+        "end": 2022
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2022,
+        "end": 2025
+      },
+      {
+        "team": "Charlotte Hornets",
+        "start": 2025,
+        "end": 2025
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629637,
+    "stops": [
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2019,
+        "end": 2023
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2023,
+        "end": 2026
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629004,
+    "stops": [
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2018,
+        "end": 2019
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2019,
+        "end": 2021
+      },
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2021,
+        "end": 2021
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2022,
+        "end": 2023
+      },
+      {
+        "team": "Charlotte Hornets",
+        "start": 2023,
+        "end": 2023
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2023,
+        "end": 2024
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1626220,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 2017,
+        "end": 2022
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2024,
+        "end": 2026
+      },
+      {
+        "team": "Charlotte Hornets",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629675,
+    "stops": [
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2019,
+        "end": 2026
+      },
+      {
+        "team": "Charlotte Hornets",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631217,
+    "stops": [
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "Charlotte Hornets",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642883,
+    "stops": [
+      {
+        "team": "Charlotte Hornets",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641750,
+    "stops": [
+      {
+        "team": "Charlotte Hornets",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631108,
+    "stops": [
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2022,
+        "end": 2025
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629023,
+    "stops": [
+      {
+        "team": "Charlotte Hornets",
+        "start": 2019,
+        "end": 2024
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642258,
+    "stops": [
+      {
+        "team": "Atlanta Hawks",
+        "start": 2024,
+        "end": 2026
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630583,
+    "stops": [
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2021,
+        "end": 2026
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629655,
+    "stops": [
+      {
+        "team": "Chicago Bulls",
+        "start": 2019,
+        "end": 2021
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2021,
+        "end": 2024
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203939,
+    "stops": [
+      {
+        "team": "Boston Celtics",
+        "start": 2014,
+        "end": 2015
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2015,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628997,
+    "stops": [
+      {
+        "team": "Charlotte Hornets",
+        "start": 2019,
+        "end": 2021
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2021,
+        "end": 2024
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641724,
+    "stops": [
+      {
+        "team": "Orlando Magic",
+        "start": 2023,
+        "end": 2026
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630700,
+    "stops": [
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629652,
+    "stops": [
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2019,
+        "end": 2026
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629111,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2022,
+        "end": 2023
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630598,
+    "stops": [
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2021,
+        "end": 2026
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631243,
+    "stops": [
+      {
+        "team": "Atlanta Hawks",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630557,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 2021,
+        "end": 2026
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631260,
+    "stops": [
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2022,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628398,
+    "stops": [
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2017,
+        "end": 2021
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2021,
+        "end": 2025
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642276,
+    "stops": [
+      {
+        "team": "Miami Heat",
+        "start": 2024,
+        "end": 2026
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629018,
+    "stops": [
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2018,
+        "end": 2021
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 2021,
+        "end": 2024
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630579,
+    "stops": [
+      {
+        "team": "New York Knicks",
+        "start": 2021,
+        "end": 2025
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642347,
+    "stops": [
+      {
+        "team": "Toronto Raptors",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642266,
+    "stops": [
+      {
+        "team": "Toronto Raptors",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642867,
+    "stops": [
+      {
+        "team": "Toronto Raptors",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1627751,
+    "stops": [
+      {
+        "team": "Toronto Raptors",
+        "start": 2016,
+        "end": 2018
+      },
+      {
+        "team": "San Antonio Spurs",
+        "start": 2018,
+        "end": 2023
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203937,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 2014,
+        "end": 2018
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2018,
+        "end": 2022
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "Golden State Warriors",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2025,
+        "end": 2025
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2026,
+        "end": 2026
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2026,
+        "end": 2026
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642419,
+    "stops": [
+      {
+        "team": "Toronto Raptors",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641739,
+    "stops": [
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642270,
+    "stops": [
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631321,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630249,
+    "stops": [
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2022,
+        "end": 2026
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629057,
+    "stops": [
+      {
+        "team": "Boston Celtics",
+        "start": 2018,
+        "end": 2023
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630695,
+    "stops": [
+      {
+        "team": "Detroit Pistons",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2022,
+        "end": 2025
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629651,
+    "stops": [
+      {
+        "team": "Brooklyn Nets",
+        "start": 2019,
+        "end": 2026
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630200,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 2020,
+        "end": 2025
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630171,
+    "stops": [
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2020,
+        "end": 2025
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630172,
+    "stops": [
+      {
+        "team": "Chicago Bulls",
+        "start": 2020,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630188,
+    "stops": [
+      {
+        "team": "Phoenix Suns",
+        "start": 2020,
+        "end": 2022
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631159,
+    "stops": [
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2023,
+        "end": 2026
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642267,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629028,
+    "stops": [
+      {
+        "team": "Phoenix Suns",
+        "start": 2018,
+        "end": 2023
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642860,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641731,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642848,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203114,
+    "stops": [
+      {
+        "team": "Detroit Pistons",
+        "start": 2012,
+        "end": 2013
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2013,
+        "end": 2025
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2026,
+        "end": 2026
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642273,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629661,
+    "stops": [
+      {
+        "team": "Phoenix Suns",
+        "start": 2019,
+        "end": 2023
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642461,
+    "stops": [
+      {
+        "team": "Denver Nuggets",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631128,
+    "stops": [
+      {
+        "team": "Denver Nuggets",
+        "start": 2022,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628963,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 2018,
+        "end": 2022
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2025,
+        "end": 2025
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2026,
+        "end": 2026
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642948,
+    "stops": [
+      {
+        "team": "Dallas Mavericks",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1626145,
+    "stops": [
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2015,
+        "end": 2019
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2019,
+        "end": 2023
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2023,
+        "end": 2024
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Orlando Magic",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2026,
+        "end": 2026
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628978,
+    "stops": [
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2018,
+        "end": 2022
+      },
+      {
+        "team": "Sacramento Kings",
+        "start": 2022,
+        "end": 2022
+      },
+      {
+        "team": "Golden State Warriors",
+        "start": 2022,
+        "end": 2023
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2023,
+        "end": 2024
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203497,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 2013,
+        "end": 2022
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2022,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630183,
+    "stops": [
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2020,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630245,
+    "stops": [
+      {
+        "team": "Chicago Bulls",
+        "start": 2021,
+        "end": 2026
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642262,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 2024,
+        "end": 2026
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630538,
+    "stops": [
+      {
+        "team": "Denver Nuggets",
+        "start": 2021,
+        "end": 2023
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641740,
+    "stops": [
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630228,
+    "stops": [
+      {
+        "team": "Golden State Warriors",
+        "start": 2021,
+        "end": 2026
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2026,
+        "end": 2026
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628976,
+    "stops": [
+      {
+        "team": "Chicago Bulls",
+        "start": 2018,
+        "end": 2021
+      },
+      {
+        "team": "Orlando Magic",
+        "start": 2021,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641783,
+    "stops": [
+      {
+        "team": "Orlando Magic",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630591,
+    "stops": [
+      {
+        "team": "Orlando Magic",
+        "start": 2021,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629048,
+    "stops": [
+      {
+        "team": "Indiana Pacers",
+        "start": 2019,
+        "end": 2023
+      },
+      {
+        "team": "Orlando Magic",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628975,
+    "stops": [
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2018,
+        "end": 2019
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2019,
+        "end": 2021
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2022,
+        "end": 2023
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2023,
+        "end": 2026
+      },
+      {
+        "team": "Orlando Magic",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631230,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629014,
+    "stops": [
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2018,
+        "end": 2025
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2026,
+        "end": 2026
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629731,
+    "stops": [
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2019,
+        "end": 2026
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641737,
+    "stops": [
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203484,
+    "stops": [
+      {
+        "team": "Detroit Pistons",
+        "start": 2013,
+        "end": 2017
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2017,
+        "end": 2021
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "Orlando Magic",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630577,
+    "stops": [
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2022,
+        "end": 2023
+      },
+      {
+        "team": "San Antonio Spurs",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630170,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 2020,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629640,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 2019,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642844,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628436,
+    "stops": [
+      {
+        "team": "New York Knicks",
+        "start": 2017,
+        "end": 2019
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2019,
+        "end": 2021
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2021,
+        "end": 2021
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2022,
+        "end": 2022
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2022,
+        "end": 2025
+      },
+      {
+        "team": "San Antonio Spurs",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641717,
+    "stops": [
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642349,
+    "stops": [
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631119,
+    "stops": [
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2022,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642272,
+    "stops": [
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2024,
+        "end": 2026
+      },
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628392,
+    "stops": [
+      {
+        "team": "Houston Rockets",
+        "start": 2017,
+        "end": 2020
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2021,
+        "end": 2021
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1627936,
+    "stops": [
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2017,
+        "end": 2021
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2021,
+        "end": 2024
+      },
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629026,
+    "stops": [
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2018,
+        "end": 2020
+      },
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2020,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641764,
+    "stops": [
+      {
+        "team": "Golden State Warriors",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630541,
+    "stops": [
+      {
+        "team": "Golden State Warriors",
+        "start": 2021,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630314,
+    "stops": [
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2023,
+        "end": 2026
+      },
+      {
+        "team": "Golden State Warriors",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630611,
+    "stops": [
+      {
+        "team": "Golden State Warriors",
+        "start": 2022,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642954,
+    "stops": [
+      {
+        "team": "Golden State Warriors",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 202710,
+    "stops": [
+      {
+        "team": "Chicago Bulls",
+        "start": 2011,
+        "end": 2017
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2017,
+        "end": 2019
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2019,
+        "end": 2019
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2019,
+        "end": 2025
+      },
+      {
+        "team": "Golden State Warriors",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1627739,
+    "stops": [
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2016,
+        "end": 2017
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2017,
+        "end": 2020
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629060,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 2019,
+        "end": 2023
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2023,
+        "end": 2026
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642920,
+    "stops": [
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1627884,
+    "stops": [
+      {
+        "team": "Phoenix Suns",
+        "start": 2016,
+        "end": 2018
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2018,
+        "end": 2020
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2021,
+        "end": 2023
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2023,
+        "end": 2024
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641757,
+    "stops": [
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641711,
+    "stops": [
+      {
+        "team": "Toronto Raptors",
+        "start": 2023,
+        "end": 2026
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630543,
+    "stops": [
+      {
+        "team": "Indiana Pacers",
+        "start": 2021,
+        "end": 2026
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642847,
+    "stops": [
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642852,
+    "stops": [
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630529,
+    "stops": [
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2021,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642274,
+    "stops": [
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631255,
+    "stops": [
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641730,
+    "stops": [
+      {
+        "team": "Brooklyn Nets",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629611,
+    "stops": [
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2019,
+        "end": 2025
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2025,
+        "end": 2025
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631165,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 2022,
+        "end": 2026
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2026,
+        "end": 2026
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642962,
+    "stops": [
+      {
+        "team": "Brooklyn Nets",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642856,
+    "stops": [
+      {
+        "team": "Brooklyn Nets",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642849,
+    "stops": [
+      {
+        "team": "Brooklyn Nets",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642874,
+    "stops": [
+      {
+        "team": "Brooklyn Nets",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630549,
+    "stops": [
+      {
+        "team": "Brooklyn Nets",
+        "start": 2021,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631221,
+    "stops": [
+      {
+        "team": "Denver Nuggets",
+        "start": 2023,
+        "end": 2024
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642345,
+    "stops": [
+      {
+        "team": "Phoenix Suns",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628379,
+    "stops": [
+      {
+        "team": "Detroit Pistons",
+        "start": 2017,
+        "end": 2020
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2020,
+        "end": 2023
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2026,
+        "end": 2026
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630692,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 2021,
+        "end": 2023
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2023,
+        "end": 2024
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2024,
+        "end": 2024
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631109,
+    "stops": [
+      {
+        "team": "Charlotte Hornets",
+        "start": 2022,
+        "end": 2025
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642346,
+    "stops": [
+      {
+        "team": "Phoenix Suns",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642377,
+    "stops": [
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642285,
+    "stops": [
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642907,
+    "stops": [
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642383,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631200,
+    "stops": [
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2023,
+        "end": 2026
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630191,
+    "stops": [
+      {
+        "team": "Detroit Pistons",
+        "start": 2020,
+        "end": 2026
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641713,
+    "stops": [
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642366,
+    "stops": [
+      {
+        "team": "Golden State Warriors",
+        "start": 2024,
+        "end": 2026
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641707,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 2023,
+        "end": 2026
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641716,
+    "stops": [
+      {
+        "team": "Indiana Pacers",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630643,
+    "stops": [
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2022,
+        "end": 2023
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2023,
+        "end": 2024
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1626162,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 2015,
+        "end": 2019
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2019,
+        "end": 2020
+      },
+      {
+        "team": "Golden State Warriors",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Charlotte Hornets",
+        "start": 2021,
+        "end": 2023
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2023,
+        "end": 2026
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1627826,
+    "stops": [
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2016,
+        "end": 2019
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2019,
+        "end": 2026
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641767,
+    "stops": [
+      {
+        "team": "Indiana Pacers",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630174,
+    "stops": [
+      {
+        "team": "Boston Celtics",
+        "start": 2020,
+        "end": 2022
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2022,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641738,
+    "stops": [
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2023,
+        "end": 2026
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 204456,
+    "stops": [
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2015,
+        "end": 2019
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2019,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629656,
+    "stops": [
+      {
+        "team": "New York Knicks",
+        "start": 2021,
+        "end": 2024
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2024,
         "end": 2024
       },
       {
@@ -2408,9 +5448,2079 @@
         "end": 2025
       },
       {
-        "team": "Washington Wizards",
+        "team": "Philadelphia 76ers",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631222,
+    "stops": [
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2022,
+        "end": 2025
+      },
+      {
+        "team": "Sacramento Kings",
+        "start": 2025,
+        "end": 2025
+      },
+      {
+        "team": "Los Angeles Lakers",
         "start": 2025,
         "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630572,
+    "stops": [
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2021,
+        "end": 2023
+      },
+      {
+        "team": "San Antonio Spurs",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630533,
+    "stops": [
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2021,
+        "end": 2024
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2024,
+        "end": 2026
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629020,
+    "stops": [
+      {
+        "team": "Denver Nuggets",
+        "start": 2018,
+        "end": 2020
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2020,
+        "end": 2022
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2022,
+        "end": 2023
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630702,
+    "stops": [
+      {
+        "team": "Dallas Mavericks",
+        "start": 2022,
+        "end": 2026
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2026,
+        "end": 2026
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642261,
+    "stops": [
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630573,
+    "stops": [
+      {
+        "team": "Boston Celtics",
+        "start": 2021,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629674,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 2021,
+        "end": 2023
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1631248,
+    "stops": [
+      {
+        "team": "Boston Celtics",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641775,
+    "stops": [
+      {
+        "team": "Boston Celtics",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629011,
+    "stops": [
+      {
+        "team": "New York Knicks",
+        "start": 2018,
+        "end": 2026
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629130,
+    "stops": [
+      {
+        "team": "Miami Heat",
+        "start": 2018,
+        "end": 2025
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641709,
+    "stops": [
+      {
+        "team": "Detroit Pistons",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628381,
+    "stops": [
+      {
+        "team": "Atlanta Hawks",
+        "start": 2017,
+        "end": 2023
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1628989,
+    "stops": [
+      {
+        "team": "Atlanta Hawks",
+        "start": 2018,
+        "end": 2022
+      },
+      {
+        "team": "Sacramento Kings",
+        "start": 2022,
+        "end": 2025
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2025,
+        "end": 2026
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1641842,
+    "stops": [
+      {
+        "team": "Detroit Pistons",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1630198,
+    "stops": [
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2020,
+        "end": 2022
+      },
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2022,
+        "end": 2026
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1642450,
+    "stops": [
+      {
+        "team": "Detroit Pistons",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1629750,
+    "stops": [
+      {
+        "team": "Boston Celtics",
+        "start": 2019,
+        "end": 2021
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2021,
+        "end": 2024
+      },
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2025,
+        "end": 2025
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 201599,
+    "stops": [
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2008,
+        "end": 2018
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2018,
+        "end": 2019
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2019,
+        "end": 2019
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2019,
+        "end": 2021
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2022,
+        "end": 2022
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2022,
+        "end": 2025
+      },
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 1627749,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 2016,
+        "end": 2022
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2022,
+        "end": 2024
+      },
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2024,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 947,
+    "stops": [
+      {
+        "team": "Philadelphia 76ers",
+        "start": 1996,
+        "end": 2007
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2007,
+        "end": 2009
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2009,
+        "end": 2009
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2009,
+        "end": 2010
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2010,
+        "end": 2010
+      }
+    ]
+  },
+  {
+    "id": 2547,
+    "stops": [
+      {
+        "team": "Toronto Raptors",
+        "start": 2003,
+        "end": 2010
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2010,
+        "end": 2016
+      }
+    ]
+  },
+  {
+    "id": 1717,
+    "stops": [
+      {
+        "team": "Dallas Mavericks",
+        "start": 1998,
+        "end": 2019
+      }
+    ]
+  },
+  {
+    "id": 1122,
+    "stops": [
+      {
+        "team": "Atlanta Hawks",
+        "start": 1982,
+        "end": 1994
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 1994,
+        "end": 1994
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 1994,
+        "end": 1995
+      },
+      {
+        "team": "San Antonio Spurs",
+        "start": 1996,
+        "end": 1997
+      },
+      {
+        "team": "Orlando Magic",
+        "start": 1998,
+        "end": 1999
+      }
+    ]
+  },
+  {
+    "id": 2548,
+    "stops": [
+      {
+        "team": "Miami Heat",
+        "start": 2003,
+        "end": 2016
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2016,
+        "end": 2017
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2017,
+        "end": 2018
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2018,
+        "end": 2019
+      }
+    ]
+  },
+  {
+    "id": 165,
+    "stops": [
+      {
+        "team": "Houston Rockets",
+        "start": 1984,
+        "end": 2001
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 2001,
+        "end": 2002
+      }
+    ]
+  },
+  {
+    "id": 708,
+    "stops": [
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 1995,
+        "end": 2007
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2007,
+        "end": 2013
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2013,
+        "end": 2015
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2015,
+        "end": 2016
+      }
+    ]
+  },
+  {
+    "id": 977,
+    "stops": [
+      {
+        "team": "Los Angeles Lakers",
+        "start": 1996,
+        "end": 2016
+      }
+    ]
+  },
+  {
+    "id": 1449,
+    "stops": [
+      {
+        "team": "Boston Celtics",
+        "start": 1978,
+        "end": 1992
+      }
+    ]
+  },
+  {
+    "id": 77142,
+    "stops": [
+      {
+        "team": "Los Angeles Lakers",
+        "start": 1979,
+        "end": 1996
+      }
+    ]
+  },
+  {
+    "id": 1938,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 2002,
+        "end": 2018
+      }
+    ]
+  },
+  {
+    "id": 1718,
+    "stops": [
+      {
+        "team": "Boston Celtics",
+        "start": 1998,
+        "end": 2013
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2013,
+        "end": 2014
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2014,
+        "end": 2015
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2015,
+        "end": 2017
+      }
+    ]
+  },
+  {
+    "id": 2200,
+    "stops": [
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2001,
+        "end": 2008
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2008,
+        "end": 2014
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2014,
+        "end": 2016
+      },
+      {
+        "team": "San Antonio Spurs",
+        "start": 2016,
+        "end": 2019
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2019,
+        "end": 2019
+      }
+    ]
+  },
+  {
+    "id": 951,
+    "stops": [
+      {
+        "team": "Milwaukee Bucks",
+        "start": 1996,
+        "end": 2003
+      },
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2003,
+        "end": 2007
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2007,
+        "end": 2012
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2012,
+        "end": 2014
+      }
+    ]
+  },
+  {
+    "id": 397,
+    "stops": [
+      {
+        "team": "Indiana Pacers",
+        "start": 1987,
+        "end": 2005
+      }
+    ]
+  },
+  {
+    "id": 937,
+    "stops": [
+      {
+        "team": "Chicago Bulls",
+        "start": 1987,
+        "end": 1998
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 1998,
+        "end": 1999
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 1999,
+        "end": 2003
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2003,
+        "end": 2004
+      }
+    ]
+  },
+  {
+    "id": 406,
+    "stops": [
+      {
+        "team": "Orlando Magic",
+        "start": 1992,
+        "end": 1996
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 1996,
+        "end": 2004
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2004,
+        "end": 2008
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2008,
+        "end": 2009
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2009,
+        "end": 2010
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2010,
+        "end": 2011
+      }
+    ]
+  },
+  {
+    "id": 959,
+    "stops": [
+      {
+        "team": "Phoenix Suns",
+        "start": 1996,
+        "end": 1998
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 1998,
+        "end": 2004
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2004,
+        "end": 2012
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2012,
+        "end": 2014
+      }
+    ]
+  },
+  {
+    "id": 1495,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 1997,
+        "end": 2016
+      }
+    ]
+  },
+  {
+    "id": 2225,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 2001,
+        "end": 2018
+      },
+      {
+        "team": "Charlotte Hornets",
+        "start": 2018,
+        "end": 2019
+      }
+    ]
+  },
+  {
+    "id": 1503,
+    "stops": [
+      {
+        "team": "Toronto Raptors",
+        "start": 1997,
+        "end": 2000
+      },
+      {
+        "team": "Orlando Magic",
+        "start": 2000,
+        "end": 2004
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2004,
+        "end": 2010
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2010,
+        "end": 2010
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2010,
+        "end": 2011
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2011,
+        "end": 2012
+      }
+    ]
+  },
+  {
+    "id": 1713,
+    "stops": [
+      {
+        "team": "Toronto Raptors",
+        "start": 1998,
+        "end": 2005
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2005,
+        "end": 2009
+      },
+      {
+        "team": "Orlando Magic",
+        "start": 2009,
+        "end": 2011
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2011,
+        "end": 2011
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2011,
+        "end": 2014
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2014,
+        "end": 2017
+      },
+      {
+        "team": "Sacramento Kings",
+        "start": 2017,
+        "end": 2018
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2018,
+        "end": 2020
+      }
+    ]
+  },
+  {
+    "id": 2397,
+    "stops": [
+      {
+        "team": "Houston Rockets",
+        "start": 2002,
+        "end": 2011
+      }
+    ]
+  },
+  {
+    "id": 297,
+    "stops": [
+      {
+        "team": "Charlotte Hornets",
+        "start": 1992,
+        "end": 1995
+      },
+      {
+        "team": "Miami Heat",
+        "start": 1995,
+        "end": 2002
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2003,
+        "end": 2005
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2005,
+        "end": 2008
+      }
+    ]
+  },
+  {
+    "id": 2405,
+    "stops": [
+      {
+        "team": "Phoenix Suns",
+        "start": 2002,
+        "end": 2010
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2010,
+        "end": 2015
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2015,
+        "end": 2015
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2015,
+        "end": 2016
+      }
+    ]
+  },
+  {
+    "id": 1112,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 1996,
+        "end": 1999
+      },
+      {
+        "team": "Orlando Magic",
+        "start": 1999,
+        "end": 2000
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2000,
+        "end": 2006
+      },
+      {
+        "team": "Chicago Bulls",
+        "start": 2006,
+        "end": 2008
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2008,
+        "end": 2009
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2009,
+        "end": 2012
+      }
+    ]
+  },
+  {
+    "id": 201933,
+    "stops": [
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2009,
+        "end": 2018
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2018,
+        "end": 2021
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2022,
+        "end": 2023
+      }
+    ]
+  },
+  {
+    "id": 1497,
+    "stops": [
+      {
+        "team": "Boston Celtics",
+        "start": 1997,
+        "end": 1998
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 1998,
+        "end": 1998
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 1998,
+        "end": 2000
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2000,
+        "end": 2002
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2002,
+        "end": 2009
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2009,
+        "end": 2011
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2011,
+        "end": 2011
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2011,
+        "end": 2013
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2013,
+        "end": 2014
+      }
+    ]
+  },
+  {
+    "id": 202326,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 2010,
+        "end": 2017
+      },
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2017,
+        "end": 2018
+      },
+      {
+        "team": "Golden State Warriors",
+        "start": 2018,
+        "end": 2019
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2021,
+        "end": 2021
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2022,
+        "end": 2022
+      }
+    ]
+  },
+  {
+    "id": 201565,
+    "stops": [
+      {
+        "team": "Chicago Bulls",
+        "start": 2008,
+        "end": 2016
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2016,
+        "end": 2017
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2017,
+        "end": 2018
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2018,
+        "end": 2019
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2019,
+        "end": 2021
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2021,
+        "end": 2023
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2023,
+        "end": 2024
+      }
+    ]
+  },
+  {
+    "id": 2240,
+    "stops": [
+      {
+        "team": "Golden State Warriors",
+        "start": 2001,
+        "end": 2003
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2003,
+        "end": 2011
+      },
+      {
+        "team": "Orlando Magic",
+        "start": 2011,
+        "end": 2011
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2011,
+        "end": 2012
+      }
+    ]
+  },
+  {
+    "id": 202330,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 2010,
+        "end": 2017
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2017,
+        "end": 2020
+      },
+      {
+        "team": "Charlotte Hornets",
+        "start": 2020,
+        "end": 2024
+      },
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2024,
+        "end": 2024
+      }
+    ]
+  },
+  {
+    "id": 255,
+    "stops": [
+      {
+        "team": "Detroit Pistons",
+        "start": 1994,
+        "end": 2000
+      },
+      {
+        "team": "Orlando Magic",
+        "start": 2000,
+        "end": 2007
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2007,
+        "end": 2012
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2012,
+        "end": 2013
+      }
+    ]
+  },
+  {
+    "id": 2207,
+    "stops": [
+      {
+        "team": "Boston Celtics",
+        "start": 2001,
+        "end": 2002
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2002,
+        "end": 2005
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2005,
+        "end": 2012
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2012,
+        "end": 2016
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2016,
+        "end": 2016
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2016,
+        "end": 2018
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2018,
+        "end": 2018
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2021,
+        "end": 2022
+      }
+    ]
+  },
+  {
+    "id": 202322,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 2010,
+        "end": 2019
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2022,
+        "end": 2023
+      }
+    ]
+  },
+  {
+    "id": 202689,
+    "stops": [
+      {
+        "team": "Charlotte Hornets",
+        "start": 2011,
+        "end": 2019
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2019,
+        "end": 2021
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2022,
+        "end": 2023
+      }
+    ]
+  },
+  {
+    "id": 201567,
+    "stops": [
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2008,
+        "end": 2014
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2014,
+        "end": 2023
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2025,
+        "end": 2026
+      }
+    ]
+  },
+  {
+    "id": 200746,
+    "stops": [
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2006,
+        "end": 2015
+      },
+      {
+        "team": "San Antonio Spurs",
+        "start": 2015,
+        "end": 2021
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2021,
+        "end": 2022
+      }
+    ]
+  },
+  {
+    "id": 201188,
+    "stops": [
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2008,
+        "end": 2019
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 2019,
+        "end": 2020
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2020,
+        "end": 2021
+      }
+    ]
+  },
+  {
+    "id": 978,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 1998,
+        "end": 2006
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2006,
+        "end": 2006
+      },
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2006,
+        "end": 2011
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 2011,
+        "end": 2011
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2011,
+        "end": 2011
+      }
+    ]
+  },
+  {
+    "id": 739,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 1995,
+        "end": 1996
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 1996,
+        "end": 2004
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2004,
+        "end": 2004
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2004,
+        "end": 2009
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2009,
+        "end": 2010
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2012,
+        "end": 2013
+      }
+    ]
+  },
+  {
+    "id": 2216,
+    "stops": [
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2001,
+        "end": 2007
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2007,
+        "end": 2009
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2009,
+        "end": 2009
+      },
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2009,
+        "end": 2017
+      },
+      {
+        "team": "Sacramento Kings",
+        "start": 2017,
+        "end": 2018
+      }
+    ]
+  },
+  {
+    "id": 201943,
+    "stops": [
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2009,
+        "end": 2013
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2013,
+        "end": 2016
+      },
+      {
+        "team": "Orlando Magic",
+        "start": 2016,
+        "end": 2016
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2016,
+        "end": 2017
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2017,
+        "end": 2017
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2017,
+        "end": 2018
+      }
+    ]
+  },
+  {
+    "id": 202323,
+    "stops": [
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2010,
+        "end": 2014
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2014,
+        "end": 2014
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2014,
+        "end": 2016
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2016,
+        "end": 2019
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2019,
+        "end": 2020
+      }
+    ]
+  },
+  {
+    "id": 202355,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 2010,
+        "end": 2012
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2014,
+        "end": 2019
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2019,
+        "end": 2020
+      },
+      {
+        "team": "Sacramento Kings",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2021,
+        "end": 2022
+      }
+    ]
+  },
+  {
+    "id": 202738,
+    "stops": [
+      {
+        "team": "Sacramento Kings",
+        "start": 2011,
+        "end": 2014
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2014,
+        "end": 2015
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2015,
+        "end": 2017
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2017,
+        "end": 2018
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2018,
+        "end": 2018
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2018,
+        "end": 2019
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 2019,
+        "end": 2020
+      },
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2021,
+        "end": 2022
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2022,
+        "end": 2022
+      },
+      {
+        "team": "Charlotte Hornets",
+        "start": 2022,
+        "end": 2022
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2023,
+        "end": 2024
+      }
+    ]
+  },
+  {
+    "id": 2747,
+    "stops": [
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2004,
+        "end": 2006
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2006,
+        "end": 2011
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2011,
+        "end": 2015
+      },
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2015,
+        "end": 2019
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2019,
+        "end": 2020
+      }
+    ]
+  },
+  {
+    "id": 2037,
+    "stops": [
+      {
+        "team": "Chicago Bulls",
+        "start": 2000,
+        "end": 2004
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2004,
+        "end": 2009
+      },
+      {
+        "team": "Golden State Warriors",
+        "start": 2009,
+        "end": 2009
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2009,
+        "end": 2011
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2011,
+        "end": 2012
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2012,
+        "end": 2017
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2017,
+        "end": 2018
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2018,
+        "end": 2019
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2019,
+        "end": 2020
+      }
+    ]
+  },
+  {
+    "id": 201952,
+    "stops": [
+      {
+        "team": "Atlanta Hawks",
+        "start": 2009,
+        "end": 2016
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2016,
+        "end": 2017
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2017,
+        "end": 2020
+      },
+      {
+        "team": "Atlanta Hawks",
+        "start": 2020,
+        "end": 2020
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2020,
+        "end": 2021
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2021,
+        "end": 2021
+      }
+    ]
+  },
+  {
+    "id": 202702,
+    "stops": [
+      {
+        "team": "Denver Nuggets",
+        "start": 2011,
+        "end": 2018
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2018,
+        "end": 2019
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2019,
+        "end": 2019
+      }
+    ]
+  },
+  {
+    "id": 201563,
+    "stops": [
+      {
+        "team": "Miami Heat",
+        "start": 2008,
+        "end": 2010
+      },
+      {
+        "team": "Minnesota Timberwolves",
+        "start": 2010,
+        "end": 2012
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2012,
+        "end": 2013
+      },
+      {
+        "team": "Miami Heat",
+        "start": 2013,
+        "end": 2015
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2015,
+        "end": 2016
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2016,
+        "end": 2017
+      },
+      {
+        "team": "New York Knicks",
+        "start": 2017,
+        "end": 2018
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2018,
+        "end": 2019
+      }
+    ]
+  },
+  {
+    "id": 101145,
+    "stops": [
+      {
+        "team": "Golden State Warriors",
+        "start": 2005,
+        "end": 2012
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2012,
+        "end": 2013
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2013,
+        "end": 2015
+      },
+      {
+        "team": "Indiana Pacers",
+        "start": 2015,
+        "end": 2017
+      }
+    ]
+  },
+  {
+    "id": 201156,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 2007,
+        "end": 2012
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2012,
+        "end": 2012
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2012,
+        "end": 2013
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2013,
+        "end": 2017
+      },
+      {
+        "team": "Golden State Warriors",
+        "start": 2017,
+        "end": 2018
+      },
+      {
+        "team": "Denver Nuggets",
+        "start": 2018,
+        "end": 2019
+      }
+    ]
+  },
+  {
+    "id": 200752,
+    "stops": [
+      {
+        "team": "Memphis Grizzlies",
+        "start": 2006,
+        "end": 2013
+      },
+      {
+        "team": "Toronto Raptors",
+        "start": 2013,
+        "end": 2014
+      },
+      {
+        "team": "Sacramento Kings",
+        "start": 2014,
+        "end": 2017
+      },
+      {
+        "team": "San Antonio Spurs",
+        "start": 2017,
+        "end": 2021
+      },
+      {
+        "team": "Utah Jazz",
+        "start": 2021,
+        "end": 2023
+      }
+    ]
+  },
+  {
+    "id": 787,
+    "stops": [
+      {
+        "team": "Philadelphia 76ers",
+        "start": 1984,
+        "end": 1992
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 1992,
+        "end": 1996
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 1996,
+        "end": 2000
+      }
+    ]
+  },
+  {
+    "id": 764,
+    "stops": [
+      {
+        "team": "San Antonio Spurs",
+        "start": 1989,
+        "end": 2003
+      }
+    ]
+  },
+  {
+    "id": 304,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 1984,
+        "end": 2003
+      }
+    ]
+  },
+  {
+    "id": 252,
+    "stops": [
+      {
+        "team": "Utah Jazz",
+        "start": 1985,
+        "end": 2003
+      },
+      {
+        "team": "Los Angeles Lakers",
+        "start": 2003,
+        "end": 2004
+      }
+    ]
+  },
+  {
+    "id": 185,
+    "stops": [
+      {
+        "team": "Golden State Warriors",
+        "start": 1993,
+        "end": 1994
+      },
+      {
+        "team": "Washington Wizards",
+        "start": 1994,
+        "end": 1998
+      },
+      {
+        "team": "Sacramento Kings",
+        "start": 1998,
+        "end": 2005
+      },
+      {
+        "team": "Philadelphia 76ers",
+        "start": 2005,
+        "end": 2007
+      },
+      {
+        "team": "Detroit Pistons",
+        "start": 2007,
+        "end": 2007
+      },
+      {
+        "team": "Golden State Warriors",
+        "start": 2007,
+        "end": 2008
+      }
+    ]
+  },
+  {
+    "id": 202681,
+    "stops": [
+      {
+        "team": "Cleveland Cavaliers",
+        "start": 2011,
+        "end": 2017
+      },
+      {
+        "team": "Boston Celtics",
+        "start": 2017,
+        "end": 2019
+      },
+      {
+        "team": "Brooklyn Nets",
+        "start": 2019,
+        "end": 2023
+      },
+      {
+        "team": "Dallas Mavericks",
+        "start": 2023,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203081,
+    "stops": [
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2012,
+        "end": 2023
+      },
+      {
+        "team": "Milwaukee Bucks",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Portland Trail Blazers",
+        "start": 2026,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 203078,
+    "stops": [
+      {
+        "team": "Washington Wizards",
+        "start": 2012,
+        "end": 2023
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2023,
+        "end": 2025
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2025,
+        "end": 2027
+      }
+    ]
+  },
+  {
+    "id": 101108,
+    "stops": [
+      {
+        "team": "New Orleans Pelicans",
+        "start": 2005,
+        "end": 2011
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2011,
+        "end": 2017
+      },
+      {
+        "team": "Houston Rockets",
+        "start": 2017,
+        "end": 2019
+      },
+      {
+        "team": "Oklahoma City Thunder",
+        "start": 2019,
+        "end": 2020
+      },
+      {
+        "team": "Phoenix Suns",
+        "start": 2020,
+        "end": 2023
+      },
+      {
+        "team": "Golden State Warriors",
+        "start": 2023,
+        "end": 2024
+      },
+      {
+        "team": "San Antonio Spurs",
+        "start": 2024,
+        "end": 2025
+      },
+      {
+        "team": "Los Angeles Clippers",
+        "start": 2025,
+        "end": 2026
       }
     ]
   }

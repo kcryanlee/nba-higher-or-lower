@@ -1,10 +1,11 @@
 import { careerPlayers } from "../data/players.js";
-import { careerQuestionKey as careerStopKey } from "./careerPath.js";
+import { continueCareerQuestion, currentCareerQuestion } from "./careerPath.js";
 import { auditChainQuestion, gradeChainChoice } from "./chain.js";
 import { categoryById, statGap } from "./categories.js";
 import { bandForStreak } from "./difficulty.js";
 import { draftChoices, draftPool, draftQuestion } from "./draft.js";
 import { positionCredit, questionFromSaved, SCORED_PERFECT_CREDIT, SCORED_POSITIONS } from "./scored.js";
+import { hashString, mulberry32 } from "./seed.js";
 import { pairKey } from "./selectMatchup.js";
 import { readJsonStorage, removeStorage, writeStorage } from "./storage.js";
 
@@ -132,50 +133,62 @@ function careerUsedIds(saved, question) {
   return ids;
 }
 
-function careerQuestionKey(question) {
-  if (typeof question?.key === "string" && question.key) return question.key;
-  const answerId = careerAnswerId(question);
-  if (answerId == null || !Number.isInteger(question?.hiddenIndex)) return null;
-  return careerStopKey(answerId, question.hiddenIndex);
-}
-
-function careerQuestionPlayable(question) {
-  const stop = question?.stops?.[question?.hiddenIndex];
-  if (typeof question?.player !== "string" || !question.player.trim()) return false;
-  if (!Array.isArray(question.stops) || question.stops.length === 0) return false;
-  if (!Number.isInteger(question.hiddenIndex) || typeof stop?.team !== "string" || !stop.team) return false;
-  return question.answer === question.player || question.answer === stop.team;
-}
-
 function careerUsedKeys(saved, question) {
   const keys = Array.isArray(saved.usedKeys)
     ? saved.usedKeys.filter((key) => typeof key === "string" && key.length > 0)
     : [];
-  const key = careerQuestionKey(question);
-  if (key && !keys.includes(key)) keys.push(key);
+  if (question?.key && !keys.includes(question.key)) keys.push(question.key);
   return keys;
 }
 
+function savedCareerQuestion(question) {
+  if (typeof question?.player !== "string" || !question.player.trim()) return null;
+  const answerId = careerAnswerId(question);
+  if (answerId == null) return null;
+  return currentCareerQuestion({ ...question, answerId });
+}
+
+// A saved question that no longer passes validation is swapped for a fresh one at the same streak.
+// Its answer, if any, is dropped, so it never counts as wrong or ends the run.
+function replacementCareerRun(saved) {
+  const ids = Array.isArray(saved.usedIds) ? saved.usedIds.filter((id) => Number.isInteger(id)) : [];
+  const keys = Array.isArray(saved.usedKeys) ? saved.usedKeys.filter((key) => typeof key === "string" && key) : [];
+  const seed = `${saved.streak}:${saved.question?.key ?? ""}:${saved.question?.player ?? ""}`;
+  const next = continueCareerQuestion(saved.streak, {
+    usedIds: ids,
+    usedKeys: keys,
+    random: mulberry32(hashString(`nba-career-replace:${seed}`)),
+  });
+  if (!next) return null;
+  return {
+    phase: "playing",
+    streak: saved.streak,
+    picked: null,
+    result: null,
+    question: next.question,
+    usedIds: next.usedIds,
+    usedKeys: next.usedKeys,
+  };
+}
+
 function restoreCareerSaved(saved) {
-  const question = saved?.question;
-  if (!saved || saved.game !== "career" || !careerQuestionPlayable(question)) return null;
+  if (!saved || saved.game !== "career" || typeof saved.question?.player !== "string") return null;
+  const question = savedCareerQuestion(saved.question);
+  if (!question) return replacementCareerRun(saved);
 
   const revealing = saved.phase === "revealing"
     && (saved.result === "correct" || saved.result === "wrong")
     && typeof saved.picked === "string"
     && saved.picked.trim().length > 0;
-  const normalized = question.answer === question.player
-    ? question
-    : { ...question, answer: question.player };
 
   return {
     phase: revealing ? "revealing" : "playing",
     streak: saved.streak,
     picked: revealing ? saved.picked : null,
     result: revealing ? saved.result : null,
-    question: normalized,
-    usedIds: careerUsedIds(saved, normalized),
-    usedKeys: careerUsedKeys(saved, normalized),
+    question,
+    usedIds: careerUsedIds(saved, question),
+    usedKeys: careerUsedKeys(saved, question),
   };
 }
 

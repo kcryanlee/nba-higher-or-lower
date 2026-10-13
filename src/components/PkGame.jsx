@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { approvedPlayerImage, playerImageUrl } from "../data/playerMedia.js";
 import { categoryById } from "../game/categories.js";
-import { formatYears } from "../game/careerPath.js";
+import { formatYears, isHiddenStop } from "../game/careerPath.js";
 import { choiceName, connectionsFor } from "../game/chain.js";
 import { draftModeLabel, formatDraftChoice, formatDraftReveal } from "../game/draft.js";
 import { playBuzzer } from "../game/feedback.js";
 import { PK_LOBBY_GAMES, PK_QUESTION_MS, lobbyGameSelected, pkModeDetail, pkModeLabel } from "../game/pkModes.js";
 import { teamColors, teamLogoUrl } from "../game/teams.js";
 import { savedPkName, usePk } from "../hooks/usePk.js";
+import HiddenCareerStop from "./HiddenCareerStop.jsx";
 import PlayerCard from "./PlayerCard.jsx";
 import PlayerSearch from "./PlayerSearch.jsx";
 import StatIcon from "./StatIcon.jsx";
@@ -342,13 +343,22 @@ function CareerQuestion({ question, reveal, phase, roundId, disabled, onSubmit }
       </p>
       <h1 className="section-title">Who is this player?</h1>
       {question.position ? <p className="career-position">Position · {question.position}</p> : null}
+      {Number.isInteger(question.hiddenIndex) ? <p className="career-position">One team is hidden</p> : null}
       <div className="career-path">
-        {question.stops.map((stop, index) => (
-          <span key={`${stop.team}-${stop.start}-${index}`} className="career-piece">
-            {index > 0 ? <span className="career-arrow" aria-hidden="true">→</span> : null}
-            <CareerStop stop={stop} />
-          </span>
-        ))}
+        {question.stops.map((stop, index) => {
+          const hidden = isHiddenStop(question, index);
+          const revealedTeam = hidden && phase === "reveal" ? reveal?.hiddenTeam : null;
+          return (
+            <span key={`${index}-${stop.start}`} className="career-piece">
+              {index > 0 ? <span className="career-arrow" aria-hidden="true">→</span> : null}
+              {hidden && !revealedTeam ? (
+                <HiddenCareerStop stop={stop} />
+              ) : (
+                <CareerStop stop={revealedTeam ? { ...stop, team: revealedTeam } : stop} />
+              )}
+            </span>
+          );
+        })}
       </div>
       <PlayerSearch resetKey={roundId} disabled={disabled} onSubmit={onSubmit} />
       {phase === "reveal" && reveal?.player ? <p className="career-player">{reveal.player}</p> : null}

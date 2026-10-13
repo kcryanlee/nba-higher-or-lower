@@ -1,4 +1,4 @@
-import { CATEGORIES, statGap } from "./categories.js";
+import { ACTIVE_ONLY, CATEGORIES, statGap } from "./categories.js";
 import { bandForStreak, gapInRange, widenedRange } from "./difficulty.js";
 
 function shuffle(list) {
@@ -15,9 +15,10 @@ export function pairKey(categoryId, first, second) {
   return `${categoryId}:${low}:${high}`;
 }
 
-function hasStat(player, categoryId) {
+export function hasStat(player, categoryId) {
   const value = player?.[categoryId];
   if (!Number.isFinite(value)) return false;
+  if (ACTIVE_ONLY.has(categoryId) && !player.team) return false;
   if ((categoryId === "threes" || categoryId === "tpPct") && value <= 0) return false;
   return true;
 }

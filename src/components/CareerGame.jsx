@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { formatYears } from "../game/careerPath.js";
+import { formatYears, isHiddenStop } from "../game/careerPath.js";
 import { teamLogoUrl } from "../game/teams.js";
 import EndActions from "./EndActions.jsx";
+import HiddenCareerStop from "./HiddenCareerStop.jsx";
 import PlayerSearch from "./PlayerSearch.jsx";
 import ScoreCard from "./ScoreCard.jsx";
 
-function CareerStop({ stop }) {
+function CareerStop({ stop, revealed = false }) {
   const [failed, setFailed] = useState(false);
   const logo = teamLogoUrl(stop.team);
 
   return (
-    <span className="career-stop">
+    <span className={`career-stop ${revealed ? "is-revealed" : ""}`}>
       {logo && !failed ? (
         <img src={logo} alt="" onError={() => setFailed(true)} />
       ) : (
@@ -74,15 +75,20 @@ export default function CareerGame({
       </p>
       <h1 className="section-title" id="career-prompt">Who is this player?</h1>
       {question.band.id === "easy" ? <p className="career-position">Position · {question.position}</p> : null}
+      {Number.isInteger(question.hiddenIndex) ? <p className="career-position">One team is hidden</p> : null}
       <div className="career-path">
         {question.stops.map((stop, index) => (
-          <span key={`${stop.team}-${stop.start}`} className="career-piece">
+          <span key={`${index}-${stop.start}`} className="career-piece">
             {index > 0 ? (
               <span className="career-arrow" aria-hidden="true">
                 →
               </span>
             ) : null}
-            <CareerStop stop={stop} />
+            {isHiddenStop(question, index) && !revealing ? (
+              <HiddenCareerStop stop={stop} />
+            ) : (
+              <CareerStop stop={stop} revealed={isHiddenStop(question, index)} />
+            )}
           </span>
         ))}
       </div>

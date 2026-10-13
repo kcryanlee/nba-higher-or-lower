@@ -8,7 +8,53 @@ const OUTPUT = new URL("../src/data/teammateSeasons.json", import.meta.url);
 const CACHE = new URL("../.cache/teammate-fetch.json", import.meta.url);
 const NBA_CACHE = new URL("../.cache/teammate-nba-logs.json", import.meta.url);
 const NBA_LOG = "https://stats.nba.com/stats/playergamelog";
+const NBA_CAREER = "https://stats.nba.com/stats/playercareerstats";
+const CAREER_CACHE = new URL("../.cache/teammate-nba-careers.json", import.meta.url);
+const NBA_HEADERS = {
+  Referer: "https://www.nba.com/",
+  Origin: "https://www.nba.com",
+  "x-nba-stats-origin": "stats",
+  "x-nba-stats-token": "true",
+};
 const SEASON = /^\d{4}-\d{2}$/;
+// ESPN search returns only the G League profile for these players. Each id is still checked
+// against the NBA career table before it is used.
+const ESPN_CANDIDATES = {
+  202702: [6433],
+};
+// Only abbreviations that have meant a single team name across every season they were used.
+const NBA_TEAM_NAMES = {
+  ATL: "Atlanta Hawks",
+  BKN: "Brooklyn Nets",
+  BOS: "Boston Celtics",
+  CHI: "Chicago Bulls",
+  CLE: "Cleveland Cavaliers",
+  DAL: "Dallas Mavericks",
+  DEN: "Denver Nuggets",
+  DET: "Detroit Pistons",
+  GSW: "Golden State Warriors",
+  HOU: "Houston Rockets",
+  IND: "Indiana Pacers",
+  LAC: "Los Angeles Clippers",
+  LAL: "Los Angeles Lakers",
+  MEM: "Memphis Grizzlies",
+  MIA: "Miami Heat",
+  MIL: "Milwaukee Bucks",
+  MIN: "Minnesota Timberwolves",
+  NJN: "New Jersey Nets",
+  NOP: "New Orleans Pelicans",
+  NYK: "New York Knicks",
+  OKC: "Oklahoma City Thunder",
+  ORL: "Orlando Magic",
+  PHI: "Philadelphia 76ers",
+  PHX: "Phoenix Suns",
+  POR: "Portland Trail Blazers",
+  SAC: "Sacramento Kings",
+  SAS: "San Antonio Spurs",
+  SEA: "Seattle SuperSonics",
+  TOR: "Toronto Raptors",
+  UTA: "Utah Jazz",
+};
 const ABBR_TO_SLUG = {
   ATL: "atlanta-hawks",
   BKN: "brooklyn-nets",
@@ -50,6 +96,20 @@ const ABBR_TO_SLUG = {
   UTA: "utah-jazz",
   WAS: "washington-wizards",
 };
+const EXTRA_SLUGS = {
+  CHA: ["charlotte-bobcats"],
+  CHH: ["charlotte-bobcats"],
+  GOS: ["golden-state-warriors"],
+  LAC: ["los-angeles-clippers"],
+  NOK: ["nooklahoma-city-hornets"],
+  SAN: ["san-antonio-spurs"],
+  UTH: ["utah-jazz"],
+  WAS: ["washington-bullets"],
+};
+
+function slugOptions(abbr) {
+  return [...new Set([ABBR_TO_SLUG[abbr], ...(EXTRA_SLUGS[abbr] || [])].filter(Boolean))];
+}
 const MONTHS = {
   Jan: "01",
   Feb: "02",
@@ -91,34 +151,49 @@ function writeNbaCache(cache) {
   writeFileSync(NBA_CACHE, JSON.stringify(cache));
 }
 
-function publishedDate(text) {
-  const match = /^([A-Z][a-z]{2}) (\d{1,2}), (\d{4})$/.exec(text || "");
-  if (!match || !MONTHS[match[1]]) return null;
-  return `${match[3]}-${MONTHS[match[1]]}-${match[2].padStart(2, "0")}`;
+function readJson(file) {
+  try {
+    const saved = JSON.parse(readFileSync(file, "utf8"));
+    return saved && typeof saved === "object" ? saved : {};
+  } catch {
+    return {};
+  }
 }
 
-function minutesPlayed(value) {
-  if (typeof value === "number") return value;
-  const text = String(value ?? "").trim();
-  if (!text) return 0;
-  if (text.includes(":")) {
-    const [minutes, seconds] = text.split(":");
-    return Number(minutes) + Number(seconds || 0) / 60;
-  }
-  const parsed = Number(text);
-  return Number.isFinite(parsed) ? parsed : 0;
+function writeJson(file, value) {
+  mkdirSync(new URL("../.cache/", import.meta.url), { recursive: true });
+  writeFileSync(file, JSON.stringify(value));
 }
+
+function nameKey(name) {
+  return String(name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/\b(jr|sr|ii|iii|iv)\b\.?/g, "")
+    .replace(/[^a-z]/g, "");
+}
+
+function publishedDate(text) {
+  const match = /^([A-Za-z]{3}) (\d{1,2}), (\d{4})$/.exec(text || "");
+  if (!match) return null;
+  const month = `${match[1].slice(0, 1).toUpperCase()}${match[1].slice(1).toLowerCase()}`;
+  if (!MONTHS[month]) return null;
+  return `${match[3]}-${MONTHS[month]}-${match[2].padStart(2, "0")}`;
+}
+
+// The game log lists only games the player appeared in. MIN is rounded to whole minutes,
+// so an appearance shorter than 30 seconds reads 0 and still counts toward games played.
+const LOG_RULE = "every-row";
 
 function logFromNba(data) {
   const set = (data?.resultSets || []).find((item) => item?.name === "PlayerGameLog");
   if (!set || !Array.isArray(set.headers) || !Array.isArray(set.rowSet)) return { error: "missing-game-log" };
   const dateIndex = set.headers.indexOf("GAME_DATE");
   const matchIndex = set.headers.indexOf("MATCHUP");
-  const minutesIndex = set.headers.indexOf("MIN");
-  if (dateIndex < 0 || matchIndex < 0 || minutesIndex < 0) return { error: "missing-columns" };
+  if (dateIndex < 0 || matchIndex < 0) return { error: "missing-columns" };
   const byAbbr = {};
   for (const row of set.rowSet) {
-    if (minutesPlayed(row?.[minutesIndex]) <= 0) continue;
     const abbr = String(row?.[matchIndex] || "").split(" ")[0];
     const date = publishedDate(row?.[dateIndex]);
     if (!abbr || !date) return { error: `unreadable-row ${row?.[matchIndex]} ${row?.[dateIndex]}` };
@@ -226,6 +301,24 @@ async function resolvePlayer(player) {
   };
 }
 
+async function searchCandidates(name) {
+  const ids = new Set();
+  const base = name.replace(/\s+(Jr\.?|Sr\.?|II|III|IV)$/i, "").trim();
+  for (const query of new Set([name, base])) {
+    const data = await fetchJson(`${SEARCH}?query=${encodeURIComponent(query)}&limit=10&type=player`);
+    for (const item of Array.isArray(data?.items) ? data.items : []) {
+      if (nameKey(item?.displayName) === nameKey(name) && /^\d+$/.test(String(item?.id))) ids.add(Number(item.id));
+    }
+    const fallback = await fetchJson(`${SEARCH_V2}?query=${encodeURIComponent(query)}&limit=8&type=player`);
+    const contents = fallback?.results?.find((result) => result?.type === "player")?.contents || [];
+    for (const item of contents) {
+      const match = /^s:40~l:\d+~a:(\d+)$/.exec(item?.uid || "");
+      if (match && nameKey(item.displayName) === nameKey(name)) ids.add(Number(match[1]));
+    }
+  }
+  return [...ids];
+}
+
 function stintsFromStats(data) {
   const category = (data?.categories || []).find((item) => item?.name === "averages");
   if (!category) return { error: "missing-averages" };
@@ -289,6 +382,68 @@ await mapPool(pendingStats, 5, async (player) => {
   console.log(saved.stints ? `stints ${player.name} ${saved.stints.length}` : `!! ${player.name} ${saved.error}`);
 });
 
+const careerCache = readJson(CAREER_CACHE);
+async function nbaCareerRows(player) {
+  if (!careerCache[player.id]) {
+    const data = await fetchJson(`${NBA_CAREER}?PlayerID=${player.id}&PerMode=Totals&LeagueID=00`, NBA_HEADERS);
+    const set = (data?.resultSets || []).find((item) => item?.name === "SeasonTotalsRegularSeason");
+    if (!set) return null;
+    const column = (key) => set.headers.indexOf(key);
+    careerCache[player.id] = set.rowSet
+      .filter((row) => row[column("TEAM_ABBREVIATION")] !== "TOT" && row[column("GP")] > 0)
+      .map((row) => ({ season: row[column("SEASON_ID")], abbr: row[column("TEAM_ABBREVIATION")], games: row[column("GP")] }));
+    writeJson(CAREER_CACHE, careerCache);
+  }
+  return careerCache[player.id];
+}
+
+function sameSeasonGames(stints, careerRows) {
+  const left = stints.map((stint) => `${stint.season}|${stint.games}`).sort();
+  const right = careerRows.map((row) => `${row.season}|${row.games}`).sort();
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+const pendingIdentity = roster.filter((player) => !cache.resolved[player.id]?.espnId && !cache.resolved[player.id]?.verifiedCandidates);
+console.log(`Checking ${pendingIdentity.length} unmatched identities against NBA career rows...`);
+for (const player of pendingIdentity) {
+  const candidates = [...new Set([...(await searchCandidates(player.name)), ...(ESPN_CANDIDATES[player.id] || [])])];
+  const careerRows = await nbaCareerRows(player);
+  const verified = [];
+  for (const espnId of candidates) {
+    try {
+      const parsed = stintsFromStats(await fetchJson(`${STATS}/${espnId}/stats?seasontype=2`));
+      if (parsed.stints && careerRows && sameSeasonGames(parsed.stints, careerRows)) verified.push({ espnId, stints: parsed.stints });
+    } catch {
+      // A candidate without a stats page cannot be verified.
+    }
+  }
+  if (verified.length === 1) {
+    cache.resolved[player.id] = { espnId: verified[0].espnId, name: player.name, verifiedCandidates: candidates };
+    cache.stats[player.id] = { stints: verified[0].stints };
+    console.log(`id ${player.name} -> ${verified[0].espnId} (seasons match NBA career)`);
+  } else {
+    cache.resolved[player.id] = { ...cache.resolved[player.id], verifiedCandidates: candidates };
+    console.log(`?? ${player.name}: ${verified.length} of ${candidates.length} ESPN candidates match the NBA career`);
+  }
+  writeCache(cache);
+}
+
+for (const player of roster) {
+  const stats = cache.stats[player.id];
+  if (!cache.resolved[player.id]?.espnId || stats?.stints || !/^404 /.test(stats?.error || "")) continue;
+  const careerRows = await nbaCareerRows(player);
+  const stints = (careerRows || []).map((row) => ({
+    season: row.season,
+    team: NBA_TEAM_NAMES[row.abbr],
+    slug: ABBR_TO_SLUG[row.abbr],
+    games: row.games,
+  }));
+  if (!stints.length || stints.some((stint) => !stint.team || !stint.slug)) continue;
+  cache.stats[player.id] = { stints, source: "nba-career" };
+  writeCache(cache);
+  console.log(`stints ${player.name} ${stints.length} from the NBA career table (ESPN has no stats page)`);
+}
+
 const players = [];
 const unresolved = [];
 for (const player of roster) {
@@ -314,17 +469,26 @@ for (const player of roster) {
 players.sort((left, right) => left.id - right.id);
 
 const nbaCache = readNbaCache();
-const nbaHeaders = {
-  Referer: "https://www.nba.com/",
-  Origin: "https://www.nba.com",
-  "x-nba-stats-origin": "stats",
-  "x-nba-stats-token": "true",
-};
+
+// Logs cached before LOG_RULE skipped zero-minute rows. Skipping can only lose appearances,
+// so a cached log that already matches every published stint for that season is complete.
+function cachedLogUsable(entry, stints) {
+  if (!entry?.byAbbr || entry.error) return false;
+  if (entry.rule === LOG_RULE) return true;
+  return stints.every((stint) => {
+    const count = Object.entries(entry.byAbbr)
+      .filter(([abbr]) => slugOptions(abbr).includes(stint.slug))
+      .reduce((sum, [, dates]) => sum + dates.length, 0);
+    return count === stint.games;
+  });
+}
+
 const dateJobs = [];
 for (const player of players) {
   for (const season of new Set(player.stints.map((stint) => stint.season))) {
     const key = `${player.id}|${season}`;
-    if (!nbaCache[key] || nbaCache[key].error) dateJobs.push({ player, season, key });
+    const stints = player.stints.filter((stint) => stint.season === season);
+    if (!cachedLogUsable(nbaCache[key], stints)) dateJobs.push({ player, season, key });
   }
 }
 console.log(`Fetching ${dateJobs.length} NBA regular-season game logs...`);
@@ -332,9 +496,9 @@ let dateWrites = 0;
 await mapPool(dateJobs, 4, async (job) => {
   const url = `${NBA_LOG}?PlayerID=${job.player.id}&Season=${encodeURIComponent(job.season)}&SeasonType=${encodeURIComponent("Regular Season")}`;
   try {
-    const data = await fetchJson(url, nbaHeaders);
+    const data = await fetchJson(url, NBA_HEADERS);
     const parsed = logFromNba(data);
-    nbaCache[job.key] = parsed.byAbbr ? { byAbbr: parsed.byAbbr } : { error: parsed.error };
+    nbaCache[job.key] = parsed.byAbbr ? { byAbbr: parsed.byAbbr, rule: LOG_RULE } : { error: parsed.error };
     if (!parsed.byAbbr) console.log(`!! dates ${job.player.name} ${job.season} ${parsed.error}`);
   } catch (error) {
     nbaCache[job.key] = { error: error.message };
@@ -349,6 +513,7 @@ await mapPool(dateJobs, 4, async (job) => {
 writeNbaCache(nbaCache);
 
 const problems = [];
+const failedIds = new Set();
 let splitStints = 0;
 for (const player of players) {
   const bySeason = new Map();
@@ -360,17 +525,15 @@ for (const player of players) {
     const saved = nbaCache[`${player.id}|${season}`];
     if (!saved?.byAbbr) {
       problems.push(`${player.name} ${season}: ${saved?.error || "missing game log"}`);
+      failedIds.add(player.id);
       continue;
     }
     const slugDates = new Map();
     for (const [abbr, dates] of Object.entries(saved.byAbbr)) {
-      const slug = ABBR_TO_SLUG[abbr];
+      const slug = slugOptions(abbr).find((option) => stints.some((stint) => stint.slug === option));
       if (!slug) {
-        problems.push(`${player.name} ${season}: unknown team ${abbr}`);
-        continue;
-      }
-      if (!stints.some((stint) => stint.slug === slug)) {
         problems.push(`${player.name} ${season}: ${abbr} is not one of ${stints.map((stint) => stint.slug).join(", ")}`);
+        failedIds.add(player.id);
         continue;
       }
       if (slugDates.has(slug)) {
@@ -378,6 +541,7 @@ for (const player of players) {
         for (const date of dates) {
           if (existing.includes(date)) {
             problems.push(`${player.name} ${season}: ${abbr} repeats ${date} on ${slug}`);
+            failedIds.add(player.id);
             continue;
           }
           existing.push(date);
@@ -391,10 +555,12 @@ for (const player of players) {
       const dates = slugDates.get(stint.slug);
       if (!dates) {
         problems.push(`${player.name} ${season} ${stint.slug}: no appearances in the game log`);
+        failedIds.add(player.id);
         continue;
       }
       if (dates.length !== stint.games) {
         problems.push(`${player.name} ${season} ${stint.slug}: stats ${stint.games} games, game log ${dates.length}`);
+        failedIds.add(player.id);
         continue;
       }
       const spans = spansFromDates(dates, otherDates(stint.slug));
@@ -405,26 +571,42 @@ for (const player of players) {
     }
   }
 }
+const dated = [];
+for (const player of players) {
+  if (failedIds.has(player.id) || player.stints.some((stint) => !Array.isArray(stint.spans) || stint.spans.length === 0)) {
+    if (!unresolved.some((item) => item.id === player.id)) {
+      unresolved.push({
+        id: player.id,
+        name: player.name,
+        reason: `regular-season game log did not match the published season totals: ${problems.filter((line) => line.startsWith(`${player.name} `)).join("; ")}`,
+        candidates: [],
+      });
+    }
+    continue;
+  }
+  for (const stint of player.stints) stint.team = stint.team.replace(/\s+/g, " ").trim();
+  dated.push(player);
+}
 if (problems.length) {
-  console.error(`Could not date ${problems.length} player seasons.`);
+  console.error(`Left ${failedIds.size} players out of teammate questions. ${problems.length} seasons did not match.`);
   for (const line of problems) console.error(`- ${line}`);
-  process.exit(1);
 }
 
 const payload = {
-  source: "ESPN public NBA player statistics API, with regular-season appearance dates from the NBA stats player game log",
+  source: "ESPN public NBA player statistics API, with regular-season appearance dates from the NBA stats player game log. The NBA career table confirms ESPN identities found by search and supplies team seasons when ESPN has no stats page.",
   endpoint: `${STATS}/{espnId}/stats?seasontype=2`,
   gamelogEndpoint: `${NBA_LOG}?PlayerID={playerId}&Season={season}&SeasonType=Regular%20Season`,
+  careerEndpoint: `${NBA_CAREER}?PlayerID={playerId}&PerMode=Totals&LeagueID=00`,
   searchEndpoint: `${SEARCH_V2}?type=player`,
-  retrieved: "2026-10-11",
+  retrieved: "2026-10-13",
   seasonType: "regular",
-  rule: "Two players are teammates only when each has a regular-season appearance for the same NBA team and those appearance dates overlap. Sharing a team and season is not enough when one player arrived after the other had already left. Dates are the published calendar dates of each regular-season game. A same-season return to a team is a separate stint when games for another team fall between appearances. Combined season total rows are omitted. Playoff-only stints, G League stints, and roster spots with no appearance are not included.",
-  players,
+  rule: "Two players are teammates only when each has a regular-season appearance for the same NBA team and those appearance dates overlap. Sharing a team and season is not enough when one player arrived after the other had already left. Dates are the published calendar dates of each regular-season game, including appearances that round to zero minutes. A same-season return to a team is a separate stint when games for another team fall between appearances. Combined season total rows are omitted. Playoff-only stints, G League stints, and roster spots with no appearance are not included.",
+  players: dated,
   unresolved,
 };
 
 writeFileSync(OUTPUT, `${JSON.stringify(payload, null, 2)}\n`);
-console.log(`Wrote ${players.length} players, ${unresolved.length} unresolved, ${splitStints} same-season returns split.`);
+console.log(`Wrote ${dated.length} players, ${unresolved.length} unresolved, ${splitStints} same-season returns split.`);
 if (unresolved.length) {
   for (const item of unresolved) console.log(`- ${item.name}: ${item.reason} ${item.candidates.join(" | ")}`);
 }

@@ -8,9 +8,12 @@ const HISTORICAL_TEAMS = new Set([
   "Seattle SuperSonics",
   "New Jersey Nets",
   "New Orleans Hornets",
+  "Charlotte Bobcats",
+  "Washington Bullets",
 ]);
 const SOURCE_ALIASES = {
   "LA Clippers": "Los Angeles Clippers",
+  "NO/Oklahoma City Hornets": "New Orleans Hornets",
 };
 
 function validSeason(season) {
@@ -23,10 +26,11 @@ function validSeason(season) {
 
 function canonicalTeam(name) {
   if (typeof name !== "string") return null;
-  const alias = SOURCE_ALIASES[name];
-  if (alias && teamLogoUrl(alias)) return alias;
-  if (HISTORICAL_TEAMS.has(name)) return name;
-  if (teamLogoUrl(name)) return name;
+  const cleaned = name.replace(/\s+/g, " ").trim();
+  const alias = SOURCE_ALIASES[cleaned];
+  if (alias && (teamLogoUrl(alias) || HISTORICAL_TEAMS.has(alias))) return alias;
+  if (HISTORICAL_TEAMS.has(cleaned)) return cleaned;
+  if (teamLogoUrl(cleaned)) return cleaned;
   return null;
 }
 

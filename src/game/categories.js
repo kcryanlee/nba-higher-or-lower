@@ -89,6 +89,18 @@ export function categoryById(id) {
   return CATEGORIES.find((category) => category.id === id);
 }
 
+export const ACTIVE_ONLY = new Set([
+  "ppg",
+  "rpg",
+  "apg",
+  "spg",
+  "bpg",
+  "fgPct",
+  "tpPct",
+  "ftPct",
+  "salary",
+]);
+
 const ONE_DECIMAL = new Set([
   "ppg",
   "rpg",

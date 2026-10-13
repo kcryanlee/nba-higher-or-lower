@@ -438,6 +438,25 @@ describe("question payloads", () => {
     assert.equal(JSON.stringify(built.public).includes(built.reveal.player), false);
     assert.equal(built.grade(built.reveal.player), true);
     assert.equal(built.grade("Not A Player"), false);
+    assert.equal(built.public.hiddenIndex, null);
+    assert.ok(built.public.stops.every((stop) => typeof stop.team === "string"));
+  });
+
+  test("career path expert rounds hide one team and keep its place", () => {
+    const easy = buildQuestion({ mode: "career", roundIndex: 99, used: [], usedIds: [] });
+    assert.equal(easy.public.bandId, "hard");
+    const built = buildQuestion({ mode: "career", roundIndex: 100, used: [], usedIds: [] });
+    assert.equal(built.public.bandId, "expert");
+    const hidden = built.public.hiddenIndex;
+    assert.ok(Number.isInteger(hidden));
+    assert.ok(built.public.stops.length >= 2);
+    assert.equal(built.public.stops[hidden].team, null);
+    assert.ok(Number.isInteger(built.public.stops[hidden].start));
+    assert.ok(built.public.stops.every((stop, index) => index === hidden || typeof stop.team === "string"));
+    assert.equal(typeof built.reveal.hiddenTeam, "string");
+    assert.equal(JSON.stringify(built.public).includes(built.reveal.player), false);
+    assert.equal(built.grade(built.reveal.player), true);
+    assert.equal(built.grade(built.reveal.hiddenTeam), false);
   });
 
   test("draft pick hides which choice is correct", () => {

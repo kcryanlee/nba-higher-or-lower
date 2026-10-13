@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { CATEGORIES } from "../src/game/categories.js";
+import { ACTIVE_ONLY, CATEGORIES } from "../src/game/categories.js";
+import careerHistory from "../src/data/careerHistory.json" with { type: "json" };
+import roster from "../src/data/players.json" with { type: "json" };
+import { validateDataset } from "../src/data/validatePlayers.js";
 import {
   DAILY_LENGTH,
   activeDailyStreak,
@@ -22,10 +25,27 @@ import { pairKey, selectMatchup } from "../src/game/selectMatchup.js";
 import { BADGES, applyAnswer, emptyBadgeState } from "../src/game/badges.js";
 import { readJsonStorage, readStoredNumber, writeStorage } from "../src/game/storage.js";
 import { players, careerPlayers } from "../src/data/players.js";
-import { careerPlayerAccepted, continueCareerQuestion, eligibleCareers, selectCareerQuestion } from "../src/game/careerPath.js";
+import {
+  CAREER_BANDS,
+  EXPERT_STREAK,
+  buildCareerPools,
+  careerBand,
+  careerClues,
+  careerMatches,
+  careerPlayerAccepted,
+  careerPoolReport,
+  careerRejections,
+  continueCareerQuestion,
+  currentCareerQuestion,
+  eligibleCareers,
+  selectCareerQuestion,
+  selectCareerQuestionForBand,
+} from "../src/game/careerPath.js";
+import { careerFingerprint, careerVerified } from "../src/data/careerVerification.js";
+import careerVerification from "../src/data/careerVerification.json" with { type: "json" };
 import { playerNamesMatch, searchPlayers } from "../src/game/playerSearch.js";
 import { officialTeamName, searchTeams, teamMatches } from "../src/game/teams.js";
-import { collectPairs } from "../src/game/selectMatchup.js";
+import { collectPairs, hasStat } from "../src/game/selectMatchup.js";
 import { clearActiveRun, focusRun, openingScreen, readActiveRun, readRunSlot, resetRunFocus, restoreCareerRun, restoreChainRun, restoreClassicRun, restoreDraftRun, restoreParkedDraftRun, restoreScoredRun, writeActiveRun } from "../src/game/activeRun.js";
 import { DRAFT_BEST_KEYS, continueDraftQuestion, draftPool, ordinal, parseDraftAnswer, selectDraftQuestion, usableDraftYear } from "../src/game/draft.js";
 import { DRAFT_BADGE_KEYS, DRAFT_BADGES, applyDraftStreak, readDraftBadges } from "../src/game/draftBadges.js";
@@ -119,7 +139,7 @@ globalThis.localStorage = {
 };
 
 function player(id, value) {
-  const row = { id, name: `Player ${id}` };
+  const row = { id, name: `Player ${id}`, team: "Boston Celtics" };
   for (const category of CATEGORIES) row[category.id] = value;
   return row;
 }
@@ -451,10 +471,116 @@ for (const career of careerPlayers) {
 }
 
 assert.ok(careerPlayers.some((career) => career.name === "Anthony Davis" && career.stops.length === 4));
+const rejectedFullPaths = new Set(["easy", "medium", "hard"].flatMap((bandId) => careerRejections(bandId).map((item) => item.id)));
 assert.equal(
-  eligibleCareers("easy").length + eligibleCareers("medium").length + eligibleCareers("hard").length,
+  eligibleCareers("easy").length + eligibleCareers("medium").length + eligibleCareers("hard").length + rejectedFullPaths.size,
   careerPlayers.length,
 );
+
+// Every history is verified against the NBA career table and stays verified only while unchanged.
+for (const career of careerPlayers) assert.ok(careerVerified(career.id, career.stops), `${career.name} history is verified`);
+assert.equal(careerVerified(careerPlayers[0].id, [...careerPlayers[0].stops, { team: "Utah Jazz", start: 2030, end: 2031 }]), false);
+assert.deepEqual(careerVerification.excluded, []);
+assert.equal(
+  careerPlayers.find((career) => career.name === "Anthony Davis").stops.map((stop) => `${stop.team} ${stop.start}-${stop.end}`).join(" > "),
+  "New Orleans Pelicans 2012-2019 > Los Angeles Lakers 2019-2025 > Dallas Mavericks 2025-2026 > Washington Wizards 2026-2027",
+);
+
+// Every playable question, in every difficulty, fits exactly one searchable player on its visible clues.
+const searchablePool = players.map((player) => ({ id: player.id, name: player.name, position: player.position, stops: player.careerTeams }));
+for (const bandId of CAREER_BANDS) {
+  const pool = eligibleCareers(bandId);
+  assert.ok(pool.length > 0, `${bandId} has questions`);
+  for (const career of pool) {
+    const indexes = bandId === "expert" ? career.stops.map((_, index) => index) : [null];
+    for (const hiddenIndex of indexes) {
+      const question = currentCareerQuestion({ band: { id: bandId }, answerId: career.id, player: career.name, stops: career.stops, hiddenIndex });
+      if (!question) continue;
+      const matches = careerMatches(careerClues(career, bandId, question.hiddenIndex), searchablePool);
+      assert.deepEqual(matches.map((match) => match.id), [career.id], `${career.name} ${bandId} ${hiddenIndex} is unique`);
+    }
+  }
+}
+for (const report of careerPoolReport()) assert.ok(report.valid > 0 && report.excluded >= 0);
+assert.ok(careerRejections("expert").every((item) => Number.isInteger(item.hiddenIndex)));
+assert.ok(careerRejections("expert").some((item) => /also fit/.test(item.reason)));
+
+// Screenshot 1: NBA id 201607 is Patrick Ewing Jr. (one 2010-11 season with New Orleans), stored under the Hall of Famer's name.
+const ewingRecord = {
+  id: 201607,
+  name: "Patrick Ewing",
+  position: "Forward",
+  stops: [{ team: "New Orleans Pelicans", start: 2010, end: 2011 }],
+};
+assert.equal(careerVerified(ewingRecord.id, ewingRecord.stops), false);
+const ewingPools = buildCareerPools({ careers: [ewingRecord], searchable: [...searchablePool, ewingRecord] });
+for (const bandId of CAREER_BANDS) assert.equal(ewingPools.pools[bandId].length, 0);
+const ewingRejected = CAREER_BANDS.flatMap((bandId) => ewingPools.rejected[bandId]);
+assert.equal(ewingRejected.length, 2);
+assert.ok(ewingRejected.every((item) => /Unverified career history/.test(item.reason)));
+for (const bandId of CAREER_BANDS) {
+  assert.equal(eligibleCareers(bandId).some((career) => career.id === 201607 || career.name === "Patrick Ewing"), false);
+}
+const ewingQuestion = {
+  band: { id: "easy", label: "Easy" },
+  answer: "Patrick Ewing",
+  answerId: 201607,
+  player: "Patrick Ewing",
+  position: "Forward",
+  stops: ewingRecord.stops,
+  hiddenIndex: 0,
+  key: "201607:0",
+};
+assert.equal(currentCareerQuestion(ewingQuestion), null);
+
+// Screenshot 2: "Orlando Magic · 2021–27" fits both Jalen Suggs and Franz Wagner.
+const suggs = careerPlayers.find((career) => career.name === "Jalen Suggs");
+const wagner = careerPlayers.find((career) => career.name === "Franz Wagner");
+assert.equal(careerFingerprint(suggs.stops), "Orlando Magic:2021-2027");
+assert.equal(careerFingerprint(wagner.stops), careerFingerprint(suggs.stops));
+assert.deepEqual(
+  careerMatches(careerClues(suggs, "medium"), searchablePool).map((match) => match.name).sort(),
+  ["Franz Wagner", "Jalen Suggs"],
+);
+for (const bandId of CAREER_BANDS) {
+  assert.equal(eligibleCareers(bandId).some((career) => career.id === suggs.id || career.id === wagner.id), false, bandId);
+}
+assert.match(careerRejections("medium").find((item) => item.id === suggs.id).reason, /Franz Wagner/);
+const suggsQuestion = {
+  band: { id: "medium", label: "Medium" },
+  answer: suggs.name,
+  answerId: suggs.id,
+  player: suggs.name,
+  position: suggs.position,
+  stops: suggs.stops,
+  hiddenIndex: 0,
+  key: `${suggs.id}:0`,
+};
+assert.equal(currentCareerQuestion(suggsQuestion), null);
+
+// Hidden-team questions start at question 101, after the 100th correct answer.
+assert.equal(EXPERT_STREAK, 100);
+assert.equal(careerBand(0).id, "easy");
+assert.equal(careerBand(15).id, "medium");
+assert.equal(careerBand(16).id, "hard");
+assert.equal(careerBand(99).id, "hard");
+assert.equal(careerBand(100).id, "expert");
+assert.equal(careerBand(5000).id, "expert");
+const atNinetyNine = continueCareerQuestion(99, { random: () => 0.3 });
+assert.equal(atNinetyNine.question.band.id, "hard");
+assert.equal(atNinetyNine.question.hiddenIndex, null);
+const atHundred = continueCareerQuestion(100, { usedIds: atNinetyNine.usedIds, usedKeys: atNinetyNine.usedKeys, random: () => 0.3 });
+assert.equal(atHundred.question.band.id, "expert");
+assert.ok(Number.isInteger(atHundred.question.hiddenIndex));
+assert.ok(atHundred.question.stops.length >= 2);
+assert.equal(atHundred.question.stops.length, careerPlayers.find((career) => career.id === atHundred.question.answerId).stops.length);
+for (const bandId of ["easy", "medium", "hard"]) {
+  for (let index = 0; index < 20; index += 1) {
+    const question = selectCareerQuestionForBand(bandId, { random: mulberry32(index + 1) });
+    assert.equal(question.hiddenIndex, null);
+    assert.equal(question.key, `${question.answerId}:path`);
+  }
+}
 assert.ok(eligibleCareers("easy").length >= 6);
 assert.ok(eligibleCareers("medium").length >= 10);
 assert.ok(eligibleCareers("easy").some((career) => career.name === "LeBron James" && career.stops.length > 1));
@@ -462,7 +588,9 @@ assert.ok(eligibleCareers("easy").some((career) => career.name === "Stephen Curr
 assert.equal(eligibleCareers("easy").some((career) => career.name === "Amen Thompson"), false);
 assert.equal(eligibleCareers("medium").some((career) => career.name === "Amen Thompson"), false);
 assert.ok(eligibleCareers("hard").some((career) => career.name === "Amen Thompson"));
-assert.ok(eligibleCareers("hard").some((career) => career.name === "Kon Knueppel" && career.stops.length === 1));
+assert.equal(eligibleCareers("hard").some((career) => career.name === "Kon Knueppel"), false);
+assert.match(careerRejections("hard").find((item) => item.name === "Kon Knueppel").reason, /Sion James/);
+assert.ok(eligibleCareers("hard").some((career) => career.stops.length === 1));
 assert.ok(eligibleCareers("hard").some((career) => career.name === "Dennis Schroder" && career.stops.length > 1));
 assert.equal(eligibleCareers("easy").some((career) => career.name === "Dennis Schroder"), false);
 
@@ -507,11 +635,76 @@ assert.ok(threesPairs.every((pair) => pair.first.threes > 0 && pair.second.three
 const duren = players.find((player) => player.name === "Jalen Duren");
 assert.equal(duren.threes, 0);
 assert.equal(duren.tpPct, 0);
+
+assert.deepEqual(validateDataset(roster.players, careerHistory).errors, []);
+const playerNamed = (name) => players.find((player) => player.name === name);
+assert.equal(playerNamed("DeMar DeRozan").salary, 3876529);
+assert.equal(playerNamed("Mike Conley").salary, 3876529);
+assert.equal(playerNamed("Cameron Johnson").salary, 22500000);
+assert.equal(playerNamed("Klay Thompson").salary, 5600000);
+assert.ok(players.filter((player) => !player.team).every((player) => player.salary == null));
+for (const name of ["Russell Westbrook", "Kyle Lowry", "Eric Gordon", "Kevin Love", "Chris Paul"]) {
+  const retired = playerNamed(name);
+  assert.equal(retired.team, null);
+  assert.ok(Number.isFinite(retired.ppg) && Number.isFinite(retired.ftPct));
+  assert.equal(hasStat(retired, "ppg"), false);
+  assert.equal(hasStat(retired, "careerPoints"), true);
+}
+assert.equal(playerNamed("Russell Westbrook").ppg, 15.2);
+assert.equal(playerNamed("Russell Westbrook").careerPoints, 27176);
+assert.equal(playerNamed("Carmelo Anthony").careerPoints, 28289);
+assert.equal(playerNamed("Kyle Korver").threes, 2450);
+for (const categoryId of ACTIVE_ONLY) {
+  const category = CATEGORIES.find((item) => item.id === categoryId);
+  const pairs = collectPairs(players, category, { min: 0, max: Infinity });
+  assert.ok(pairs.length > 0);
+  assert.ok(pairs.every((pair) => pair.first.team && pair.second.team));
+}
+assert.equal(playerNamed("Patrick Ewing"), undefined);
+assert.equal(players.some((player) => player.id === 201607), false);
 const undrafted = players
   .filter((player) => player.draftYear == null && player.draftPick == null)
   .map((player) => player.name)
   .sort();
-assert.deepEqual(undrafted, ["Austin Reaves", "Naji Marshall"]);
+assert.deepEqual(undrafted, [
+  "AJ Green",
+  "Alex Caruso",
+  "Austin Reaves",
+  "Ben Wallace",
+  "Brandon Williams",
+  "Caleb Martin",
+  "Collin Gillespie",
+  "Craig Porter Jr.",
+  "Daeqwon Plowden",
+  "Daniss Jenkins",
+  "Dean Wade",
+  "Derrick Jones Jr.",
+  "Dominick Barlow",
+  "Dru Smith",
+  "Duncan Robinson",
+  "Dylan Cardwell",
+  "Jamison Battle",
+  "Javonte Green",
+  "Jay Huff",
+  "Jock Landale",
+  "Jordan Goodwin",
+  "Jose Alvarado",
+  "Julian Champagnie",
+  "Kenrich Williams",
+  "Keon Ellis",
+  "Luguentz Dort",
+  "Luke Kornet",
+  "Micah Potter",
+  "Nae'Qwan Tomlin",
+  "Naji Marshall",
+  "Naz Reid",
+  "Royce O'Neale",
+  "Ryan Nembhard",
+  "Sam Hauser",
+  "Simone Fontecchio",
+  "Spencer Jones",
+  "T.J. McConnell",
+]);
 assert.equal(draftPool(players, "year").length, players.length - undrafted.length);
 assert.equal(draftPool(players, "pick").length, players.length - undrafted.length);
 assert.equal(draftPool(players, "year").some((player) => player.name === "Austin Reaves"), false);
@@ -542,7 +735,7 @@ assert.equal(ordinal(21), "21st");
 assert.equal(ordinal(22), "22nd");
 assert.equal(ordinal(23), "23rd");
 const seenDraft = [];
-while (seenDraft.length < 200) {
+while (seenDraft.length < draftPool(players, "pick").length) {
   const question = selectDraftQuestion(players, "pick", seenDraft, () => 0);
   if (!question) break;
   assert.equal(seenDraft.includes(question.id), false);
@@ -714,18 +907,23 @@ store.clear();
 const seenAnswers = [];
 const seenCareerKeys = [];
 let careerStreak = 0;
-const careerRunLength = 6 + 10 + eligibleCareers("hard").length;
+const careerRunLength = EXPERT_STREAK + 30;
 while (careerStreak < careerRunLength) {
   const question = selectCareerQuestion(careerStreak, { usedIds: seenAnswers, usedKeys: seenCareerKeys });
   assert.ok(question, `career question at streak ${careerStreak}`);
   assert.equal(seenCareerKeys.includes(question.key), false);
   assert.equal(seenAnswers.includes(question.answerId), false);
   assert.equal(question.answer, question.player);
-  assert.equal(typeof question.stops[question.hiddenIndex].team, "string");
-  assert.ok(question.stops[question.hiddenIndex].team.length > 0);
   if (careerStreak <= 5) assert.equal(question.band.id, "easy");
   else if (careerStreak <= 15) assert.equal(question.band.id, "medium");
-  else assert.equal(question.band.id, "hard");
+  else if (careerStreak <= 99) assert.equal(question.band.id, "hard");
+  else assert.equal(question.band.id, "expert");
+  if (question.band.id === "expert") {
+    assert.ok(Number.isInteger(question.hiddenIndex));
+    assert.equal(typeof question.stops[question.hiddenIndex].team, "string");
+  } else {
+    assert.equal(question.hiddenIndex, null);
+  }
   assert.ok(eligibleCareers(question.band.id).some((career) => career.id === question.answerId));
   seenAnswers.push(question.answerId);
   seenCareerKeys.push(question.key);
@@ -734,19 +932,30 @@ while (careerStreak < careerRunLength) {
 assert.equal(careerStreak, careerRunLength);
 assert.equal(new Set(seenAnswers).size, seenAnswers.length);
 assert.equal(new Set(seenCareerKeys).size, seenCareerKeys.length);
-assert.equal(selectCareerQuestion(careerStreak, { usedIds: seenAnswers, usedKeys: seenCareerKeys }), null);
-const hardBoundary = continueCareerQuestion(careerStreak, {
-  usedIds: seenAnswers,
-  usedKeys: seenCareerKeys,
-  avoidId: seenAnswers.at(-1),
+const hardIdList = eligibleCareers("hard").map((career) => career.id);
+assert.equal(selectCareerQuestionForBand("hard", { usedIds: hardIdList }), null);
+const hardBoundary = continueCareerQuestion(50, {
+  usedIds: hardIdList,
+  avoidId: hardIdList.at(-1),
   random: () => 0,
 });
 assert.equal(hardBoundary.cycled, true);
 assert.equal(hardBoundary.question.band.id, "hard");
 assert.equal(hardBoundary.question.answer, hardBoundary.question.player);
-assert.notEqual(hardBoundary.question.answerId, seenAnswers.at(-1));
-const hardIds = new Set(eligibleCareers("hard").map((career) => career.id));
+assert.notEqual(hardBoundary.question.answerId, hardIdList.at(-1));
+const hardIds = new Set(hardIdList);
 assert.equal(hardBoundary.usedIds.filter((id) => hardIds.has(id)).length, 1);
+const expertIdList = eligibleCareers("expert").map((career) => career.id);
+const expertBoundary = continueCareerQuestion(400, {
+  usedIds: expertIdList,
+  usedKeys: [`${expertIdList[0]}:0`],
+  avoidId: expertIdList[0],
+  random: () => 0,
+});
+assert.equal(expertBoundary.cycled, true);
+assert.equal(expertBoundary.question.band.id, "expert");
+assert.notEqual(expertBoundary.question.answerId, expertIdList[0]);
+assert.ok(expertBoundary.usedKeys.includes(`${expertIdList[0]}:0`));
 
 const easyIds = eligibleCareers("easy").map((career) => career.id);
 const easyCycle = continueCareerQuestion(4, {
@@ -778,8 +987,9 @@ let cycleIds = [];
 let cycleKeys = [];
 let cyclePrevious = null;
 let lastCareerStep = null;
-const cycleSeen = { easy: new Set(), medium: new Set(), hard: new Set() };
-const careerTarget = 6 + 10 + eligibleCareers("hard").length + 8;
+const cycleSeen = { easy: new Set(), medium: new Set(), hard: new Set(), expert: new Set() };
+const expertKeysSeen = new Set();
+const careerTarget = EXPERT_STREAK + eligibleCareers("expert").length + 40;
 for (let streak = 0; streak < careerTarget; streak += 1) {
   const step = continueCareerQuestion(streak, {
     usedIds: cycleIds,
@@ -789,9 +999,13 @@ for (let streak = 0; streak < careerTarget; streak += 1) {
   });
   assert.ok(step, `career continues at ${streak}`);
   assert.equal(step.question.answer, step.question.player);
-  assert.equal(typeof step.question.stops[step.question.hiddenIndex].team, "string");
-  const band = streak >= 16 ? "hard" : streak >= 6 ? "medium" : "easy";
+  assert.ok(currentCareerQuestion(step.question), `career question at ${streak} is valid`);
+  const band = careerBand(streak).id;
   assert.equal(step.question.band.id, band);
+  if (band === "expert") {
+    assert.equal(expertKeysSeen.has(step.question.key), false, "expert questions do not repeat before every hidden stop is used");
+    expertKeysSeen.add(step.question.key);
+  }
   if (step.cycled) {
     assert.notEqual(step.question.answerId, cyclePrevious);
     cycleSeen[band] = new Set([step.question.answerId]);
@@ -804,7 +1018,8 @@ for (let streak = 0; streak < careerTarget; streak += 1) {
   cycleKeys = step.usedKeys;
   lastCareerStep = step;
 }
-assert.ok(careerTarget > 46);
+assert.ok(careerTarget > EXPERT_STREAK + 200);
+assert.equal(lastCareerStep.question.band.id, "expert");
 store.clear();
 writeStorage(CAREER_BEST_KEY, "20");
 writeActiveRun({
@@ -874,7 +1089,9 @@ store.clear();
 
 const legacyCareer = {
   ...secondCareer,
-  answer: secondCareer.stops[secondCareer.hiddenIndex].team,
+  hiddenIndex: 0,
+  key: `${secondCareer.answerId}:0`,
+  answer: secondCareer.stops[0].team,
 };
 writeActiveRun({
   game: "career",
@@ -887,7 +1104,43 @@ writeActiveRun({
 });
 const migratedCareer = restoreCareerRun();
 assert.equal(migratedCareer.question.answer, legacyCareer.player);
+assert.equal(migratedCareer.question.answerId, legacyCareer.answerId);
+assert.equal(migratedCareer.question.hiddenIndex, null);
+assert.equal(migratedCareer.question.key, `${legacyCareer.answerId}:path`);
 assert.equal(migratedCareer.streak, 2);
+store.clear();
+
+// Saved runs holding a question that is no longer valid get a fresh question at the same streak.
+for (const [label, question, streak] of [["Ewing", ewingQuestion, 7], ["Suggs", suggsQuestion, 99]]) {
+  for (const phase of ["playing", "revealing"]) {
+    writeStorage(CAREER_BEST_KEY, "140");
+    writeActiveRun({
+      game: "career",
+      phase,
+      streak,
+      picked: phase === "revealing" ? "Somebody Else" : null,
+      result: phase === "revealing" ? "wrong" : null,
+      question,
+      usedIds: [question.answerId],
+      usedKeys: [question.key],
+    });
+    const replaced = restoreCareerRun();
+    assert.ok(replaced, `${label} ${phase} run restores`);
+    assert.equal(replaced.phase, "playing");
+    assert.equal(replaced.streak, streak);
+    assert.equal(replaced.result, null);
+    assert.equal(replaced.picked, null);
+    assert.notEqual(replaced.question.answerId, question.answerId);
+    assert.ok(currentCareerQuestion(replaced.question));
+    assert.equal(replaced.question.band.id, careerBand(streak).id);
+    assert.deepEqual(restoreCareerRun().question, replaced.question);
+    assert.equal(readStoredNumber(CAREER_BEST_KEY), 140);
+    store.clear();
+  }
+}
+const expertSaved = continueCareerQuestion(100, { random: () => 0.5 }).question;
+writeActiveRun({ game: "career", phase: "playing", streak: 100, picked: null, result: null, question: expertSaved, usedIds: [expertSaved.answerId] });
+assert.deepEqual(restoreCareerRun().question, expertSaved);
 store.clear();
 
 const firstDraft = selectDraftQuestion(players, "year", [], () => 0);
@@ -952,8 +1205,16 @@ assert.deepEqual(careerDailyQuestions.map((question) => question.band.id), ["eas
 assert.equal(new Set(careerDailyQuestions.map((question) => question.answerId)).size, QUIZ_DAILY_LENGTH);
 for (const question of careerDailyQuestions) {
   assert.equal(question.answer, question.player);
-  assert.equal(typeof question.stops[question.hiddenIndex].team, "string");
+  assert.equal(question.hiddenIndex, null);
+  assert.ok(currentCareerQuestion(question));
   assert.equal(careerPlayerAccepted(question, question.player), true);
+}
+for (let day = 1; day <= 28; day += 1) {
+  for (const question of buildCareerDaily(`2026-11-${String(day).padStart(2, "0")}`)) {
+    assert.ok(currentCareerQuestion(question));
+    assert.notEqual(question.answerId, suggs.id);
+    assert.notEqual(question.answerId, wagner.id);
+  }
 }
 assert.notDeepEqual(
   careerDailyQuestions.map((question) => question.answerId),
@@ -1535,12 +1796,14 @@ assert.equal(readScoredBadges().unlocked.includes("sharp-shooter"), false);
 
 assert.equal(teammateReady, true);
 assert.deepEqual(teammateErrors, []);
-assert.deepEqual(unresolvedTeammates, []);
+const rosterNames = new Set(players.map((player) => player.name));
+assert.ok(unresolvedTeammates.every((name) => rosterNames.has(name)));
+assert.equal(new Set([...chainPlayers.map((player) => player.name), ...unresolvedTeammates]).size, players.length);
 assert.match(teammateSource.source, /ESPN/);
 assert.match(teammateSource.rule, /regular-season appearance/);
 assert.match(teammateSource.rule, /appearance dates overlap/);
 assert.match(teammateSource.rule, /not enough/);
-assert.equal(chainPlayers.length, players.length);
+assert.equal(chainPlayers.length + unresolvedTeammates.length, players.length);
 
 const curry = chainPlayerByName("Stephen Curry");
 const durant = chainPlayerByName("Kevin Durant");

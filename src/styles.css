@@ -401,6 +401,21 @@ main {
   line-height: 1;
 }
 
+.career-mystery {
+  border-style: dashed;
+  border-width: 2px;
+  font-size: 1.9rem;
+  background: rgba(255, 177, 90, 0.08);
+}
+
+.career-stop.is-hidden .career-team {
+  color: #ffb15a;
+}
+
+.career-stop.is-revealed .career-team {
+  color: #ffb15a;
+}
+
 .career-stop.is-correct .career-team {
   color: #7dffc3;
 }
@@ -1784,6 +1799,10 @@ h1.section-title {
 
   .career-blank {
     font-size: 1rem;
+  }
+
+  .career-mystery {
+    font-size: 1.2rem;
   }
 
   .career-team {

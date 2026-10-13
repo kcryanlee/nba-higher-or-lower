@@ -1,4 +1,4 @@
-import { selectCareerQuestionForBand } from "./careerPath.js";
+import { currentCareerQuestion, selectCareerQuestionForBand } from "./careerPath.js";
 import { QUIZ_DAILY_LENGTH } from "./quizDaily.js";
 import { hashString, mulberry32 } from "./seed.js";
 
@@ -7,19 +7,11 @@ export const CAREER_DAILY_KEY = "nba-career-daily";
 const SLOT_BANDS = ["easy", "medium", "medium", "hard", "hard"];
 
 function readyQuestion(question) {
-  const stop = question?.stops?.[question?.hiddenIndex];
   return Boolean(question)
-    && typeof question.answer === "string"
-    && question.answer.length > 0
     && typeof question.player === "string"
     && question.player.length > 0
     && question.answer === question.player
-    && Number.isInteger(question.answerId)
-    && Number.isInteger(question.hiddenIndex)
-    && Array.isArray(question.stops)
-    && question.stops.length > 0
-    && typeof stop?.team === "string"
-    && stop.team.length > 0;
+    && Boolean(currentCareerQuestion(question));
 }
 
 export function buildCareerDaily(dateKey) {

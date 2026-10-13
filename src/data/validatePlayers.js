@@ -17,7 +17,7 @@ const COUNT_FIELDS = [
   "draftYear",
   "draftPick",
 ];
-const SEASON_FIELDS = ["ppg", "rpg", "apg", "spg", "bpg", "fgPct", "tpPct", "ftPct", "salary", "heightIn", "threes", "careerPoints"];
+const TEAM_FIELDS = ["salary"];
 
 function finiteOrNull(value) {
   return value == null || Number.isFinite(value);
@@ -89,8 +89,8 @@ export function validateDataset(players, history) {
       else if (Number.isFinite(player[field]) && player[field] < 0) errors.push(`${label} has a negative ${field}.`);
     }
 
-    const hasSeasonStat = SEASON_FIELDS.some((field) => Number.isFinite(player[field]));
-    if (hasSeasonStat) {
+    const hasCurrentTeamStat = TEAM_FIELDS.some((field) => Number.isFinite(player[field]));
+    if (hasCurrentTeamStat) {
       if (typeof player.team !== "string" || !player.team.trim()) errors.push(`${label} is missing a team.`);
       else if (!teamLogoUrl(player.team)) errors.push(`${label} has a team without a logo.`);
     } else if (player.team != null && !teamLogoUrl(player.team)) {
