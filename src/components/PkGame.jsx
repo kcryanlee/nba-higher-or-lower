@@ -360,7 +360,7 @@ function Gate({ name, setName, code, setCode, error, link, onCreate, onJoin, onL
       <p className="eyebrow">Live 1 vs 1</p>
       <h1>Race a friend</h1>
       <p className="lede">
-        Same question on two devices. First correct answer scores one point. First to 5 wins.
+        First correct answer scores one point. First to 5 wins.
       </p>
       <label className="pk-field">
         <span>Your name</span>

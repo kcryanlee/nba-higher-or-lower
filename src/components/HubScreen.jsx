@@ -54,7 +54,7 @@ export default function HubScreen({ onHigher, onCareer, onDraftYear, onDraftPick
       <button type="button" className="pk-entry" onClick={onPk}>
         <span>
           <strong>Live 1 vs 1</strong>
-          <em>Same question, two devices. First correct answer scores.</em>
+          <em>First correct answer scores.</em>
         </span>
         <span className="pk-entry-play">Play</span>
       </button>
