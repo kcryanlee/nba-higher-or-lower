@@ -2,11 +2,15 @@ export const REVEAL_MS = 750;
 export const MILESTONE_MS = 1200;
 export const BADGE_REVEAL_MS = 2500;
 
-export function milestoneBanner(streak) {
+export function streakMarkBanner(streak) {
   if (streak === 10 || streak === 25 || streak === 50) return `${streak} streak`;
+  return "";
+}
+
+export function milestoneBanner(streak) {
   if (streak === 11) return "Hard mode unlocked";
   if (streak === 21) return "Expert mode";
-  return "";
+  return streakMarkBanner(streak);
 }
 
 export function streakCallout(streak) {

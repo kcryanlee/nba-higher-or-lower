@@ -54,8 +54,33 @@ h1 {
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
   margin: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
   font-size: 1.15rem;
+  cursor: pointer;
+}
+
+.brand:hover,
+.brand:focus-visible {
+  color: #ffb15a;
+}
+
+.brand:focus-visible {
+  outline: 2px solid #ffb15a;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.brand.is-home,
+.brand.is-home:hover,
+.brand.is-home:focus-visible {
+  color: inherit;
+  cursor: default;
 }
 
 .brand-mark {
@@ -2306,5 +2331,321 @@ h1.section-title {
   .chain-board .section-title {
     font-size: 1.45rem;
     line-height: 1.05;
+  }
+}
+
+.pk-entry {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 8px 0 16px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 122, 26, 0.65);
+  border-radius: 18px;
+  background: rgba(10, 22, 38, 0.88);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pk-entry strong,
+.pk-entry em,
+.pk-entry-play {
+  display: block;
+  font-family: "Oswald", Impact, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-style: normal;
+}
+
+.pk-entry strong {
+  color: #ffb15a;
+  font-size: 1.35rem;
+}
+
+.pk-entry em {
+  margin-top: 4px;
+  color: #d7c8b2;
+  font-size: 0.95rem;
+}
+
+.pk-entry-play {
+  flex: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  background: #ff7a1a;
+  color: #1a0d04;
+}
+
+.pk-entry:hover {
+  transform: translateY(-2px);
+}
+
+.pk-field {
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+  text-align: left;
+}
+
+.pk-field span,
+.pk-round,
+.pk-target,
+.pk-next,
+.pk-status,
+.pk-seats span,
+.pk-lock {
+  font-family: "Oswald", Impact, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pk-field input {
+  width: 100%;
+  border: 1px solid rgba(244, 239, 228, 0.28);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(8, 16, 28, 0.9);
+  color: #f4efe4;
+}
+
+.pk-field input:focus {
+  outline: 2px solid rgba(255, 122, 26, 0.7);
+  border-color: transparent;
+}
+
+.pk-join {
+  width: min(420px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.pk-code {
+  margin: 0;
+  font-family: "Oswald", Impact, sans-serif;
+  font-size: clamp(2.4rem, 8vw, 4.4rem);
+  letter-spacing: 0.18em;
+  line-height: 1;
+}
+
+.pk-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  margin: 12px 0;
+  color: #d7c8b2;
+}
+
+.pk-status span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pk-status i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff8b98;
+}
+
+.pk-status i.is-on {
+  background: #7dffc3;
+}
+
+.pk-seats {
+  width: min(460px, 100%);
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 14px;
+}
+
+.pk-seats p {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(244, 239, 228, 0.18);
+  background: rgba(8, 16, 28, 0.72);
+}
+
+.pk-seats strong {
+  font-family: "Oswald", Impact, sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.pk-seats span,
+.pk-seats .is-empty {
+  color: #d7c8b2;
+}
+
+.pk-modes {
+  width: min(520px, 100%);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.pk-modes button {
+  flex: 1 1 140px;
+  border: 1px solid rgba(244, 239, 228, 0.28);
+  border-radius: 999px;
+  padding: 10px 12px;
+  background: transparent;
+  color: #f4efe4;
+  font-family: "Oswald", Impact, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.pk-modes button.is-on {
+  background: #ff7a1a;
+  border-color: #ff7a1a;
+  color: #1a0d04;
+}
+
+.pk-modes button:disabled {
+  cursor: default;
+}
+
+.pk-score {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: end;
+  width: min(640px, 100%);
+  margin: 0 auto 8px;
+}
+
+.pk-score p {
+  margin: 0;
+}
+
+.pk-score p:first-child {
+  text-align: left;
+}
+
+.pk-score p:last-child {
+  text-align: right;
+}
+
+.pk-score span,
+.pk-target {
+  display: block;
+  color: #d7c8b2;
+}
+
+.pk-score strong {
+  font-family: "Oswald", Impact, sans-serif;
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 0.9;
+  color: #ffb15a;
+}
+
+.pk-target,
+.pk-round,
+.pk-next {
+  text-align: center;
+  color: #d7c8b2;
+}
+
+.pk-timer {
+  position: relative;
+  width: min(640px, 100%);
+  height: 34px;
+  margin: 8px auto 12px;
+  border-radius: 999px;
+  background: rgba(244, 239, 228, 0.12);
+  overflow: hidden;
+}
+
+.pk-timer span {
+  display: block;
+  height: 100%;
+  background: #ff7a1a;
+}
+
+.pk-timer strong {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: "Oswald", Impact, sans-serif;
+  letter-spacing: 0.08em;
+  color: #1a0d04;
+}
+
+.pk-timer.is-paused strong {
+  color: #f4efe4;
+}
+
+.pk-lock,
+.pk-error {
+  margin: 8px 0;
+  text-align: center;
+  color: #ffb15a;
+}
+
+.pk-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 50vh;
+  padding-top: 12px;
+}
+
+.pk-count strong {
+  font-family: "Oswald", Impact, sans-serif;
+  font-size: clamp(6rem, 18vw, 10rem);
+  line-height: 0.85;
+  color: #ff7a1a;
+}
+
+.pk-live,
+.pk-race,
+.pk-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pk-guesses {
+  width: min(460px, 100%);
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pk-guesses li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.pk-guesses span {
+  color: #d7c8b2;
+}
+
+@media (max-width: 800px) {
+  .pk-entry {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .pk-score {
+    gap: 8px;
   }
 }

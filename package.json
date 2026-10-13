@@ -8,6 +8,8 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "start": "node server/index.js",
+    "test": "node --test server/pk.test.js",
     "update-nba-data": "node scripts/updateNBAData.js",
     "build-box-scores": "node scripts/buildBoxScores.js",
     "build-teammates": "node scripts/buildTeammates.js"
@@ -15,7 +17,8 @@
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",

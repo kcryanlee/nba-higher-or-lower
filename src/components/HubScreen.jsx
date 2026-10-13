@@ -39,7 +39,7 @@ function listedReady(game, modes) {
   return game.ready;
 }
 
-export default function HubScreen({ onHigher, onCareer, onDraftYear, onDraftPick, onScored, onChain }) {
+export default function HubScreen({ onHigher, onCareer, onDraftYear, onDraftPick, onScored, onChain, onPk }) {
   const actions = { higher: onHigher, career: onCareer, scored: onScored, chain: onChain };
   const draftModes = {
     year: draftPool(players, "year").length > 0,
@@ -51,6 +51,13 @@ export default function HubScreen({ onHigher, onCareer, onDraftYear, onDraftPick
       <p className="eyebrow">NBA Mini Games</p>
       <h1 className="section-title">NBA Mini Games</h1>
       <p className="lede">Test how well you really know basketball.</p>
+      <button type="button" className="pk-entry" onClick={onPk}>
+        <span>
+          <strong>Live 1 vs 1</strong>
+          <em>Same question, two devices. First correct answer scores.</em>
+        </span>
+        <span className="pk-entry-play">Play</span>
+      </button>
       <div className="hub-grid">
         {GAMES.map((game) => (
           <article key={game.id} className={`hub-card ${listedReady(game, draftModes) ? "" : "is-soon"}`}>

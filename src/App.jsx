@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import Achievements from "./components/Achievements.jsx";
 import Board from "./components/Board.jsx";
@@ -9,6 +9,8 @@ import DraftGame from "./components/DraftGame.jsx";
 import GameLobby from "./components/GameLobby.jsx";
 import GameOver from "./components/GameOver.jsx";
 import HubScreen from "./components/HubScreen.jsx";
+import MilestoneCover from "./components/MilestoneCover.jsx";
+import PkGame from "./components/PkGame.jsx";
 import QuizDailyScore from "./components/QuizDailyScore.jsx";
 import ScoredGame from "./components/ScoredGame.jsx";
 import StartScreen from "./components/StartScreen.jsx";
@@ -28,7 +30,7 @@ import { SCORED_BADGES, scoredBadgeProgress } from "./game/scoredBadges.js";
 import { SCORED_DAILY_KEY, buildScoredDaily } from "./game/scoredDaily.js";
 import { SCORED_DAILY_TOTAL, readScoredDailyRecord } from "./game/scoredDailyRecord.js";
 import { SCORED_REVEAL_MS, scoredMilestoneBanner, scoredStreakCallout } from "./game/scored.js";
-import { BADGE_REVEAL_MS, MILESTONE_MS, milestoneBanner, streakCallout } from "./game/feedback.js";
+import { BADGE_REVEAL_MS, MILESTONE_MS, milestoneBanner, streakCallout, streakMarkBanner } from "./game/feedback.js";
 import {
   CAREER_DAILY_BADGE_KEY,
   CHAIN_DAILY_BADGE_KEY,
@@ -56,6 +58,7 @@ import { useModeDailyBadges } from "./hooks/useModeDailyBadges.js";
 import { useQuizDaily } from "./hooks/useQuizDaily.js";
 import { useScored } from "./hooks/useScored.js";
 import { useScoredBadges } from "./hooks/useScoredBadges.js";
+import { hasPkSeat } from "./hooks/usePk.js";
 import { useScoredDaily } from "./hooks/useScoredDaily.js";
 
 const HIGHER_DAILY_BADGES = MODE_DAILY_BADGES.map((badge) => (
@@ -86,7 +89,8 @@ function readDraftSharedDailyRecord() {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState(() => openingScreen(players));
+  const [screen, setScreen] = useState(() => (hasPkSeat() ? "pk" : openingScreen(players)));
+  const pkLeaveRef = useRef(null);
   const [awardsReturn, setAwardsReturn] = useState("menu");
   const [draftLobbyMode, setDraftLobbyMode] = useState("year");
   const [draftAwardsMode, setDraftAwardsMode] = useState(null);
@@ -166,6 +170,38 @@ export default function App() {
 
   function livePhase(phase) {
     return phase === "playing" || phase === "revealing";
+  }
+
+  function goHome() {
+    if (screen === "hub") return;
+    if (screen === "pk") pkLeaveRef.current?.();
+    if (screen === "daily" || screen === "daily-awards") {
+      daily.leave();
+      higherDailyBadges.dismiss();
+    } else if (screen === "career-daily" || screen === "career-daily-awards") {
+      careerDaily.leave();
+      careerDailyBadges.dismiss();
+    } else if (screen === "draft-daily" || screen === "draft-daily-awards") {
+      draftDaily.leave();
+      draftDailyBadges.dismiss();
+    } else if (screen === "scored-daily" || screen === "scored-daily-awards") {
+      scoredDaily.leave();
+      scoredDailyBadges.dismiss();
+    } else if (screen === "chain-daily" || screen === "chain-daily-awards") {
+      chainDaily.leave();
+      chainDailyBadges.dismiss();
+    } else if (screen === "classic" || screen === "awards" || screen === "menu") {
+      if (!livePhase(game.phase)) game.discard();
+    } else if (screen === "career" || screen === "career-awards" || screen === "career-menu") {
+      if (!livePhase(career.phase)) career.discard();
+    } else if (screen === "draft" || screen === "draft-awards" || screen === "draft-menu") {
+      if (!livePhase(draft.phase)) draft.discard();
+    } else if (screen === "scored" || screen === "scored-awards" || screen === "scored-menu") {
+      if (!livePhase(scored.phase)) scored.discard();
+    } else if (screen === "chain" || screen === "chain-awards" || screen === "chain-menu") {
+      if (!livePhase(chain.phase)) chain.discard();
+    }
+    setScreen("hub");
   }
 
   function playCareer() {
@@ -499,22 +535,44 @@ export default function App() {
   const scoredMilestone = scoredLive && scored.result === "placed"
     ? scoredMilestoneBanner(scoredBefore, scored.streak)
     : "";
-  const milestone = (classicLive && game.result === "correct" ? milestoneBanner(game.streak) : "") || scoredMilestone;
+  const classicMilestone = classicLive && game.result === "correct" ? milestoneBanner(game.streak) : "";
+  const careerMilestone = screen === "career" && career.phase === "revealing" && career.result === "correct"
+    ? streakMarkBanner(career.streak)
+    : "";
+  const draftMilestone = screen === "draft" && draft.phase === "revealing" && draft.result === "correct"
+    ? streakMarkBanner(draft.streak)
+    : "";
+  const chainMilestone = screen === "chain" && chain.phase === "revealing" && chain.result === "correct"
+    ? streakMarkBanner(chain.streak)
+    : "";
+  const milestone = classicMilestone || careerMilestone || draftMilestone || chainMilestone || scoredMilestone;
+  const dismissMilestoneRef = useRef(() => {});
+  dismissMilestoneRef.current = () => {
+    if (classicMilestone) advanceClassic();
+    else if (careerMilestone) advanceCareer();
+    else if (draftMilestone) advanceDraft();
+    else if (chainMilestone) advanceChain();
+    else if (scoredMilestone) advanceScored();
+  };
 
   return (
     <div className="court">
       <Analytics />
       {wrongFlash ? <div className="wrong-flash" aria-hidden="true" /> : null}
       {milestone ? (
-        <div className="milestone" role="status">
-          <p>{milestone}</p>
-        </div>
+        <MilestoneCover message={milestone} onDone={() => dismissMilestoneRef.current()} />
       ) : null}
       <header className="topbar">
-        <p className="brand">
+        <button
+          type="button"
+          className={`brand ${screen === "hub" ? "is-home" : ""}`}
+          onClick={goHome}
+          aria-current={screen === "hub" ? "page" : undefined}
+          aria-label={screen === "hub" ? undefined : "Back to all games"}
+        >
           <img className="brand-mark" src="/basketball.png" alt="" width="22" height="22" />
           NBA Mini Games
-        </p>
+        </button>
         {careerDailyLive ? (
           <p className="scoreboard">
             {careerDaily.practice ? <span>Practice</span> : null}
@@ -717,6 +775,10 @@ export default function App() {
           <p className="scoreboard">
             <span>Pick a game</span>
           </p>
+        ) : screen === "pk" ? (
+          <p className="scoreboard">
+            <span>Live 1 vs 1</span>
+          </p>
         ) : draftLive ? (
           <p className="scoreboard">
             <span>
@@ -765,7 +827,12 @@ export default function App() {
             onDraftPick={() => openDraftLobby("pick")}
             onScored={() => setScreen("scored-menu")}
             onChain={() => setScreen("chain-menu")}
+            onPk={() => setScreen("pk")}
           />
+        ) : null}
+
+        {screen === "pk" ? (
+          <PkGame onLeave={() => setScreen("hub")} leaveRef={pkLeaveRef} />
         ) : null}
 
         {screen === "chain-menu" ? (
@@ -1361,7 +1428,7 @@ export default function App() {
           />
         ) : null}
 
-        {screen === "scored" || screen === "scored-menu" || screen === "scored-awards" || screen === "scored-daily" || screen === "scored-daily-awards" ? null : (
+        {screen === "pk" || screen === "scored" || screen === "scored-menu" || screen === "scored-awards" || screen === "scored-daily" || screen === "scored-daily-awards" ? null : (
           <p className="snapshot">
             {dataDisclaimer()}
             <span className="snapshot-seasons">{dataSeasonLine()}</span>

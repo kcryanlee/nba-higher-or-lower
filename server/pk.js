@@ -12,8 +12,11 @@ import {
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 const MAX_ROOMS = 300;
 
-export function cleanName(value) {
-  const name = String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 16);
+function cleanName(value) {
+  const name = [...String(value ?? "")].filter((char) => {
+    const code = char.charCodeAt(0);
+    return code > 31 && code !== 127;
+  }).join("").trim().slice(0, 16);
   return name || "Player";
 }
 
