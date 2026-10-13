@@ -8,6 +8,18 @@ function higherId(matchup) {
   return left[category.id] > right[category.id] ? left.id : right.id;
 }
 
+function verdictLabel(result) {
+  if (result === "wrong") return "Wrong";
+  if (result === "push") return "Tie";
+  return "Correct";
+}
+
+function verdictTone(result) {
+  if (result === "wrong") return "is-miss";
+  if (result === "push") return "is-tie";
+  return "is-right";
+}
+
 export default function Board({
   matchup,
   phase,
@@ -15,7 +27,6 @@ export default function Board({
   result,
   unlockedBadges,
   callout,
-  holdMs,
   onPick,
   onAdvance,
   onMenu,
@@ -67,12 +78,17 @@ export default function Board({
         />
       </div>
       {phase === "revealing" ? (
-        <RevealBar
-          unlockedBadges={unlockedBadges}
-          callout={callout}
-          holdMs={holdMs}
-          onAdvance={onAdvance}
-        />
+        <div className="result-step" role="status">
+          <p className={`reveal-title ${verdictTone(result)}`}>{verdictLabel(result)}</p>
+          <RevealBar
+            unlockedBadges={unlockedBadges}
+            callout={callout}
+            autoAdvance={false}
+          />
+          <button type="button" className="action rank-lock" onClick={onAdvance}>
+            Continue
+          </button>
+        </div>
       ) : null}
       <div className="career-links">
         {onDaily ? (

@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { formatYears } from "../game/careerPath.js";
-import { BADGE_REVEAL_MS, REVEAL_MS } from "../game/feedback.js";
 import { teamLogoUrl } from "../game/teams.js";
 import EndActions from "./EndActions.jsx";
 import PlayerSearch from "./PlayerSearch.jsx";
@@ -40,19 +39,6 @@ export default function CareerGame({
   menuLabel = "All Games",
   unlockedBadges = [],
 }) {
-  const onAdvanceRef = useRef(onAdvance);
-
-  useEffect(() => {
-    onAdvanceRef.current = onAdvance;
-  });
-
-  useEffect(() => {
-    if (phase !== "revealing") return undefined;
-    const hold = unlockedBadges.length ? BADGE_REVEAL_MS : REVEAL_MS;
-    const timer = window.setTimeout(() => onAdvanceRef.current(), hold);
-    return () => window.clearTimeout(timer);
-  }, [phase, question, unlockedBadges.length]);
-
   if (phase === "gameover") {
     return (
       <section className="panel game-over">
@@ -106,18 +92,21 @@ export default function CareerGame({
         onSubmit={onPick}
       />
       {revealing ? (
-        <p className={`reveal-title ${result === "correct" ? "is-right" : "is-miss"}`}>
-          {result === "correct" ? "Correct" : "Wrong"}
-        </p>
-      ) : null}
-      {revealing ? <p className="career-player">{question.player}</p> : null}
-      {revealing
-        ? unlockedBadges.map((badge) => (
+        <div className="result-step" role="status">
+          <p className={`reveal-title ${result === "correct" ? "is-right" : "is-miss"}`}>
+            {result === "correct" ? "Correct" : "Wrong"}
+          </p>
+          <p className="career-player">{question.player}</p>
+          {unlockedBadges.map((badge) => (
             <p key={badge.id} className="unlock">
               Badge unlocked · {badge.name}
             </p>
-          ))
-        : null}
+          ))}
+          <button type="button" className="action rank-lock" onClick={onAdvance}>
+            Continue
+          </button>
+        </div>
+      ) : null}
       <div className="career-links">
         {onDaily ? (
           <button type="button" className="lobby-link" onClick={onDaily}>

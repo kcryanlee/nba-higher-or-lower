@@ -28,7 +28,7 @@ import { SCORED_BADGES, scoredBadgeProgress } from "./game/scoredBadges.js";
 import { SCORED_DAILY_KEY, buildScoredDaily } from "./game/scoredDaily.js";
 import { SCORED_DAILY_TOTAL, readScoredDailyRecord } from "./game/scoredDailyRecord.js";
 import { SCORED_REVEAL_MS, scoredMilestoneBanner, scoredStreakCallout } from "./game/scored.js";
-import { BADGE_REVEAL_MS, MILESTONE_MS, REVEAL_MS, milestoneBanner, streakCallout } from "./game/feedback.js";
+import { BADGE_REVEAL_MS, MILESTONE_MS, milestoneBanner, streakCallout } from "./game/feedback.js";
 import {
   CAREER_DAILY_BADGE_KEY,
   CHAIN_DAILY_BADGE_KEY,
@@ -1326,7 +1326,6 @@ export default function App() {
             result={game.result}
             unlockedBadges={badges.fresh}
             callout={game.result === "correct" ? streakCallout(game.streak) : ""}
-            holdMs={badges.fresh.length ? BADGE_REVEAL_MS : milestone ? MILESTONE_MS : REVEAL_MS}
             onPick={game.pick}
             onAdvance={advanceClassic}
             onMenu={leaveClassic}
@@ -1353,7 +1352,6 @@ export default function App() {
             pickedId={daily.pickedId}
             result={daily.result}
             unlockedBadges={badges.fresh}
-            holdMs={badges.fresh.length ? BADGE_REVEAL_MS : REVEAL_MS}
             onPick={daily.pick}
             onAdvance={advanceDaily}
             onMenu={leaveDaily}

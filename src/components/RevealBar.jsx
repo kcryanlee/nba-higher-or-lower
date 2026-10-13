@@ -6,6 +6,7 @@ export default function RevealBar({
   unlockedBadges = [],
   callout = "",
   holdMs = REVEAL_MS,
+  autoAdvance = true,
 }) {
   const onAdvanceRef = useRef(onAdvance);
 
@@ -14,9 +15,10 @@ export default function RevealBar({
   });
 
   useEffect(() => {
+    if (!autoAdvance) return undefined;
     const timer = window.setTimeout(() => onAdvanceRef.current(), holdMs);
     return () => window.clearTimeout(timer);
-  }, [holdMs]);
+  }, [autoAdvance, holdMs]);
 
   if (!callout && unlockedBadges.length === 0) return null;
 

@@ -700,6 +700,18 @@ main {
   color: #ff8b98;
 }
 
+.reveal-title.is-tie {
+  color: #ffb15a;
+}
+
+.result-step {
+  text-align: center;
+}
+
+.result-step .reveal-title {
+  margin: 12px 0 0;
+}
+
 .awards {
   margin-top: 18px;
 }
@@ -1551,6 +1563,63 @@ h1.section-title {
     height: auto;
     aspect-ratio: auto;
   }
+
+  .court:has(.board .result-step) {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .court:has(.board .result-step) main {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .court:has(.board .result-step) .snapshot {
+    flex: none;
+  }
+
+  .board:has(.result-step) {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding-bottom: 2px;
+  }
+
+  .board:has(.result-step) .prompt,
+  .board:has(.result-step) .versus,
+  .board:has(.result-step) .player-copy,
+  .board:has(.result-step) .higher-label,
+  .board:has(.result-step) .result-step,
+  .board:has(.result-step) .career-links {
+    flex: none;
+  }
+
+  .board:has(.result-step) .cards {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .board:has(.result-step) .player-card {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .board:has(.result-step) .photo-frame {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    height: auto;
+    aspect-ratio: auto;
+  }
 }
 
 @media (max-width: 520px) {
@@ -1963,6 +2032,7 @@ h1.section-title {
   .board .versus,
   .board .player-copy,
   .board .higher-label,
+  .board .result-step,
   .board .board-notes,
   .board .rank-lock,
   .board .career-links {
@@ -2013,8 +2083,10 @@ h1.section-title {
   .career-board .career-position,
   .career-board .player-search,
   .career-choices,
+  .career-board .result-step,
   .career-board .reveal-title,
   .career-board .unlock,
+  .career-board .rank-lock,
   .career-links {
     flex: none;
   }
