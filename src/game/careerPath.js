@@ -219,6 +219,55 @@ export function selectCareerQuestion(streak, options = {}) {
   return selectCareerQuestionForBand(careerBand(streak).id, options);
 }
 
+function integerIds(ids) {
+  return Array.isArray(ids) ? ids.filter((id) => Number.isInteger(id)) : [];
+}
+
+function careerKeyId(key) {
+  const id = Number(String(key).split(":")[0]);
+  return Number.isInteger(id) ? id : null;
+}
+
+export function continueCareerQuestion(streak, {
+  usedIds = [],
+  usedKeys = [],
+  avoidId = null,
+  random = Math.random,
+} = {}) {
+  const band = careerBand(streak);
+  const pool = poolFor(band.id);
+  if (pool.length === 0) return null;
+
+  const ids = integerIds(usedIds);
+  const keys = Array.isArray(usedKeys) ? usedKeys.filter((key) => typeof key === "string" && key) : [];
+  const poolIds = new Set(pool.map((career) => career.id));
+  const used = new Set(ids);
+  const unused = pool.filter((career) => !used.has(career.id));
+  let selectionIds = ids;
+  let baseIds = ids;
+  let baseKeys = keys;
+  let cycled = false;
+
+  if (unused.length === 0) {
+    cycled = true;
+    const lastId = Number.isInteger(avoidId) ? avoidId : ids.at(-1);
+    const blockLast = Number.isInteger(lastId) && poolIds.has(lastId) && pool.length > 1;
+    baseIds = ids.filter((id) => !poolIds.has(id));
+    baseKeys = keys.filter((key) => !poolIds.has(careerKeyId(key)));
+    selectionIds = blockLast ? [...baseIds, lastId] : baseIds;
+  }
+
+  let question = selectCareerQuestion(streak, { usedIds: selectionIds, usedKeys: baseKeys, random });
+  if (!question && cycled && selectionIds.length > baseIds.length) {
+    question = selectCareerQuestion(streak, { usedIds: baseIds, usedKeys: baseKeys, random });
+  }
+  if (!question) return null;
+
+  const nextIds = baseIds.includes(question.answerId) ? baseIds : [...baseIds, question.answerId];
+  const nextKeys = baseKeys.includes(question.key) ? baseKeys : [...baseKeys, question.key];
+  return { question, usedIds: nextIds, usedKeys: nextKeys, cycled };
+}
+
 export function formatYears(stop) {
   const end = String(stop.end).slice(2);
   return `${stop.start}–${end}`;

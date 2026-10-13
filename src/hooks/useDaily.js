@@ -8,6 +8,7 @@ import {
   dailyRunStatus,
   formatDailyDate,
   monthCompletionCount,
+  continueDaily,
   noteOfficialAnswer,
   readDailyRecord,
   todayKey,
@@ -120,7 +121,8 @@ export function useDaily(players, { onAnswer, onOfficial } = {}) {
     }
 
     const run = !nextPractice && saved.active?.date === runDate ? saved.active : null;
-    locked.current = false;
+    const revealing = Boolean(run && run.phase === "revealing");
+    locked.current = revealing;
     practiceRef.current = Boolean(nextPractice);
     setPuzzleDate(runDate);
     setPractice(Boolean(nextPractice));
@@ -128,10 +130,10 @@ export function useDaily(players, { onAnswer, onOfficial } = {}) {
     setCorrectCount(run ? run.correct : 0);
     setScore(run ? run.score : 0);
     setHighestId(run ? run.highestId : null);
-    setPickedId(null);
-    setResult(null);
+    setPickedId(revealing ? run.pickedId : null);
+    setResult(revealing ? run.result : null);
     setAttempt(null);
-    setPhase("playing");
+    setPhase(revealing ? "revealing" : "playing");
   }
 
   function leave() {
@@ -167,6 +169,8 @@ export function useDaily(players, { onAnswer, onOfficial } = {}) {
           highestId: nextHighest,
           total: questions.length,
           difficulty: nextHighest ? BANDS[nextHighest].label : "None",
+          pickedId: playerId,
+          result: outcome === "push" ? "push" : outcome,
         });
         accepted = noted.accepted;
         if (accepted) {
@@ -209,48 +213,76 @@ export function useDaily(players, { onAnswer, onOfficial } = {}) {
     if (phase !== "revealing" || !locked.current) return;
     locked.current = false;
 
-    if (index + 1 < (questions?.length ?? 0)) {
-      setIndex((current) => current + 1);
+    if (practiceRef.current) {
+      if (index + 1 < (questions?.length ?? 0)) {
+        setIndex((current) => current + 1);
+        setPickedId(null);
+        setResult(null);
+        setPhase("playing");
+        return;
+      }
+      setAttempt(present({
+        correct: correctCount,
+        total: questions?.length ?? DAILY_LENGTH,
+        score,
+        difficulty: highestId ? BANDS[highestId].label : "None",
+      }, recordRef.current, true));
+      setPhase("results");
+      return;
+    }
+
+    let saved = recordRef.current;
+    if (saved.active?.date !== date || saved.active?.phase !== "revealing") {
+      try {
+        const noted = noteOfficialAnswer(saved, {
+          date,
+          index,
+          correct: correctCount,
+          score,
+          highestId,
+          total: questions?.length ?? DAILY_LENGTH,
+          difficulty: highestId ? BANDS[highestId].label : "None",
+          pickedId,
+          result,
+        });
+        if (noted.accepted) {
+          saved = noted.record;
+          recordRef.current = saved;
+          setRecord(saved);
+          writeDailyRecord(saved);
+        }
+      } catch {
+        // The saved reveal is enough when storage already recorded the answer.
+      }
+    }
+
+    const stepped = continueDaily(saved);
+    if (!stepped.advanced) {
+      locked.current = true;
+      return;
+    }
+    saved = stepped.record;
+    recordRef.current = saved;
+    setRecord(saved);
+    writeDailyRecord(saved);
+
+    if (!stepped.finished) {
+      setIndex(saved.active.index);
+      setCorrectCount(saved.active.correct);
+      setScore(saved.active.score);
+      setHighestId(saved.active.highestId);
       setPickedId(null);
       setResult(null);
       setPhase("playing");
       return;
     }
 
-    const finished = {
+    const day = saved.days[date] ?? {
       correct: correctCount,
       total: questions?.length ?? DAILY_LENGTH,
       score,
       difficulty: highestId ? BANDS[highestId].label : "None",
     };
-
-    if (practiceRef.current) {
-      setAttempt(present(finished, recordRef.current, true));
-      setPhase("results");
-      return;
-    }
-
-    const saved = recordRef.current.days[date]
-      ? recordRef.current
-      : {
-          ...noteOfficialAnswer(recordRef.current, {
-            date,
-            index,
-            correct: correctCount,
-            score,
-            highestId,
-            total: questions.length,
-            difficulty: finished.difficulty,
-          }).record,
-          active: null,
-        };
-    if (!recordRef.current.days[date]) {
-      recordRef.current = saved;
-      setRecord(saved);
-      writeDailyRecord(saved);
-    }
-
-    const day = saved.days[date] ?? finished;
     setAttempt(present(day, saved, false));
     setPhase("results");
     reportOfficial(saved);

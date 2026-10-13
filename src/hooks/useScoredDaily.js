@@ -5,6 +5,7 @@ import { positionCredit } from "../game/scored.js";
 import {
   SCORED_DAILY_QUESTIONS,
   SCORED_DAILY_TOTAL,
+  continueScoredDaily,
   noteScoredDailyAnswer,
   readScoredDailyRecord,
   scoredDailyBest,
@@ -128,12 +129,17 @@ export function useScoredDaily({ storageKey, questionsFor, onComplete } = {}) {
       return;
     }
     const run = !nextPractice && saved.active?.date === runDate ? saved.active : null;
+    const revealing = Boolean(run && run.phase === "revealing" && Array.isArray(run.picks));
+    locked.current = revealing;
     practiceRef.current = Boolean(nextPractice);
     setPractice(Boolean(nextPractice));
     setIndex(run ? run.index : 0);
     setCorrectCount(run ? run.correct : 0);
+    setPicks(revealing ? run.picks : []);
+    setCredit(revealing ? run.credit : null);
+    setResult(revealing ? run.result : null);
     setAttempt(null);
-    setPhase("playing");
+    setPhase(revealing ? "revealing" : "playing");
   }
 
   function leave() {
@@ -179,6 +185,9 @@ export function useScoredDaily({ storageKey, questionsFor, onComplete } = {}) {
         index,
         correct: nextCorrect,
         total: SCORED_DAILY_TOTAL,
+        picks: chosen,
+        credit: gained,
+        result: gained > 0 ? "placed" : "miss",
       });
     } catch {
       noted = null;
@@ -203,18 +212,16 @@ export function useScoredDaily({ storageKey, questionsFor, onComplete } = {}) {
     if (phase !== "revealing" || !locked.current) return;
     locked.current = false;
 
-    if (index + 1 < SCORED_DAILY_QUESTIONS) {
-      setIndex((current) => current + 1);
-      setPicks([]);
-      setCredit(null);
-      setResult(null);
-      setPhase("playing");
-      return;
-    }
-
     if (practiceRef.current) {
-      const saved = recordRef.current;
-      setAttempt(present(saved, date, {
+      if (index + 1 < SCORED_DAILY_QUESTIONS) {
+        setIndex((current) => current + 1);
+        setPicks([]);
+        setCredit(null);
+        setResult(null);
+        setPhase("playing");
+        return;
+      }
+      setAttempt(present(recordRef.current, date, {
         correct: correctCount,
         total: SCORED_DAILY_TOTAL,
         practice: true,
@@ -223,18 +230,24 @@ export function useScoredDaily({ storageKey, questionsFor, onComplete } = {}) {
       return;
     }
 
-    let saved = recordRef.current;
-    if (!saved.days[date]) {
-      const noted = noteScoredDailyAnswer(saved, {
-        date,
-        index,
-        correct: correctCount,
-        total: SCORED_DAILY_TOTAL,
-      });
-      saved = noted.record;
-      recordRef.current = saved;
-      setRecord(saved);
-      writeScoredDailyRecord(storageKey, saved);
+    const stepped = continueScoredDaily(recordRef.current);
+    if (!stepped.advanced) {
+      locked.current = true;
+      return;
+    }
+    const saved = stepped.record;
+    recordRef.current = saved;
+    setRecord(saved);
+    writeScoredDailyRecord(storageKey, saved);
+
+    if (!stepped.finished) {
+      setIndex(saved.active.index);
+      setCorrectCount(saved.active.correct);
+      setPicks([]);
+      setCredit(null);
+      setResult(null);
+      setPhase("playing");
+      return;
     }
     finish(saved, date);
   }

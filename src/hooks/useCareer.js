@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { clearActiveRun, restoreCareerRun, restoreParkedCareerRun, writeActiveRun } from "../game/activeRun.js";
 import { CAREER_BEST_KEY } from "../game/careerBadges.js";
-import { selectCareerQuestion } from "../game/careerPath.js";
+import { continueCareerQuestion } from "../game/careerPath.js";
 import { playerNamesMatch } from "../game/playerSearch.js";
 import { playBuzzer } from "../game/feedback.js";
 import { readStoredNumber, writeStorage } from "../game/storage.js";
@@ -49,15 +49,19 @@ export function useCareer({ onCorrect } = {}) {
     }
   }, [phase, streak, question, picked, result, usedIds, usedKeys]);
 
-  function deal(nextStreak, ids, keys) {
-    const next = selectCareerQuestion(nextStreak, { usedIds: ids, usedKeys: keys });
+  function deal(nextStreak, ids, keys, avoidId = null) {
+    const next = continueCareerQuestion(nextStreak, {
+      usedIds: ids,
+      usedKeys: keys,
+      avoidId,
+    });
     if (!next) {
       setPhase("gameover");
       return;
     }
-    setUsedIds(ids.includes(next.answerId) ? ids : [...ids, next.answerId]);
-    setUsedKeys(keys.includes(next.key) ? keys : [...keys, next.key]);
-    setQuestion(next);
+    setUsedIds(next.usedIds);
+    setUsedKeys(next.usedKeys);
+    setQuestion(next.question);
     setPicked(null);
     setResult(null);
     locked.current = false;
@@ -66,7 +70,7 @@ export function useCareer({ onCorrect } = {}) {
 
   function start() {
     locked.current = false;
-    const next = selectCareerQuestion(0, { usedIds: [], usedKeys: [] });
+    const next = continueCareerQuestion(0, { usedIds: [], usedKeys: [] });
     setStreak(0);
     setPicked(null);
     setResult(null);
@@ -77,9 +81,9 @@ export function useCareer({ onCorrect } = {}) {
       setPhase("idle");
       return;
     }
-    setUsedIds([next.answerId]);
-    setUsedKeys([next.key]);
-    setQuestion(next);
+    setUsedIds(next.usedIds);
+    setUsedKeys(next.usedKeys);
+    setQuestion(next.question);
     setPhase("playing");
   }
 
@@ -144,7 +148,7 @@ export function useCareer({ onCorrect } = {}) {
     if (phase !== "revealing" || !locked.current) return;
     locked.current = false;
     if (result === "correct") {
-      deal(streak, usedIds, usedKeys);
+      deal(streak, usedIds, usedKeys, question?.answerId);
       return;
     }
     setPhase("gameover");

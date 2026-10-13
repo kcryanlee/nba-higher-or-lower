@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { clearActiveRun, restoreDraftRun, restoreParkedDraftRun, writeActiveRun } from "../game/activeRun.js";
-import { DRAFT_BEST_KEYS, selectDraftQuestion } from "../game/draft.js";
+import { DRAFT_BEST_KEYS, continueDraftQuestion } from "../game/draft.js";
 import { playBuzzer } from "../game/feedback.js";
 import { readStoredNumber, writeStorage } from "../game/storage.js";
 
@@ -49,8 +49,8 @@ export function useDraft(players, { onCorrect } = {}) {
     }
   }, [phase, mode, streak, question, guess, result, usedIds]);
 
-  function deal(nextMode, ids) {
-    const next = selectDraftQuestion(players, nextMode, ids);
+  function deal(nextMode, ids, avoidId = null) {
+    const next = continueDraftQuestion(players, nextMode, ids, { avoidId });
     setGuess(null);
     setResult(null);
     locked.current = false;
@@ -58,14 +58,14 @@ export function useDraft(players, { onCorrect } = {}) {
       setPhase("cleared");
       return;
     }
-    setUsedIds(ids.includes(next.id) ? ids : [...ids, next.id]);
-    setQuestion(next);
+    setUsedIds(next.usedIds);
+    setQuestion(next.question);
     setPhase("playing");
   }
 
   function start(nextMode) {
     if (nextMode !== "year" && nextMode !== "pick") return false;
-    const next = selectDraftQuestion(players, nextMode, []);
+    const next = continueDraftQuestion(players, nextMode, []);
     locked.current = false;
     setMode(nextMode);
     setBest(bestFor(nextMode));
@@ -78,8 +78,8 @@ export function useDraft(players, { onCorrect } = {}) {
       setPhase("idle");
       return false;
     }
-    setUsedIds([next.id]);
-    setQuestion(next);
+    setUsedIds(next.usedIds);
+    setQuestion(next.question);
     setPhase("playing");
     return true;
   }
@@ -143,7 +143,7 @@ export function useDraft(players, { onCorrect } = {}) {
     if (phase !== "revealing" || !locked.current) return;
     locked.current = false;
     if (result === "correct") {
-      deal(mode, usedIds);
+      deal(mode, usedIds, question?.id);
       return;
     }
     setPhase("gameover");

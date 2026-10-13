@@ -29,20 +29,61 @@ function readDay(value) {
   return { correct, total: QUIZ_DAILY_LENGTH };
 }
 
-function readActive(value, days) {
-  if (!value || typeof value !== "object") return null;
-  if (typeof value.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.date)) return null;
-  if (days[value.date]) return null;
-  const index = Math.floor(Number(value.index));
-  if (!Number.isInteger(index) || index <= 0 || index >= QUIZ_DAILY_LENGTH) return null;
-  const correct = wholeCount(value.correct, index);
-  if (correct == null) return null;
+function readChoice(value) {
+  if (typeof value === "string" && value.trim()) return value;
+  if (typeof value === "number" && Number.isInteger(value)) return value;
+  return null;
+}
+
+function playingQuiz(value, index, correct) {
   return {
     date: value.date,
     index,
     correct,
     credited: index,
+    phase: "playing",
+    choice: null,
+    result: null,
   };
+}
+
+function readActive(value, days) {
+  if (!value || typeof value !== "object") return null;
+  if (typeof value.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.date)) return null;
+  if (days[value.date]) return null;
+  const index = Math.floor(Number(value.index));
+  if (!Number.isInteger(index) || index < 0 || index >= QUIZ_DAILY_LENGTH) return null;
+
+  const choice = readChoice(value.choice);
+  const revealing = value.phase === "revealing"
+    && (value.result === "correct" || value.result === "wrong")
+    && choice != null;
+  if (revealing) {
+    const correct = wholeCount(value.correct, index + 1);
+    if (correct == null) return null;
+    return {
+      date: value.date,
+      index,
+      correct,
+      credited: index + 1,
+      phase: "revealing",
+      choice,
+      result: value.result,
+    };
+  }
+
+  if (value.phase === "revealing") {
+    const next = index + 1;
+    if (next <= 0 || next >= QUIZ_DAILY_LENGTH) return null;
+    const correct = wholeCount(value.correct, next);
+    if (correct == null) return null;
+    return playingQuiz(value, next, correct);
+  }
+
+  if (index <= 0) return null;
+  const correct = wholeCount(value.correct, index);
+  if (correct == null) return null;
+  return playingQuiz(value, index, correct);
 }
 
 export function nextDateKey(dateKey) {
@@ -171,26 +212,55 @@ export function noteQuizAnswer(record, attempt) {
 
   const active = record.active?.date === attempt.date
     ? record.active
-    : { date: attempt.date, index: 0, correct: 0, credited: 0 };
+    : { date: attempt.date, index: 0, correct: 0, credited: 0, phase: "playing" };
 
   const index = Math.floor(Number(attempt.index));
   const correct = Math.floor(Number(attempt.correct));
-  if (index !== active.index || !Number.isInteger(correct)) {
+  if (active.phase === "revealing" || index !== active.index || !Number.isInteger(correct)) {
     return { record, accepted: false, finished: false };
   }
   if (correct < active.correct || correct > active.correct + 1 || correct > QUIZ_DAILY_LENGTH) {
     return { record, accepted: false, finished: false };
   }
+  const choice = readChoice(attempt.choice);
+  if ((attempt.result !== "correct" && attempt.result !== "wrong") || choice == null) {
+    return { record, accepted: false, finished: false };
+  }
 
-  const nextIndex = index + 1;
+  return {
+    record: {
+      ...record,
+      version: 1,
+      active: {
+        date: attempt.date,
+        index,
+        correct,
+        credited: index + 1,
+        phase: "revealing",
+        choice,
+        result: attempt.result,
+      },
+    },
+    accepted: true,
+    finished: false,
+  };
+}
+
+export function continueQuiz(record) {
+  const active = record?.active;
+  if (!active || active.phase !== "revealing") {
+    return { record, advanced: false, finished: false };
+  }
+
+  const nextIndex = active.index + 1;
   if (nextIndex >= QUIZ_DAILY_LENGTH) {
     return {
       record: commitQuizResult(record, {
-        date: attempt.date,
-        correct,
+        date: active.date,
+        correct: active.correct,
         total: QUIZ_DAILY_LENGTH,
       }),
-      accepted: true,
+      advanced: true,
       finished: true,
     };
   }
@@ -200,13 +270,16 @@ export function noteQuizAnswer(record, attempt) {
       ...record,
       version: 1,
       active: {
-        date: attempt.date,
+        date: active.date,
         index: nextIndex,
-        correct,
+        correct: active.correct,
         credited: nextIndex,
+        phase: "playing",
+        choice: null,
+        result: null,
       },
     },
-    accepted: true,
+    advanced: true,
     finished: false,
   };
 }

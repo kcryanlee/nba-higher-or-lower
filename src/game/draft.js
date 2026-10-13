@@ -153,3 +153,38 @@ export function selectDraftQuestion(players, mode, usedIds = [], random = Math.r
   }
   return null;
 }
+
+export function continueDraftQuestion(players, mode, usedIds = [], {
+  avoidId = null,
+  random = Math.random,
+  now = new Date(),
+} = {}) {
+  if (mode !== "year" && mode !== "pick") return null;
+  const ids = Array.isArray(usedIds) ? usedIds.filter((id) => Number.isInteger(id)) : [];
+  const pool = draftPool(players, mode, now);
+  if (pool.length === 0) return null;
+
+  const used = new Set(ids);
+  const unused = pool.filter((player) => !used.has(player.id));
+  let selectionIds = ids;
+  let baseIds = ids;
+  let cycled = false;
+
+  if (unused.length === 0) {
+    cycled = true;
+    const lastId = Number.isInteger(avoidId) ? avoidId : ids.at(-1);
+    const lastInPool = Number.isInteger(lastId) && pool.some((player) => player.id === lastId);
+    const otherExists = pool.some((player) => player.id !== lastId);
+    selectionIds = lastInPool && otherExists ? [lastId] : [];
+    baseIds = [];
+  }
+
+  let question = selectDraftQuestion(players, mode, selectionIds, random, now);
+  if (!question && cycled && selectionIds.length > 0) {
+    question = selectDraftQuestion(players, mode, [], random, now);
+  }
+  if (!question) return null;
+
+  const nextIds = baseIds.includes(question.id) ? baseIds : [...baseIds, question.id];
+  return { question, usedIds: nextIds, cycled };
+}

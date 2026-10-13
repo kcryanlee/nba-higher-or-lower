@@ -32,21 +32,69 @@ function readDay(value) {
   return { correct, total: SCORED_DAILY_TOTAL };
 }
 
-function readActive(value, days) {
-  if (!value || typeof value !== "object") return null;
-  if (typeof value.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.date)) return null;
-  if (days[value.date]) return null;
-  const index = Math.floor(Number(value.index));
-  if (!Number.isInteger(index) || index <= 0 || index >= SCORED_DAILY_QUESTIONS) return null;
-  if (Math.floor(Number(value.credited)) !== index) return null;
-  const correct = wholeCount(value.correct, index * SCORED_PERFECT_CREDIT);
-  if (correct == null) return null;
+function readPicks(value) {
+  if (!Array.isArray(value) || value.length !== 3) return null;
+  const picks = [];
+  for (const id of value) {
+    if (!Number.isInteger(id) || picks.includes(id)) return null;
+    picks.push(id);
+  }
+  return picks;
+}
+
+function playingScored(value, index, correct) {
   return {
     date: value.date,
     index,
     correct,
     credited: index,
+    phase: "playing",
+    picks: null,
+    credit: null,
+    result: null,
   };
+}
+
+function readActive(value, days) {
+  if (!value || typeof value !== "object") return null;
+  if (typeof value.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.date)) return null;
+  if (days[value.date]) return null;
+  const index = Math.floor(Number(value.index));
+  if (!Number.isInteger(index) || index < 0 || index >= SCORED_DAILY_QUESTIONS) return null;
+
+  const picks = readPicks(value.picks);
+  const credit = wholeCount(value.credit, SCORED_PERFECT_CREDIT);
+  const revealing = value.phase === "revealing"
+    && picks
+    && credit != null
+    && ((value.result === "placed" && credit > 0) || (value.result === "miss" && credit === 0));
+  if (revealing) {
+    const correct = wholeCount(value.correct, (index + 1) * SCORED_PERFECT_CREDIT);
+    if (correct == null) return null;
+    return {
+      date: value.date,
+      index,
+      correct,
+      credited: index + 1,
+      phase: "revealing",
+      picks,
+      credit,
+      result: value.result,
+    };
+  }
+
+  if (value.phase === "revealing") {
+    const next = index + 1;
+    if (next <= 0 || next >= SCORED_DAILY_QUESTIONS) return null;
+    const correct = wholeCount(value.correct, next * SCORED_PERFECT_CREDIT);
+    if (correct == null) return null;
+    return playingScored(value, next, correct);
+  }
+
+  if (index <= 0 || Math.floor(Number(value.credited)) !== index) return null;
+  const correct = wholeCount(value.correct, index * SCORED_PERFECT_CREDIT);
+  if (correct == null) return null;
+  return playingScored(value, index, correct);
 }
 
 export function readScoredDailyRecord(key) {
@@ -136,27 +184,58 @@ export function noteScoredDailyAnswer(record, attempt) {
 
   const active = record.active?.date === attempt.date
     ? record.active
-    : { date: attempt.date, index: 0, correct: 0, credited: 0 };
+    : { date: attempt.date, index: 0, correct: 0, credited: 0, phase: "playing" };
 
   const index = Math.floor(Number(attempt.index));
   const correct = Math.floor(Number(attempt.correct));
-  if (index !== active.index || !Number.isInteger(correct)) {
+  if (active.phase === "revealing" || index !== active.index || !Number.isInteger(correct)) {
     return { record, accepted: false, finished: false };
   }
   const gained = correct - active.correct;
-  if (gained < 0 || gained > SCORED_PERFECT_CREDIT || correct > SCORED_DAILY_TOTAL) {
+  const credit = Math.floor(Number(attempt.credit));
+  const picks = readPicks(attempt.picks);
+  if (gained < 0 || gained > SCORED_PERFECT_CREDIT || correct > SCORED_DAILY_TOTAL || credit !== gained || !picks) {
+    return { record, accepted: false, finished: false };
+  }
+  if ((gained > 0 && attempt.result !== "placed") || (gained === 0 && attempt.result !== "miss")) {
     return { record, accepted: false, finished: false };
   }
 
-  const nextIndex = index + 1;
+  return {
+    record: {
+      ...record,
+      version: RECORD_VERSION,
+      active: {
+        date: attempt.date,
+        index,
+        correct,
+        credited: index + 1,
+        phase: "revealing",
+        picks,
+        credit,
+        result: attempt.result,
+      },
+    },
+    accepted: true,
+    finished: false,
+  };
+}
+
+export function continueScoredDaily(record) {
+  const active = record?.active;
+  if (!active || active.phase !== "revealing") {
+    return { record, advanced: false, finished: false };
+  }
+
+  const nextIndex = active.index + 1;
   if (nextIndex >= SCORED_DAILY_QUESTIONS) {
     return {
       record: commitDay(record, {
-        date: attempt.date,
-        correct,
+        date: active.date,
+        correct: active.correct,
         total: SCORED_DAILY_TOTAL,
       }),
-      accepted: true,
+      advanced: true,
       finished: true,
     };
   }
@@ -166,13 +245,17 @@ export function noteScoredDailyAnswer(record, attempt) {
       ...record,
       version: RECORD_VERSION,
       active: {
-        date: attempt.date,
+        date: active.date,
         index: nextIndex,
-        correct,
+        correct: active.correct,
         credited: nextIndex,
+        phase: "playing",
+        picks: null,
+        credit: null,
+        result: null,
       },
     },
-    accepted: true,
+    advanced: true,
     finished: false,
   };
 }

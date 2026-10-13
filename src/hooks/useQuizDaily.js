@@ -3,6 +3,7 @@ import { accuracyFor, formatDailyDate, todayKey } from "../game/daily.js";
 import { playBuzzer } from "../game/feedback.js";
 import {
   activeQuizStreak,
+  continueQuiz,
   noteQuizAnswer,
   QUIZ_DAILY_LENGTH,
   quizBestCorrect,
@@ -117,12 +118,16 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount
       return;
     }
     const run = !nextPractice && saved.active?.date === runDate ? saved.active : null;
+    const revealing = Boolean(run && run.phase === "revealing");
+    locked.current = revealing;
     practiceRef.current = Boolean(nextPractice);
     setPractice(Boolean(nextPractice));
     setIndex(run ? run.index : 0);
     setCorrectCount(run ? run.correct : 0);
+    setChoice(revealing ? run.choice : null);
+    setResult(revealing ? run.result : null);
     setAttempt(null);
-    setPhase("playing");
+    setPhase(revealing ? "revealing" : "playing");
   }
 
   function leave() {
@@ -164,6 +169,8 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount
         index,
         correct: nextCorrect,
         total: QUIZ_DAILY_LENGTH,
+        choice: nextChoice,
+        result: correct ? "correct" : "wrong",
       });
     } catch {
       noted = null;
@@ -188,17 +195,15 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount
     if (phase !== "revealing" || !locked.current) return;
     locked.current = false;
 
-    if (index + 1 < QUIZ_DAILY_LENGTH) {
-      setIndex((current) => current + 1);
-      setChoice(null);
-      setResult(null);
-      setPhase("playing");
-      return;
-    }
-
     if (practiceRef.current) {
-      const saved = recordRef.current;
-      setAttempt(present(saved, date, {
+      if (index + 1 < QUIZ_DAILY_LENGTH) {
+        setIndex((current) => current + 1);
+        setChoice(null);
+        setResult(null);
+        setPhase("playing");
+        return;
+      }
+      setAttempt(present(recordRef.current, date, {
         correct: correctCount,
         total: QUIZ_DAILY_LENGTH,
         practice: true,
@@ -207,18 +212,23 @@ export function useQuizDaily({ storageKey, questionsFor, onComplete, choiceCount
       return;
     }
 
-    let saved = recordRef.current;
-    if (!saved.days[date]) {
-      const noted = noteQuizAnswer(saved, {
-        date,
-        index,
-        correct: correctCount,
-        total: QUIZ_DAILY_LENGTH,
-      });
-      saved = noted.record;
-      recordRef.current = saved;
-      setRecord(saved);
-      writeQuizDailyRecord(storageKey, saved);
+    const stepped = continueQuiz(recordRef.current);
+    if (!stepped.advanced) {
+      locked.current = true;
+      return;
+    }
+    const saved = stepped.record;
+    recordRef.current = saved;
+    setRecord(saved);
+    writeQuizDailyRecord(storageKey, saved);
+
+    if (!stepped.finished) {
+      setIndex(saved.active.index);
+      setCorrectCount(saved.active.correct);
+      setChoice(null);
+      setResult(null);
+      setPhase("playing");
+      return;
     }
     finish(saved, date);
   }

@@ -181,22 +181,59 @@ function readDay(value) {
   };
 }
 
-function readActive(value, days) {
-  if (!value || typeof value !== "object") return null;
-  if (typeof value.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.date)) return null;
-  if (days[value.date]) return null;
-  const index = Math.floor(Number(value.index));
-  if (!Number.isInteger(index) || index <= 0 || index >= DAILY_LENGTH) return null;
-  const credited = Math.floor(Number(value.credited));
-  const safeCredited = Number.isInteger(credited) && credited > 0 ? Math.min(credited, DAILY_LENGTH) : 0;
+function readReveal(value) {
+  if (value.phase !== "revealing") return null;
+  if (value.result !== "correct" && value.result !== "wrong" && value.result !== "push") return null;
+  const pickedId = Math.floor(Number(value.pickedId));
+  if (!Number.isInteger(pickedId)) return null;
+  return { pickedId, result: value.result };
+}
+
+function playingActive(value, index, credited) {
   return {
     date: value.date,
     index,
     correct: whole(value.correct),
     score: whole(value.score),
     highestId: BAND_IDS.has(value.highestId) ? value.highestId : null,
-    credited: Math.max(safeCredited, index),
+    credited,
+    phase: "playing",
+    pickedId: null,
+    result: null,
   };
+}
+
+function readActive(value, days) {
+  if (!value || typeof value !== "object") return null;
+  if (typeof value.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value.date)) return null;
+  if (days[value.date]) return null;
+  const index = Math.floor(Number(value.index));
+  if (!Number.isInteger(index) || index < 0 || index >= DAILY_LENGTH) return null;
+  const credited = Math.floor(Number(value.credited));
+  const safeCredited = Number.isInteger(credited) && credited > 0 ? Math.min(credited, DAILY_LENGTH) : 0;
+  const reveal = readReveal(value);
+
+  if (value.phase === "revealing") {
+    if (reveal) {
+      return {
+        date: value.date,
+        index,
+        correct: whole(value.correct),
+        score: whole(value.score),
+        highestId: BAND_IDS.has(value.highestId) ? value.highestId : null,
+        credited: Math.max(safeCredited, index + 1),
+        phase: "revealing",
+        pickedId: reveal.pickedId,
+        result: reveal.result,
+      };
+    }
+    const next = index + 1;
+    if (next <= 0 || next >= DAILY_LENGTH) return null;
+    return playingActive(value, next, Math.max(safeCredited, next));
+  }
+
+  if (index <= 0) return null;
+  return playingActive(value, index, Math.max(safeCredited, index));
 }
 
 export function readDailyRecord() {
@@ -291,6 +328,10 @@ export function commitOfficialResult(record, attempt) {
   };
 }
 
+function difficultyLabel(highestId) {
+  return BANDS[highestId]?.label || "None";
+}
+
 export function noteOfficialAnswer(record, attempt) {
   if (record.days[attempt.date]) {
     const locked = record.active?.date === attempt.date ? { ...record, active: null } : record;
@@ -299,23 +340,16 @@ export function noteOfficialAnswer(record, attempt) {
 
   const active = record.active?.date === attempt.date
     ? record.active
-    : { date: attempt.date, index: 0, correct: 0, score: 0, highestId: null, credited: 0 };
+    : { date: attempt.date, index: 0, correct: 0, score: 0, highestId: null, credited: 0, phase: "playing" };
 
-  if (attempt.index !== active.index || attempt.index < active.credited) {
+  if (active.phase === "revealing" || attempt.index !== active.index || attempt.index < active.credited) {
     return { record, accepted: false, finished: false };
   }
-
-  const nextIndex = attempt.index + 1;
-  if (nextIndex >= attempt.total) {
-    const finished = commitOfficialResult(record, {
-      date: attempt.date,
-      correct: attempt.correct,
-      total: attempt.total,
-      score: attempt.score,
-      difficulty: attempt.difficulty,
-    });
-    return { record: { ...finished, active: null }, accepted: true, finished: true };
+  if (attempt.result !== "correct" && attempt.result !== "wrong" && attempt.result !== "push") {
+    return { record, accepted: false, finished: false };
   }
+  const pickedId = Math.floor(Number(attempt.pickedId));
+  if (!Number.isInteger(pickedId)) return { record, accepted: false, finished: false };
 
   return {
     record: {
@@ -323,14 +357,56 @@ export function noteOfficialAnswer(record, attempt) {
       version: 3,
       active: {
         date: attempt.date,
-        index: nextIndex,
+        index: attempt.index,
         correct: attempt.correct,
         score: attempt.score,
-        highestId: attempt.highestId ?? null,
-        credited: nextIndex,
+        highestId: BAND_IDS.has(attempt.highestId) ? attempt.highestId : null,
+        credited: attempt.index + 1,
+        phase: "revealing",
+        pickedId,
+        result: attempt.result,
       },
     },
     accepted: true,
+    finished: false,
+  };
+}
+
+export function continueDaily(record) {
+  const active = record?.active;
+  if (!active || active.phase !== "revealing") {
+    return { record, advanced: false, finished: false };
+  }
+
+  const nextIndex = active.index + 1;
+  if (nextIndex >= DAILY_LENGTH) {
+    const finished = commitOfficialResult(record, {
+      date: active.date,
+      correct: active.correct,
+      total: DAILY_LENGTH,
+      score: active.score,
+      difficulty: difficultyLabel(active.highestId),
+    });
+    return { record: finished, advanced: true, finished: true };
+  }
+
+  return {
+    record: {
+      ...record,
+      version: 3,
+      active: {
+        date: active.date,
+        index: nextIndex,
+        correct: active.correct,
+        score: active.score,
+        highestId: active.highestId ?? null,
+        credited: Math.max(active.credited, nextIndex),
+        phase: "playing",
+        pickedId: null,
+        result: null,
+      },
+    },
+    advanced: true,
     finished: false,
   };
 }

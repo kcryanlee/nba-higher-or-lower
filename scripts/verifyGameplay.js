@@ -7,6 +7,7 @@ import {
   activeDailyStreak,
   buildDaily,
   commitOfficialResult,
+  continueDaily,
   dailyRunStatus,
   emptyDailyRecord,
   noteOfficialAnswer,
@@ -21,12 +22,12 @@ import { pairKey, selectMatchup } from "../src/game/selectMatchup.js";
 import { BADGES, applyAnswer, emptyBadgeState } from "../src/game/badges.js";
 import { readJsonStorage, readStoredNumber, writeStorage } from "../src/game/storage.js";
 import { players, careerPlayers } from "../src/data/players.js";
-import { careerPlayerAccepted, eligibleCareers, selectCareerQuestion } from "../src/game/careerPath.js";
+import { careerPlayerAccepted, continueCareerQuestion, eligibleCareers, selectCareerQuestion } from "../src/game/careerPath.js";
 import { playerNamesMatch, searchPlayers } from "../src/game/playerSearch.js";
 import { officialTeamName, searchTeams, teamMatches } from "../src/game/teams.js";
 import { collectPairs } from "../src/game/selectMatchup.js";
 import { clearActiveRun, focusRun, openingScreen, readActiveRun, readRunSlot, resetRunFocus, restoreCareerRun, restoreChainRun, restoreClassicRun, restoreDraftRun, restoreParkedDraftRun, restoreScoredRun, writeActiveRun } from "../src/game/activeRun.js";
-import { DRAFT_BEST_KEYS, draftPool, ordinal, parseDraftAnswer, selectDraftQuestion, usableDraftYear } from "../src/game/draft.js";
+import { DRAFT_BEST_KEYS, continueDraftQuestion, draftPool, ordinal, parseDraftAnswer, selectDraftQuestion, usableDraftYear } from "../src/game/draft.js";
 import { DRAFT_BADGE_KEYS, DRAFT_BADGES, applyDraftStreak, readDraftBadges } from "../src/game/draftBadges.js";
 import { CAREER_BEST_KEY, readCareerBadges } from "../src/game/careerBadges.js";
 import { CAREER_DAILY_KEY, buildCareerDaily } from "../src/game/careerDaily.js";
@@ -49,6 +50,7 @@ import {
   QUIZ_DAILY_LENGTH,
   activeQuizStreak,
   commitQuizResult,
+  continueQuiz,
   emptyQuizDailyRecord,
   longestConsecutive,
   nextDateKey,
@@ -64,6 +66,7 @@ import { SCORED_DAILY_KEY, buildScoredDaily } from "../src/game/scoredDaily.js";
 import {
   SCORED_DAILY_TOTAL,
   emptyScoredDailyRecord,
+  continueScoredDaily,
   noteScoredDailyAnswer,
   readScoredDailyRecord,
   writeScoredDailyRecord,
@@ -122,7 +125,7 @@ function player(id, value) {
 }
 
 function answer(record, index, correct) {
-  return noteOfficialAnswer(record, {
+  const noted = noteOfficialAnswer(record, {
     date: "2026-10-09",
     index,
     correct,
@@ -130,7 +133,12 @@ function answer(record, index, correct) {
     highestId: correct ? "easy" : null,
     total: DAILY_LENGTH,
     difficulty: correct ? "Easy" : "None",
+    pickedId: 1000 + index,
+    result: correct > (record.active?.correct ?? 0) ? "correct" : "wrong",
   });
+  if (!noted.accepted) return noted;
+  const stepped = continueDaily(noted.record);
+  return { record: stepped.record, accepted: true, finished: stepped.finished };
 }
 
 const early = new Date(2026, 9, 9, 0, 30, 0);
@@ -256,6 +264,139 @@ const restored = readDailyRecord();
 assert.equal(restored.days["2026-10-09"].correct, 0);
 assert.equal(restored.days["2026-10-09"].total, 15);
 assert.equal(dailyRunStatus(restored, "2026-10-09"), "complete");
+
+const heldCorrect = noteOfficialAnswer(emptyDailyRecord(), {
+  date: "2026-10-09",
+  index: 0,
+  correct: 1,
+  score: 2,
+  highestId: "easy",
+  total: DAILY_LENGTH,
+  difficulty: "Easy",
+  pickedId: 42,
+  result: "correct",
+});
+assert.equal(heldCorrect.accepted, true);
+assert.equal(heldCorrect.finished, false);
+assert.equal(heldCorrect.record.active.phase, "revealing");
+assert.equal(heldCorrect.record.active.index, 0);
+assert.equal(heldCorrect.record.active.pickedId, 42);
+assert.equal(heldCorrect.record.active.result, "correct");
+assert.equal(heldCorrect.record.active.score, 2);
+assert.equal(heldCorrect.record.active.correct, 1);
+assert.equal(heldCorrect.record.days["2026-10-09"], undefined);
+const replayHeld = noteOfficialAnswer(heldCorrect.record, {
+  date: "2026-10-09",
+  index: 0,
+  correct: 2,
+  score: 9,
+  highestId: "easy",
+  total: DAILY_LENGTH,
+  difficulty: "Easy",
+  pickedId: 42,
+  result: "correct",
+});
+assert.equal(replayHeld.accepted, false);
+assert.equal(replayHeld.record.active.score, 2);
+assert.equal(replayHeld.record.active.correct, 1);
+store.clear();
+writeDailyRecord(heldCorrect.record);
+writeActiveRun({
+  game: "classic",
+  phase: "playing",
+  streak: 4,
+  pickedId: null,
+  result: null,
+  categoryId: "ppg",
+  leftId: players[0].id,
+  rightId: players[1].id,
+  key: "ppg:test",
+});
+const resumedHold = readDailyRecord();
+assert.equal(resumedHold.active.phase, "revealing");
+assert.equal(resumedHold.active.index, 0);
+assert.equal(resumedHold.active.pickedId, 42);
+assert.equal(resumedHold.active.result, "correct");
+assert.equal(resumedHold.active.score, 2);
+assert.equal(readActiveRun().game, "classic");
+assert.equal(readActiveRun().streak, 4);
+const heldWrong = noteOfficialAnswer(emptyDailyRecord(), {
+  date: "2026-10-09",
+  index: 0,
+  correct: 0,
+  score: 0,
+  highestId: null,
+  total: DAILY_LENGTH,
+  difficulty: "None",
+  pickedId: 77,
+  result: "wrong",
+});
+assert.equal(heldWrong.record.active.result, "wrong");
+assert.equal(heldWrong.record.active.pickedId, 77);
+assert.equal(heldWrong.record.days["2026-10-09"], undefined);
+writeDailyRecord(heldWrong.record);
+assert.equal(readDailyRecord().active.result, "wrong");
+assert.equal(readDailyRecord().active.score, 0);
+const afterWrong = continueDaily(heldWrong.record);
+assert.equal(afterWrong.finished, false);
+assert.equal(afterWrong.record.active.index, 1);
+assert.equal(afterWrong.record.active.phase, "playing");
+assert.equal(afterWrong.record.active.correct, 0);
+const legacyDaily = {
+  version: 3,
+  lastCompleted: "",
+  streak: 2,
+  days: {},
+  completedDates: [],
+  bestCorrect: 0,
+  bestTotal: DAILY_LENGTH,
+  active: {
+    date: "2026-10-09",
+    index: 4,
+    correct: 2,
+    score: 3,
+    highestId: "easy",
+    credited: 4,
+  },
+};
+writeDailyRecord(legacyDaily);
+const legacyRead = readDailyRecord();
+assert.equal(legacyRead.active.index, 4);
+assert.equal(legacyRead.active.phase, "playing");
+assert.equal(legacyRead.active.correct, 2);
+assert.equal(legacyRead.active.score, 3);
+assert.equal(legacyRead.streak, 2);
+assert.equal(legacyRead.days["2026-10-09"], undefined);
+let finalDaily = emptyDailyRecord();
+for (let index = 0; index < DAILY_LENGTH; index += 1) {
+  const noted = noteOfficialAnswer(finalDaily, {
+    date: "2026-10-09",
+    index,
+    correct: index === DAILY_LENGTH - 1 ? 4 : index,
+    score: index + 1,
+    highestId: "medium",
+    total: DAILY_LENGTH,
+    difficulty: "Medium",
+    pickedId: 50 + index,
+    result: index === 1 ? "wrong" : "correct",
+  });
+  assert.equal(noted.accepted, true);
+  assert.equal(noted.finished, false);
+  assert.equal(noted.record.days["2026-10-09"], undefined);
+  assert.equal(noted.record.active.phase, "revealing");
+  assert.equal(noted.record.active.index, index);
+  assert.equal(noted.record.active.pickedId, 50 + index);
+  finalDaily = continueDaily(noted.record).record;
+}
+assert.equal(finalDaily.days["2026-10-09"].correct, 4);
+assert.equal(finalDaily.days["2026-10-09"].total, DAILY_LENGTH);
+assert.equal(finalDaily.active, null);
+assert.equal(finalDaily.completedDates.filter((date) => date === "2026-10-09").length, 1);
+const finalAgain = continueDaily(finalDaily);
+assert.equal(finalAgain.advanced, false);
+assert.equal(finalAgain.record.days["2026-10-09"].correct, 4);
+assert.equal(finalAgain.record.completedDates.filter((date) => date === "2026-10-09").length, 1);
+store.clear();
 
 store.set("nba-hol-daily", "{");
 assert.equal(dailyRunStatus(readDailyRecord(), "2026-10-09"), "new");
@@ -415,6 +556,111 @@ assert.equal(seenDraft.length, draftPool(players, "pick").length);
 assert.equal(selectDraftQuestion(players, "pick", seenDraft), null);
 assert.equal(selectDraftQuestion(players, "year", draftPool(players, "year").map((player) => player.id)), null);
 
+for (const mode of ["year", "pick"]) {
+  const poolSize = draftPool(players, mode).length;
+  const random = mulberry32(mode === "year" ? 5 : 9);
+  let ids = [];
+  let previous = null;
+  let seen = new Set();
+  let best = 0;
+  for (let streak = 0; streak < poolSize + 3; streak += 1) {
+    const step = continueDraftQuestion(players, mode, ids, { avoidId: previous, random });
+    assert.ok(step, `${mode} continues at ${streak}`);
+    assert.equal(step.question.mode, mode);
+    assert.equal(step.question.choices.length, 4);
+    assert.equal(new Set(step.question.choices).size, 4);
+    assert.ok(step.question.choices.includes(step.question.answer));
+    if (step.cycled) {
+      assert.equal(seen.size, poolSize, `${mode} cycle`);
+      assert.notEqual(step.question.id, previous);
+      seen = new Set();
+    }
+    assert.equal(seen.has(step.question.id), false, `${mode} repeats ${step.question.id}`);
+    seen.add(step.question.id);
+    best = streak + 1;
+    previous = step.question.id;
+    ids = step.usedIds;
+  }
+  assert.equal(best, poolSize + 3);
+  assert.ok(seen.size > 1);
+}
+
+const yearBoundary = (() => {
+  const poolSize = draftPool(players, "year").length;
+  const random = mulberry32(21);
+  let ids = [];
+  let previous = null;
+  let step = null;
+  for (let streak = 0; streak < poolSize; streak += 1) {
+    step = continueDraftQuestion(players, "year", ids, { avoidId: previous, random });
+    previous = step.question.id;
+    ids = step.usedIds;
+  }
+  return { ids, previous, step, poolSize };
+})();
+assert.equal(yearBoundary.ids.length, yearBoundary.poolSize);
+assert.equal(selectDraftQuestion(players, "year", yearBoundary.ids), null);
+store.clear();
+writeActiveRun({
+  game: "draft",
+  mode: "year",
+  phase: "revealing",
+  streak: yearBoundary.poolSize,
+  guess: yearBoundary.step.question.answer,
+  result: "correct",
+  playerId: yearBoundary.previous,
+  choices: yearBoundary.step.question.choices,
+  usedIds: yearBoundary.ids,
+});
+const parkedBoundary = restoreParkedDraftRun(players, "year");
+assert.equal(parkedBoundary.phase, "revealing");
+assert.equal(parkedBoundary.streak, yearBoundary.poolSize);
+assert.equal(parkedBoundary.question.id, yearBoundary.previous);
+assert.equal(parkedBoundary.result, "correct");
+assert.equal(parkedBoundary.guess, yearBoundary.step.question.answer);
+assert.deepEqual(parkedBoundary.usedIds, yearBoundary.ids);
+const nextCycle = continueDraftQuestion(players, "year", parkedBoundary.usedIds, {
+  avoidId: parkedBoundary.question.id,
+  random: mulberry32(22),
+});
+assert.equal(nextCycle.cycled, true);
+assert.notEqual(nextCycle.question.id, parkedBoundary.question.id);
+assert.equal(nextCycle.question.choices.length, 4);
+assert.equal(new Set(nextCycle.question.choices).size, 4);
+assert.ok(nextCycle.question.choices.includes(nextCycle.question.answer));
+writeActiveRun({
+  game: "draft",
+  mode: "year",
+  phase: "playing",
+  streak: yearBoundary.poolSize,
+  guess: null,
+  result: null,
+  playerId: nextCycle.question.id,
+  choices: nextCycle.question.choices,
+  usedIds: nextCycle.usedIds,
+});
+const restoredCycle = restoreDraftRun(players);
+assert.equal(restoredCycle.streak, yearBoundary.poolSize);
+assert.equal(restoredCycle.question.id, nextCycle.question.id);
+assert.deepEqual(restoredCycle.usedIds, nextCycle.usedIds);
+writeStorage(DRAFT_BEST_KEYS.year, "12");
+assert.equal(readStoredNumber(DRAFT_BEST_KEYS.year), 12);
+assert.equal(restoredCycle.streak > 12, true);
+const solo = [{ id: 7, name: "Only", draftYear: 2011, draftPick: 9 }];
+let soloIds = [];
+let soloPrevious = null;
+for (let streak = 0; streak < 3; streak += 1) {
+  const step = continueDraftQuestion(solo, "year", soloIds, { avoidId: soloPrevious, random: () => 0 });
+  assert.equal(step.question.id, 7);
+  assert.equal(step.question.choices.length, 4);
+  assert.equal(new Set(step.question.choices).size, 4);
+  assert.ok(step.question.choices.includes(2011));
+  if (streak > 0) assert.equal(step.cycled, true);
+  soloPrevious = step.question.id;
+  soloIds = step.usedIds;
+}
+store.clear();
+
 store.clear();
 writeActiveRun({
   game: "classic",
@@ -489,8 +735,102 @@ assert.equal(careerStreak, careerRunLength);
 assert.equal(new Set(seenAnswers).size, seenAnswers.length);
 assert.equal(new Set(seenCareerKeys).size, seenCareerKeys.length);
 assert.equal(selectCareerQuestion(careerStreak, { usedIds: seenAnswers, usedKeys: seenCareerKeys }), null);
+const hardBoundary = continueCareerQuestion(careerStreak, {
+  usedIds: seenAnswers,
+  usedKeys: seenCareerKeys,
+  avoidId: seenAnswers.at(-1),
+  random: () => 0,
+});
+assert.equal(hardBoundary.cycled, true);
+assert.equal(hardBoundary.question.band.id, "hard");
+assert.equal(hardBoundary.question.answer, hardBoundary.question.player);
+assert.notEqual(hardBoundary.question.answerId, seenAnswers.at(-1));
+const hardIds = new Set(eligibleCareers("hard").map((career) => career.id));
+assert.equal(hardBoundary.usedIds.filter((id) => hardIds.has(id)).length, 1);
 
 const easyIds = eligibleCareers("easy").map((career) => career.id);
+const easyCycle = continueCareerQuestion(4, {
+  usedIds: easyIds,
+  avoidId: easyIds[0],
+  random: () => 0,
+});
+assert.equal(easyCycle.cycled, true);
+assert.equal(easyCycle.question.band.id, "easy");
+assert.notEqual(easyCycle.question.answerId, easyIds[0]);
+const mediumIds = eligibleCareers("medium").map((career) => career.id);
+const mediumCycle = continueCareerQuestion(10, {
+  usedIds: mediumIds,
+  avoidId: mediumIds[0],
+  random: () => 0,
+});
+assert.equal(mediumCycle.cycled, true);
+assert.equal(mediumCycle.question.band.id, "medium");
+assert.notEqual(mediumCycle.question.answerId, mediumIds[0]);
+const enteredMedium = continueCareerQuestion(6, { usedIds: easyIds, random: () => 0 });
+assert.equal(enteredMedium.cycled, false);
+assert.equal(enteredMedium.question.band.id, "medium");
+const enteredHard = continueCareerQuestion(16, { usedIds: [...easyIds, ...mediumIds], random: () => 0 });
+assert.equal(enteredHard.cycled, false);
+assert.equal(enteredHard.question.band.id, "hard");
+
+const careerRandom = mulberry32(11);
+let cycleIds = [];
+let cycleKeys = [];
+let cyclePrevious = null;
+let lastCareerStep = null;
+const cycleSeen = { easy: new Set(), medium: new Set(), hard: new Set() };
+const careerTarget = 6 + 10 + eligibleCareers("hard").length + 8;
+for (let streak = 0; streak < careerTarget; streak += 1) {
+  const step = continueCareerQuestion(streak, {
+    usedIds: cycleIds,
+    usedKeys: cycleKeys,
+    avoidId: cyclePrevious,
+    random: careerRandom,
+  });
+  assert.ok(step, `career continues at ${streak}`);
+  assert.equal(step.question.answer, step.question.player);
+  assert.equal(typeof step.question.stops[step.question.hiddenIndex].team, "string");
+  const band = streak >= 16 ? "hard" : streak >= 6 ? "medium" : "easy";
+  assert.equal(step.question.band.id, band);
+  if (step.cycled) {
+    assert.notEqual(step.question.answerId, cyclePrevious);
+    cycleSeen[band] = new Set([step.question.answerId]);
+  } else {
+    assert.equal(cycleSeen[band].has(step.question.answerId), false);
+    cycleSeen[band].add(step.question.answerId);
+  }
+  cyclePrevious = step.question.answerId;
+  cycleIds = step.usedIds;
+  cycleKeys = step.usedKeys;
+  lastCareerStep = step;
+}
+assert.ok(careerTarget > 46);
+store.clear();
+writeStorage(CAREER_BEST_KEY, "20");
+writeActiveRun({
+  game: "career",
+  phase: "playing",
+  streak: careerTarget,
+  picked: null,
+  result: null,
+  question: lastCareerStep.question,
+  usedIds: cycleIds,
+  usedKeys: cycleKeys,
+});
+const parkedCareer = restoreCareerRun();
+assert.equal(parkedCareer.streak, careerTarget);
+assert.equal(parkedCareer.phase, "playing");
+assert.deepEqual(parkedCareer.usedIds, cycleIds);
+assert.equal(readStoredNumber(CAREER_BEST_KEY), 20);
+const resumedCareer = continueCareerQuestion(parkedCareer.streak, {
+  usedIds: parkedCareer.usedIds,
+  usedKeys: parkedCareer.usedKeys,
+  avoidId: parkedCareer.question.answerId,
+  random: () => 0.2,
+});
+assert.ok(resumedCareer);
+assert.equal(parkedCareer.usedIds.includes(resumedCareer.question.answerId), false);
+store.clear();
 assert.equal(selectCareerQuestion(0, { usedIds: easyIds }), null);
 const repeated = selectCareerQuestion(0, { usedIds: [easyIds[0]] });
 assert.ok(repeated);
@@ -659,37 +999,116 @@ assert.ok(draftPickDaily.every((question) => question.mode === "pick"));
 let quizRecord = emptyQuizDailyRecord();
 assert.equal(quizRunStatus(quizRecord, careerDailyDate), "new");
 assert.equal(noteQuizAnswer(quizRecord, { date: careerDailyDate, index: 0, correct: 2, total: 5 }).accepted, false);
-const firstStep = noteQuizAnswer(quizRecord, { date: careerDailyDate, index: 0, correct: 1, total: 5 });
-assert.equal(firstStep.accepted, true);
+const revealedQuiz = noteQuizAnswer(quizRecord, {
+  date: careerDailyDate,
+  index: 0,
+  correct: 1,
+  total: 5,
+  choice: "Stephen Curry",
+  result: "correct",
+});
+assert.equal(revealedQuiz.accepted, true);
+assert.equal(revealedQuiz.finished, false);
+assert.equal(revealedQuiz.record.active.phase, "revealing");
+assert.equal(revealedQuiz.record.active.index, 0);
+assert.equal(revealedQuiz.record.active.choice, "Stephen Curry");
+assert.equal(revealedQuiz.record.active.result, "correct");
+assert.equal(revealedQuiz.record.active.correct, 1);
+assert.equal(revealedQuiz.record.days[careerDailyDate], undefined);
+assert.equal(noteQuizAnswer(revealedQuiz.record, {
+  date: careerDailyDate,
+  index: 0,
+  correct: 1,
+  total: 5,
+  choice: "Stephen Curry",
+  result: "correct",
+}).accepted, false);
+const wrongQuiz = noteQuizAnswer(emptyQuizDailyRecord(), {
+  date: careerDailyDate,
+  index: 0,
+  correct: 0,
+  total: 5,
+  choice: 2014,
+  result: "wrong",
+});
+assert.equal(wrongQuiz.record.active.result, "wrong");
+assert.equal(wrongQuiz.record.active.choice, 2014);
+assert.equal(wrongQuiz.record.active.index, 0);
+assert.equal(wrongQuiz.record.days[careerDailyDate], undefined);
+const firstStep = continueQuiz(revealedQuiz.record);
+assert.equal(firstStep.advanced, true);
 assert.equal(firstStep.finished, false);
 assert.equal(firstStep.record.active.index, 1);
+assert.equal(firstStep.record.active.phase, "playing");
 assert.equal(firstStep.record.active.correct, 1);
-assert.equal(noteQuizAnswer(firstStep.record, { date: careerDailyDate, index: 0, correct: 1, total: 5 }).accepted, false);
 quizRecord = firstStep.record;
 for (let index = 1; index < QUIZ_DAILY_LENGTH; index += 1) {
+  const correct = index === QUIZ_DAILY_LENGTH - 1 ? 4 : index;
   const noted = noteQuizAnswer(quizRecord, {
     date: careerDailyDate,
     index,
-    correct: index === QUIZ_DAILY_LENGTH - 1 ? 4 : index,
+    correct,
     total: 5,
+    choice: index,
+    result: correct > quizRecord.active.correct ? "correct" : "wrong",
   });
   assert.equal(noted.accepted, true);
-  quizRecord = noted.record;
+  assert.equal(noted.finished, false);
+  assert.equal(noted.record.days[careerDailyDate], undefined);
+  assert.equal(noted.record.active.phase, "revealing");
+  assert.equal(noted.record.active.index, index);
+  const stepped = continueQuiz(noted.record);
+  quizRecord = stepped.record;
 }
 assert.equal(quizRecord.days[careerDailyDate].correct, 4);
 assert.equal(quizRecord.days[careerDailyDate].total, 5);
 assert.equal(quizRecord.active, null);
 assert.equal(quizRunStatus(quizRecord, careerDailyDate), "complete");
-const lockedQuiz = noteQuizAnswer(quizRecord, { date: careerDailyDate, index: 0, correct: 5, total: 5 });
+assert.equal(quizRecord.completedDates.filter((date) => date === careerDailyDate).length, 1);
+const lockedQuiz = noteQuizAnswer(quizRecord, {
+  date: careerDailyDate,
+  index: 0,
+  correct: 5,
+  total: 5,
+  choice: "Stephen Curry",
+  result: "correct",
+});
 assert.equal(lockedQuiz.accepted, false);
 assert.equal(lockedQuiz.record.days[careerDailyDate].correct, 4);
+const quizAgain = continueQuiz(quizRecord);
+assert.equal(quizAgain.advanced, false);
+assert.equal(quizAgain.record.days[careerDailyDate].correct, 4);
 
 store.clear();
+assert.equal(writeQuizDailyRecord(CAREER_DAILY_KEY, revealedQuiz.record), true);
+const resumedReveal = readQuizDailyRecord(CAREER_DAILY_KEY);
+assert.equal(resumedReveal.active.phase, "revealing");
+assert.equal(resumedReveal.active.index, 0);
+assert.equal(resumedReveal.active.choice, "Stephen Curry");
+assert.equal(resumedReveal.active.result, "correct");
+assert.equal(resumedReveal.active.correct, 1);
+assert.equal(writeQuizDailyRecord(CAREER_DAILY_KEY, wrongQuiz.record), true);
+assert.equal(readQuizDailyRecord(CAREER_DAILY_KEY).active.result, "wrong");
+assert.equal(readQuizDailyRecord(CAREER_DAILY_KEY).active.choice, 2014);
 assert.equal(writeQuizDailyRecord(CAREER_DAILY_KEY, firstStep.record), true);
 const resumedQuiz = readQuizDailyRecord(CAREER_DAILY_KEY);
 assert.equal(resumedQuiz.active.index, 1);
+assert.equal(resumedQuiz.active.phase, "playing");
 assert.equal(resumedQuiz.active.correct, 1);
 assert.equal(quizRunStatus(resumedQuiz, careerDailyDate), "progress");
+writeQuizDailyRecord(CAREER_DAILY_KEY, {
+  version: 1,
+  lastCompleted: "",
+  streak: 0,
+  days: {},
+  completedDates: [],
+  active: { date: careerDailyDate, index: 2, correct: 1, credited: 2 },
+});
+const legacyQuiz = readQuizDailyRecord(CAREER_DAILY_KEY);
+assert.equal(legacyQuiz.active.index, 2);
+assert.equal(legacyQuiz.active.phase, "playing");
+assert.equal(legacyQuiz.active.correct, 1);
+assert.equal(legacyQuiz.days[careerDailyDate], undefined);
 assert.deepEqual(buildCareerDaily(careerDailyDate), careerDailyQuestions);
 failWrite = true;
 assert.equal(writeQuizDailyRecord(CAREER_DAILY_KEY, quizRecord), false);
@@ -1038,14 +1457,38 @@ let scoredNote = noteScoredDailyAnswer(scoredRecord, {
   index: 0,
   correct: 2,
   total: SCORED_DAILY_TOTAL,
+  picks: [11, 12, 13],
+  credit: 2,
+  result: "placed",
 });
 assert.equal(scoredNote.accepted, true);
+assert.equal(scoredNote.finished, false);
+assert.equal(scoredNote.record.active.phase, "revealing");
+assert.equal(scoredNote.record.active.index, 0);
 assert.equal(scoredNote.record.active.correct, 2);
+assert.deepEqual(scoredNote.record.active.picks, [11, 12, 13]);
+assert.equal(scoredNote.record.active.result, "placed");
+assert.equal(scoredNote.record.days["2026-10-11"], undefined);
+assert.equal(noteScoredDailyAnswer(scoredNote.record, {
+  date: "2026-10-11",
+  index: 0,
+  correct: 4,
+  total: SCORED_DAILY_TOTAL,
+  picks: [11, 12, 13],
+  credit: 2,
+  result: "placed",
+}).accepted, false);
+scoredNote = continueScoredDaily(scoredNote.record);
+assert.equal(scoredNote.record.active.index, 1);
+assert.equal(scoredNote.record.active.phase, "playing");
 scoredNote = noteScoredDailyAnswer(scoredNote.record, {
   date: "2026-10-11",
   index: 1,
   correct: 5,
   total: SCORED_DAILY_TOTAL,
+  picks: [11, 12, 13],
+  credit: 3,
+  result: "placed",
 });
 assert.equal(scoredNote.accepted, false);
 scoredRecord = noteScoredDailyAnswer(scoredNote.record, {
@@ -1053,17 +1496,31 @@ scoredRecord = noteScoredDailyAnswer(scoredNote.record, {
   index: 1,
   correct: 4,
   total: SCORED_DAILY_TOTAL,
+  picks: [21, 22, 23],
+  credit: 2,
+  result: "placed",
 }).record;
+assert.equal(scoredRecord.active.result, "placed");
+scoredRecord = continueScoredDaily(scoredRecord).record;
 for (let index = 2; index < QUIZ_DAILY_LENGTH; index += 1) {
-  scoredRecord = noteScoredDailyAnswer(scoredRecord, {
+  const noted = noteScoredDailyAnswer(scoredRecord, {
     date: "2026-10-11",
     index,
     correct: scoredRecord.active.correct + 2,
     total: SCORED_DAILY_TOTAL,
-  }).record;
+    picks: [31, 32, 33],
+    credit: 2,
+    result: "placed",
+  });
+  assert.equal(noted.accepted, true);
+  assert.equal(noted.finished, false);
+  assert.equal(noted.record.days["2026-10-11"], undefined);
+  scoredRecord = continueScoredDaily(noted.record).record;
 }
 assert.equal(scoredRecord.days["2026-10-11"].correct, 10);
 assert.equal(scoredRecord.days["2026-10-11"].total, 10);
+assert.equal(scoredRecord.active, null);
+assert.equal(continueScoredDaily(scoredRecord).advanced, false);
 writeScoredDailyRecord(SCORED_DAILY_KEY, { version: 1, days: { "2026-10-11": { correct: 5, total: 5 } }, completedDates: ["2026-10-11"] });
 assert.equal(readScoredDailyRecord(SCORED_DAILY_KEY).completedDates.length, 0);
 store.clear();
@@ -1350,12 +1807,21 @@ const chainNoted = noteQuizAnswer(chainRecord, {
   index: 0,
   correct: 1,
   total: QUIZ_DAILY_LENGTH,
+  choice: 44,
+  result: "correct",
 });
 assert.equal(chainNoted.accepted, true);
+assert.equal(chainNoted.record.active.phase, "revealing");
+assert.equal(chainNoted.record.active.index, 0);
+assert.equal(chainNoted.record.active.choice, 44);
 assert.equal(writeQuizDailyRecord(CHAIN_DAILY_KEY, chainNoted.record), true);
+assert.equal(readQuizDailyRecord(CHAIN_DAILY_KEY).active.result, "correct");
+chainRecord = continueQuiz(chainNoted.record).record;
+assert.equal(writeQuizDailyRecord(CHAIN_DAILY_KEY, chainRecord), true);
 chainRecord = readQuizDailyRecord(CHAIN_DAILY_KEY);
 assert.equal(chainRecord.active.date, chainDay);
 assert.equal(chainRecord.active.index, 1);
+assert.equal(chainRecord.active.phase, "playing");
 assert.equal(chainRecord.active.correct, 1);
 assert.equal(quizRunStatus(chainRecord, chainDay, true), "progress");
 
