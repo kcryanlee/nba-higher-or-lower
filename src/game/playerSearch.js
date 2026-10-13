@@ -29,17 +29,6 @@ export function playerNamesMatch(official, guess) {
   return left.length > 0 && left === right;
 }
 
-function suggestionDetail(player) {
-  const stops = player.careerTeams;
-  if (Array.isArray(stops) && stops.length > 0 && stops[0]?.start) {
-    const start = stops[0].start;
-    const end = stops[stops.length - 1]?.end;
-    if (end && end !== start) return `${start}–${end}`;
-    return String(start);
-  }
-  return typeof player.team === "string" ? player.team : "";
-}
-
 function matchRank(name, query) {
   const folded = foldPlayerName(name);
   if (!folded) return null;
@@ -61,6 +50,5 @@ export function searchPlayers(guess, source = roster) {
     .map((item) => ({
       id: item.player.id,
       name: item.player.name,
-      detail: suggestionDetail(item.player),
     }));
 }

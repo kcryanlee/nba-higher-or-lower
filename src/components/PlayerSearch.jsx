@@ -64,7 +64,7 @@ export default function PlayerSearch({ resetKey, disabled, onSubmit }) {
     const place = () => {
       const input = inputRef.current;
       if (!input) return;
-      const estimated = suggestions.length ? Math.min(280, suggestions.length * 58 + 16) : 52;
+      const estimated = suggestions.length ? Math.min(280, suggestions.length * 48 + 16) : 52;
       const contentHeight = Math.min(280, Math.max(48, menuRef.current?.scrollHeight || estimated));
       const next = menuBox(input, contentHeight);
       setBox((current) => (
@@ -159,7 +159,6 @@ export default function PlayerSearch({ resetKey, disabled, onSubmit }) {
             >
               <span className="player-search-copy">
                 <strong>{player.name}</strong>
-                {player.detail ? <small>{player.detail}</small> : null}
               </span>
               <span className="player-search-select">Select</span>
             </button>

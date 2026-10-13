@@ -499,12 +499,6 @@ main {
   white-space: nowrap;
 }
 
-.player-search-copy small {
-  color: #ffb15a;
-  font-family: "Oswald", Impact, sans-serif;
-  letter-spacing: 0.06em;
-}
-
 .player-search-option.is-active {
   background: rgba(255, 122, 26, 0.18);
 }
