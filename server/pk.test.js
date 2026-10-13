@@ -309,6 +309,56 @@ describe("live race rules", () => {
     assert.equal(latest(session.guestBox).phase, "countdown");
   });
 
+  test("the host's mode change reaches the other player before the race starts", () => {
+    const session = setup();
+    let current = "higher";
+    for (const mode of ["scored", "chain", "career", "draft-pick"]) {
+      session.lobby.command(session.guestId, { type: "mode", mode });
+      assert.equal(latest(session.hostBox).mode, current);
+      assert.equal(latest(session.guestBox).mode, current);
+      session.lobby.command(session.hostId, { type: "mode", mode });
+      assert.equal(latest(session.hostBox).mode, mode);
+      assert.equal(latest(session.guestBox).mode, mode);
+      current = mode;
+    }
+  });
+
+  test("who scored more and teammate chain use the same first-correct scoring", () => {
+    for (const mode of ["scored", "chain"]) {
+      let built = null;
+      const session = setup({
+        nextQuestion(room) {
+          built = buildQuestion(room);
+          return built;
+        },
+      });
+      session.lobby.command(session.hostId, { type: "mode", mode });
+      assert.equal(latest(session.guestBox).mode, mode);
+      readyUp(session);
+      const roundId = latest(session.hostBox).round.id;
+      assert.equal(latest(session.hostBox).round.question.kind, mode);
+      assert.deepEqual(latest(session.hostBox).round.question, latest(session.guestBox).round.question);
+      assert.equal(latest(session.hostBox).round.reveal, null);
+      const hidden = JSON.stringify(latest(session.hostBox).round.question);
+      assert.equal(hidden.includes('"pts"'), false);
+      assert.equal(hidden.includes("validIds"), false);
+
+      const wrong = mode === "scored"
+        ? [built.reveal.ranking[1], built.reveal.ranking[0], built.reveal.ranking[2]]
+        : built.public.choices.find((id) => !built.reveal.validIds.includes(id));
+      const right = mode === "scored" ? built.reveal.ranking : built.reveal.validIds[0];
+      session.lobby.command(session.hostId, { type: "answer", roundId, value: wrong });
+      assert.equal(latest(session.hostBox).phase, "question");
+      assert.equal(latest(session.hostBox).round.youLocked, true);
+      assert.equal(scores(session.hostBox)[session.hostId], 0);
+      session.lobby.command(session.guestId, { type: "answer", roundId, value: right });
+      assert.equal(latest(session.guestBox).round.winnerId, session.guestId);
+      assert.equal(scores(session.guestBox)[session.guestId], 1);
+      assert.equal(scores(session.guestBox)[session.hostId], 0);
+      assert.equal(latest(session.hostBox).round.reason, "correct");
+    }
+  });
+
   test("only the host can choose the mode, and only before the race starts", () => {
     const session = setup();
     session.lobby.command(session.guestId, { type: "mode", mode: "career" });
@@ -383,6 +433,44 @@ describe("question payloads", () => {
       const wrong = built.public.choices.find((choice) => choice !== built.reveal.answer);
       assert.equal(built.grade(wrong), false);
     }
+  });
+
+  test("who scored more hides point totals and accepts only the perfect order", () => {
+    const built = buildQuestion({ mode: "scored", roundIndex: 0, used: [], usedIds: [] });
+    assert.ok(built);
+    assert.equal(built.public.kind, "scored");
+    assert.equal(built.public.ranking, undefined);
+    assert.equal(built.public.players.length, 3);
+    for (const player of built.public.players) {
+      assert.equal(Object.hasOwn(player, "pts"), false);
+      assert.equal(Object.hasOwn(player, "points"), false);
+    }
+    assert.equal(JSON.stringify(built.public).includes('"pts"'), false);
+    assert.deepEqual(built.normalize(built.reveal.ranking), built.reveal.ranking);
+    assert.equal(built.grade(built.reveal.ranking), true);
+    const wrong = [built.reveal.ranking[1], built.reveal.ranking[0], built.reveal.ranking[2]];
+    assert.equal(built.grade(wrong), false);
+    assert.equal(built.normalize(wrong.slice(0, 2)), null);
+    assert.equal(built.normalize("not-an-order"), null);
+  });
+
+  test("teammate chain hides which choice links both careers", () => {
+    const built = buildQuestion({ mode: "chain", roundIndex: 0, used: [], usedIds: [] });
+    assert.ok(built);
+    assert.equal(built.public.kind, "chain");
+    assert.equal(built.public.validIds, undefined);
+    assert.equal(built.public.choices.length, 4);
+    assert.equal(JSON.stringify(built.public).includes("validIds"), false);
+    assert.ok(built.reveal.validIds.length >= 1);
+    for (const id of built.reveal.validIds) {
+      assert.equal(built.public.choices.includes(id), true);
+      assert.equal(built.grade(id), true);
+      assert.equal(built.normalize(id), id);
+    }
+    const wrong = built.public.choices.find((id) => !built.reveal.validIds.includes(id));
+    assert.equal(typeof wrong, "number");
+    assert.equal(built.grade(wrong), false);
+    assert.equal(built.normalize(999999), null);
   });
 });
 

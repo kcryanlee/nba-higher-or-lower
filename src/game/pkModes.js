@@ -27,10 +27,37 @@ export const PK_MODES = [
     detail: "Four choices. Name his overall pick.",
     group: "draft",
   },
+  {
+    id: "scored",
+    label: "Who Scored More?",
+    detail: "Three players from one game. Rank their points.",
+  },
+  {
+    id: "chain",
+    label: "Teammate Chain",
+    detail: "Find the player who links two careers.",
+  },
+];
+
+export const PK_LOBBY_GAMES = [
+  { id: "higher", mode: "higher", label: "Higher or Lower" },
+  { id: "career", mode: "career", label: "Career Path" },
+  { id: "draft", mode: "draft-year", label: "Draft Pick" },
+  { id: "scored", mode: "scored", label: "Who Scored More?" },
+  { id: "chain", mode: "chain", label: "Teammate Chain" },
 ];
 
 export function pkModeLabel(mode) {
   return PK_MODES.find((item) => item.id === mode)?.label ?? "1 vs 1";
+}
+
+export function pkModeDetail(mode) {
+  return PK_MODES.find((item) => item.id === mode)?.detail ?? "";
+}
+
+export function lobbyGameSelected(gameId, mode) {
+  if (gameId === "draft") return mode === "draft-year" || mode === "draft-pick";
+  return mode === gameId;
 }
 
 export function isPkMode(mode) {

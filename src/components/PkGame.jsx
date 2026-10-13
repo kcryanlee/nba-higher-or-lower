@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { approvedPlayerImage, playerImageUrl } from "../data/playerMedia.js";
 import { categoryById } from "../game/categories.js";
 import { formatYears } from "../game/careerPath.js";
+import { choiceName, connectionsFor } from "../game/chain.js";
 import { draftModeLabel, formatDraftChoice, formatDraftReveal } from "../game/draft.js";
 import { playBuzzer } from "../game/feedback.js";
-import { PK_QUESTION_MS, pkModeLabel } from "../game/pkModes.js";
+import { PK_LOBBY_GAMES, PK_QUESTION_MS, lobbyGameSelected, pkModeDetail, pkModeLabel } from "../game/pkModes.js";
 import { teamColors, teamLogoUrl } from "../game/teams.js";
 import { savedPkName, usePk } from "../hooks/usePk.js";
 import PlayerCard from "./PlayerCard.jsx";
@@ -41,6 +42,15 @@ function youAndOpponent(view) {
   return { you, opponent };
 }
 
+function namedPlayer(question, id) {
+  return question.players?.find((player) => player.id === id)?.name || "Unknown";
+}
+
+function scoredOrderText(question, ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return "No answer";
+  return ids.map((id, index) => `${index + 1}. ${namedPlayer(question, id)}`).join(", ");
+}
+
 function guessText(question, value) {
   if (value == null || value === "") return "No answer";
   if (question?.kind === "higher") {
@@ -48,6 +58,8 @@ function guessText(question, value) {
     if (value === question.right.id) return question.right.name;
   }
   if (question?.kind === "draft") return formatDraftChoice(question.mode, value);
+  if (question?.kind === "scored") return scoredOrderText(question, value);
+  if (question?.kind === "chain") return choiceName(question, value) || "No answer";
   return String(value);
 }
 
@@ -58,6 +70,17 @@ function answerLine(question, reveal) {
     return `Higher: ${winner}`;
   }
   if (question.kind === "career") return reveal.player;
+  if (question.kind === "scored") {
+    return (reveal.ranking || []).map((id, index) => {
+      const pts = reveal.scores?.find((item) => item.id === id)?.pts;
+      const stat = Number.isFinite(pts) ? ` (${pts} PTS)` : "";
+      return `${index + 1}. ${namedPlayer(question, id)}${stat}`;
+    }).join(", ");
+  }
+  if (question.kind === "chain") {
+    const names = (reveal.validIds || []).map((id) => choiceName(question, id)).filter(Boolean);
+    return names.length ? `${names.join(" or ")} links both careers.` : "";
+  }
   return formatDraftReveal(question.mode, reveal.answer);
 }
 
@@ -70,6 +93,12 @@ function resultLine(view) {
   }
   if (round.reason === "timeout") return "Time's up. No point.";
   return "No point. Both missed.";
+}
+
+function modeBlurb(mode) {
+  const label = pkModeLabel(mode);
+  const head = /[?.!]$/.test(label) ? label : `${label}.`;
+  return `${head} ${pkModeDetail(mode)} First correct answer scores. Wrong answers lock you out.`;
 }
 
 function linkText(link) {
@@ -224,6 +253,12 @@ function QuestionView({ view, rejectedRound, onAnswer }) {
       {question.kind === "draft" ? (
         <DraftQuestion question={question} reveal={reveal} phase={view.phase} picked={yourGuess} disabled={blocked} onPick={choose} />
       ) : null}
+      {question.kind === "scored" ? (
+        <ScoredQuestion question={question} reveal={reveal} phase={view.phase} picked={yourGuess} disabled={blocked} onSubmit={choose} />
+      ) : null}
+      {question.kind === "chain" ? (
+        <ChainQuestion question={question} reveal={reveal} phase={view.phase} picked={yourGuess} disabled={blocked} onPick={choose} />
+      ) : null}
       {view.phase === "reveal" ? (
         <div className="result-step" role="status">
           <p className={`reveal-title ${round.winnerId === view.you ? "is-right" : round.reason === "correct" ? "is-miss" : ""}`}>
@@ -354,6 +389,191 @@ function DraftQuestion({ question, reveal, phase, picked, disabled, onPick }) {
   );
 }
 
+const POINTS = {
+  id: "pts",
+  label: "Points",
+  format(value) {
+    return `${value} PTS`;
+  },
+};
+
+const RANK_LABELS = ["1st", "2nd", "3rd"];
+
+function toggleRank(current, playerId) {
+  const index = current.indexOf(playerId);
+  if (index >= 0) return current.slice(0, index);
+  if (current.length >= 3) return current;
+  return [...current, playerId];
+}
+
+function rankHelp(picks) {
+  if (picks.length === 0) return "Tap the most points, then the next, then the fewest.";
+  if (picks.length === 1) return "Now the next highest.";
+  if (picks.length === 2) return "Now the fewest points.";
+  return "Lock in this order, or tap a card to change it.";
+}
+
+function ScoredQuestion({ question, reveal, phase, picked, disabled, onSubmit }) {
+  const [picks, setPicks] = useState([]);
+  const showing = phase === "reveal" && reveal;
+  const guess = Array.isArray(picked) ? picked : picks;
+  const points = new Map((showing ? reveal.scores || [] : []).map((item) => [item.id, item.pts]));
+  const order = showing
+    ? (guess.length === question.players.length ? guess : reveal.ranking)
+    : null;
+  const shown = Array.isArray(order)
+    ? order.map((id) => question.players.find((player) => player.id === id)).filter(Boolean)
+    : question.players;
+  const players = shown.length === question.players.length ? shown : question.players;
+  const ranked = new Map((showing ? [] : picks).map((id, index) => [id, index]));
+
+  return (
+    <section className="board">
+      <div className="prompt">
+        <p className="band category-chip">
+          <span>{question.dateLabel}</span>
+          {question.band ? (
+            <>
+              <span className="score-dot" aria-hidden="true"> • </span>
+              <span>{question.band}</span>
+            </>
+          ) : null}
+        </p>
+        <h1>Rank the scoring</h1>
+        <p className="game-slate">
+          <span>
+            {question.away}
+            {" at "}
+            {question.home}
+          </span>
+        </p>
+        <p className="rank-rule">Only a perfect order scores. A wrong order locks you out.</p>
+        {showing ? null : <p className="rank-help">{rankHelp(picks)}</p>}
+      </div>
+      <div className="cards pk-rank" role="group" aria-label="Rank from most points to fewest">
+        {players.map((player, index) => {
+          const place = showing ? index : ranked.get(player.id);
+          const slotCorrect = Boolean(showing && reveal.ranking[index] === player.id);
+          return (
+            <PlayerCard
+              key={player.id}
+              player={{ ...player, pts: points.get(player.id) }}
+              category={POINTS}
+              revealed={Boolean(showing)}
+              picked={!showing && ranked.has(player.id)}
+              higher={slotCorrect}
+              rankLabel={Number.isInteger(place) ? RANK_LABELS[place] : ""}
+              verdictLabel={showing ? (slotCorrect ? "Right" : "Wrong") : undefined}
+              disabled={disabled || Boolean(showing)}
+              onSelect={(id) => setPicks((current) => toggleRank(current, id))}
+            />
+          );
+        })}
+      </div>
+      {showing || disabled || picks.length !== 3 ? null : (
+        <button type="button" className="action rank-lock" onClick={() => onSubmit(picks)} disabled={disabled}>
+          Lock in
+        </button>
+      )}
+    </section>
+  );
+}
+
+function ChainPhoto({ id, name }) {
+  const [failed, setFailed] = useState(false);
+  const src = playerImageUrl(id);
+  if (!src || failed) {
+    return <span className="chain-fallback" aria-hidden="true">{name.slice(0, 1)}</span>;
+  }
+  return <img src={src} alt="" onError={() => setFailed(true)} />;
+}
+
+function TeamMark({ team }) {
+  const [failed, setFailed] = useState(false);
+  const logo = teamLogoUrl(team);
+  if (!logo || failed) return null;
+  return <img src={logo} alt="" onError={() => setFailed(true)} />;
+}
+
+function ConnectionList({ connections }) {
+  return (
+    <ul className="chain-connections">
+      {connections.map((row) => (
+        <li key={row.targetId}>
+          <strong>{row.targetName}</strong>
+          {row.groups.length ? row.groups.map((group) => (
+            <span key={group.slug} className="chain-stint">
+              <TeamMark team={group.team} />
+              <span>{group.team}</span>
+              <span className="chain-seasons">{group.seasons.join(", ")}</span>
+            </span>
+          )) : <span className="chain-stint">No shared team</span>}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ChainQuestion({ question, reveal, phase, picked, disabled, onPick }) {
+  const showing = phase === "reveal" && reveal;
+  const validIds = new Set(showing ? reveal.validIds || [] : []);
+  const subjectId = showing
+    ? (validIds.has(picked) ? picked : reveal.validIds?.[0])
+    : null;
+  const subjectName = subjectId == null ? "" : choiceName(question, subjectId);
+  const connections = subjectId == null ? [] : connectionsFor(subjectId, question.targets);
+  const missed = showing && picked != null && !validIds.has(picked);
+
+  return (
+    <section className="panel chain-board">
+      <p className="band">Teammate Chain</p>
+      <h1 className="section-title">{question.prompt}</h1>
+      <p className="chain-hint">A link played with each of them, even on different teams or in different seasons.</p>
+      <div className="chain-targets">
+        {question.targets.map((target) => (
+          <article key={target.id} className="chain-target">
+            <ChainPhoto id={target.id} name={target.name} />
+            <h2>{target.name}</h2>
+          </article>
+        ))}
+      </div>
+      <div className="career-choices" role="group" aria-label={question.prompt}>
+        {question.choices.map((id) => {
+          const chosen = picked === id;
+          const correct = Boolean(showing && validIds.has(id));
+          const wrong = Boolean(showing && chosen && !validIds.has(id));
+          return (
+            <button
+              key={id}
+              type="button"
+              className={`action secondary career-choice ${correct ? "is-correct" : ""} ${wrong ? "is-wrong" : ""}`}
+              onClick={() => onPick(id)}
+              disabled={disabled}
+            >
+              {choiceName(question, id)}
+            </button>
+          );
+        })}
+      </div>
+      {showing && subjectName ? (
+        <div className="chain-reveal">
+          <p className="chain-subject">{subjectName} links both careers.</p>
+          <ConnectionList connections={connections} />
+          {missed ? (
+            <>
+              <p className="chain-subject">{choiceName(question, picked)} did not play with both.</p>
+              <ConnectionList connections={connectionsFor(picked, question.targets)} />
+            </>
+          ) : null}
+          {validIds.size > 1 ? (
+            <p className="chain-also">Every highlighted player shared a team and season with both.</p>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 function Gate({ name, setName, code, setCode, error, link, onCreate, onJoin, onLeave }) {
   return (
     <section className="panel start-screen lobby pk-gate">
@@ -418,28 +638,70 @@ function Lobby({ view, link, onMode, onReady, onLeave }) {
   const host = Boolean(you?.host);
   const draftOn = view.mode === "draft-year" || view.mode === "draft-pick";
   const [copied, setCopied] = useState(false);
+  const codeRef = useRef(null);
   let readyLabel = "Ready";
   if (!opponent) readyLabel = "Waiting for opponent";
   else if (!opponent.connected) readyLabel = "Opponent disconnected";
   else if (you?.ready) readyLabel = "Cancel ready";
 
+  useEffect(() => {
+    if (!copied) return undefined;
+    const timer = window.setTimeout(() => setCopied(false), 1600);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
+
   async function copyCode() {
+    const text = view.code;
     try {
-      await navigator.clipboard.writeText(view.code);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
+      return;
     } catch {
-      setCopied(false);
+      // Fall through to a selection copy when the clipboard is blocked.
     }
+    const node = codeRef.current;
+    if (!node) return;
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+    let ok = false;
+    try {
+      ok = document.execCommand("copy");
+    } catch {
+      ok = false;
+    }
+    selection?.removeAllRanges();
+    if (ok) setCopied(true);
+  }
+
+  function chooseGame(game) {
+    if (!host) return;
+    if (game.id === "draft") {
+      if (!draftOn) onMode("draft-year");
+      return;
+    }
+    if (view.mode !== game.mode) onMode(game.mode);
   }
 
   return (
     <section className="panel start-screen lobby pk-lobby">
-      <p className="eyebrow">Live 1 vs 1</p>
-      <h1>Room {view.code}</h1>
-      <p className="pk-code" data-pk="code">{view.code}</p>
-      <button type="button" className="lobby-link" onClick={copyCode}>
-        {copied ? "Code copied" : "Copy code"}
-      </button>
+      <h1>Live 1 vs 1</h1>
+      <div className="pk-room">
+        <p className="pk-room-label" id="pk-room-label">Room code</p>
+        <div className="pk-room-row">
+          <p className="pk-code" data-pk="code" ref={codeRef} aria-labelledby="pk-room-label">{view.code}</p>
+          <button
+            type="button"
+            className={`pk-copy ${copied ? "is-done" : ""}`}
+            onClick={copyCode}
+            aria-live="polite"
+          >
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        </div>
+      </div>
       <StatusRow view={view} link={link} />
       <div className="pk-seats">
         {view.players.map((player) => (
@@ -456,22 +718,22 @@ function Lobby({ view, link, onMode, onReady, onLeave }) {
         {view.players.length < 2 ? <p className="is-empty"><strong>Open seat</strong><span>Share the code</span></p> : null}
       </div>
       <div className="pk-modes" role="group" aria-label="Game">
-        <button type="button" className={view.mode === "higher" ? "is-on" : ""} disabled={!host} onClick={() => onMode("higher")}>
-          Higher or Lower
-        </button>
-        <button type="button" className={view.mode === "career" ? "is-on" : ""} disabled={!host} onClick={() => onMode("career")}>
-          Career Path
-        </button>
-        <button
-          type="button"
-          className={draftOn ? "is-on" : ""}
-          disabled={!host}
-          onClick={() => {
-            if (!draftOn) onMode("draft-year");
-          }}
-        >
-          Draft Pick
-        </button>
+        {PK_LOBBY_GAMES.map((game) => {
+          const selected = lobbyGameSelected(game.id, view.mode);
+          return (
+            <button
+              key={game.id}
+              type="button"
+              className={selected ? "is-on" : ""}
+              data-pk-mode={game.id}
+              aria-pressed={selected}
+              disabled={!host}
+              onClick={() => chooseGame(game)}
+            >
+              {game.label}
+            </button>
+          );
+        })}
       </div>
       {draftOn ? (
         <div className="pk-modes pk-submodes" role="group" aria-label="Draft format">
@@ -483,7 +745,7 @@ function Lobby({ view, link, onMode, onReady, onLeave }) {
           </button>
         </div>
       ) : null}
-      <p className="lede" data-pk="mode">{pkModeLabel(view.mode)}. First correct answer scores. Wrong answers lock you out.</p>
+      <p className="lede" data-pk="mode">{modeBlurb(view.mode)}</p>
       {view.notice ? <p className="pk-error">{view.notice}</p> : null}
       <button
         type="button"
@@ -565,7 +827,7 @@ export default function PkGame({ onLeave, leaveRef }) {
         <ScoreRow view={view} />
         <p>{pkModeLabel(view.mode)}</p>
         <strong data-pk="countdown">{view.countdown}</strong>
-        <span>Same question. First correct answer scores.</span>
+        <span>First correct answer scores.</span>
         <StatusRow view={view} link={pk.link} />
       </section>
     );

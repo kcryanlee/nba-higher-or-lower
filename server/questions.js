@@ -1,8 +1,11 @@
 import { players } from "../src/data/players.js";
+import { isTeammateLink } from "../src/data/teammates.js";
 import { categoryById } from "../src/game/categories.js";
 import { selectCareerQuestion } from "../src/game/careerPath.js";
+import { selectChainQuestion } from "../src/game/chain.js";
 import { draftPrompt, selectDraftQuestion } from "../src/game/draft.js";
 import { playerNamesMatch } from "../src/game/playerSearch.js";
+import { selectScoredQuestion } from "../src/game/scored.js";
 import { selectMatchup } from "../src/game/selectMatchup.js";
 
 function face(player) {
@@ -121,8 +124,81 @@ function draftQuestion(mode, { usedIds }) {
   };
 }
 
+function scoredQuestion({ roundIndex, used }) {
+  const question = selectScoredQuestion(roundIndex, { usedKeys: used });
+  if (!question?.players || question.players.length !== 3 || !Array.isArray(question.ranking)) return null;
+  const ids = question.players.map((player) => player.id);
+  const ranking = [...question.ranking];
+  const scores = question.players.map((player) => ({ id: player.id, pts: player.pts }));
+  if (scores.some((item) => !Number.isInteger(item.pts))) return null;
+  return {
+    usedKey: question.key,
+    public: {
+      kind: "scored",
+      prompt: "Rank the scoring",
+      dateLabel: question.dateLabel,
+      home: question.home,
+      away: question.away,
+      band: question.band?.label || "",
+      players: question.players.map((player) => ({
+        id: player.id,
+        name: player.name,
+        team: player.team,
+        image: player.image || null,
+      })),
+    },
+    reveal: {
+      ranking,
+      scores,
+    },
+    normalize(value) {
+      if (!Array.isArray(value) || value.length !== ids.length) return null;
+      const picks = value.map((item) => Number(item));
+      if (picks.some((id) => !ids.includes(id))) return null;
+      if (new Set(picks).size !== ids.length) return null;
+      return picks;
+    },
+    grade(value) {
+      return ranking.every((id, index) => value[index] === id);
+    },
+  };
+}
+
+function chainQuestion({ used }) {
+  const question = selectChainQuestion({ usedKeys: used });
+  if (!question?.targets || !Array.isArray(question.choices) || !Array.isArray(question.names)) return null;
+  const [first, second] = question.targets;
+  if (!first || !second) return null;
+  const choiceIds = [...question.choices];
+  const validIds = choiceIds.filter((id) => isTeammateLink(id, first.id, second.id));
+  if (!validIds.length || validIds.length === choiceIds.length) return null;
+  return {
+    usedKey: question.key,
+    public: {
+      kind: "chain",
+      prompt: "Find the player who links these two careers.",
+      targets: question.targets.map((target) => ({ id: target.id, name: target.name })),
+      choices: choiceIds,
+      names: [...question.names],
+    },
+    reveal: {
+      validIds: [...validIds],
+    },
+    normalize(value) {
+      const id = Number(value);
+      if (!choiceIds.includes(id)) return null;
+      return id;
+    },
+    grade(value) {
+      return validIds.includes(value);
+    },
+  };
+}
+
 export function buildQuestion(room) {
   if (room.mode === "career") return careerQuestion(room);
   if (room.mode === "draft-year" || room.mode === "draft-pick") return draftQuestion(room.mode, room);
+  if (room.mode === "scored") return scoredQuestion(room);
+  if (room.mode === "chain") return chainQuestion(room);
   return higherQuestion(room);
 }
